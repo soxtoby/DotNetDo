@@ -37,3 +37,9 @@ On Unix-like systems, `:new` makes the generated file executable on a best-effor
 A command whose name starts with `:` is owned by DotNetDo. App names cannot start with `:`.
 
 DotNetDo v1 includes only app listing, app creation with `:new`, help with `:help`, and app execution by name.
+
+## Exec helper
+
+A DotNetDo library helper for running an external program from a file-based app.
+
+Exec helper commands are a single command-line string where DotNetDo parses only the program token and passes the remaining argument string to .NET process execution.
