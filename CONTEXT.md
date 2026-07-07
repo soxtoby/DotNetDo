@@ -43,3 +43,15 @@ DotNetDo v1 includes only app listing, app creation with `:new`, help with `:hel
 A DotNetDo library helper for running an external program from a file-based app.
 
 Exec helper commands are a single command-line string where DotNetDo parses only the program token and passes the remaining argument string to .NET process execution.
+
+## Additional arguments
+
+Raw argument text appended after a configured tool command's structured argument slots.
+
+## Configured tool command
+
+A DotNetDo library helper that creates a typed configuration object, applies a configuration callback, builds command text, and executes it through the Exec helper.
+
+## Argument slot
+
+A configured tool command text fragment keyed by the concrete helper. The first use of a slot key fixes its command order, later uses of the same key replace the emitted text, and clearing an existing slot suppresses its text without changing surrounding slot order.
