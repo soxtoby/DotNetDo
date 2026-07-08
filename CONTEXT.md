@@ -52,6 +52,16 @@ Raw argument text appended after a configured tool command's structured argument
 
 A DotNetDo library helper that creates a typed configuration object, applies a configuration callback, builds command text, and executes it through the Exec helper.
 
+Configured tool commands use immutable config records with public `init` properties as their primary authored shape.
+
+Shared configured tool command option groups may be modeled as public non-generic base records when the dotnet CLI itself shares those options across commands.
+
 ## Argument slot
 
 A configured tool command text fragment keyed by the concrete helper. The first use of a slot key fixes its command order, later uses of the same key replace the emitted text, and clearing an existing slot suppresses its text without changing surrounding slot order.
+
+When multiple config properties write the same argument slot, the later write wins.
+
+## Custom command
+
+Raw positional command text used when a configured tool command has a known closed set of subcommands but must allow future or unsupported subcommands.
