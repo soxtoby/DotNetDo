@@ -48,17 +48,19 @@ Exec helper commands are a single command-line string where DotNetDo parses only
 
 Raw argument text appended after a configured tool command's structured argument slots.
 
-## Configured tool command
+## Tool command
 
-A DotNetDo library helper that creates a typed configuration object, applies a configuration callback, builds command text, and executes it through the Exec helper.
+A typed immutable record that describes an executable external tool command.
 
-Configured tool commands use immutable config records with public `init` properties as their primary authored shape.
+Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
 
-Shared configured tool command option groups may be modeled as public non-generic base records when the dotnet CLI itself shares those options across commands.
+Awaiting a tool command executes it through the Exec helper and requires a successful exit code.
+
+Shared tool command option groups may be modeled as public non-generic base records when the underlying tool itself shares those options across commands.
 
 ## Argument slot
 
-A configured tool command text fragment keyed by the concrete helper. The first use of a slot key fixes its command order, later uses of the same key replace the emitted text, and clearing an existing slot suppresses its text without changing surrounding slot order.
+A tool command text fragment keyed by the concrete helper. The first use of a slot key fixes its command order, later uses of the same key replace the emitted text, and clearing an existing slot suppresses its text without changing surrounding slot order.
 
 When multiple config properties write the same argument slot, the later write wins.
 

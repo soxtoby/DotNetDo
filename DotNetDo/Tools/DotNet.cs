@@ -1,38 +1,26 @@
 namespace DotNetDo;
 
-public static class DotNet
+public static partial class Tools
 {
-    public static ExecProcess Build(DotNetBuildConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Clean(DotNetCleanConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess DevCerts(DotNetDevCertsConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Format(DotNetFormatConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Pack(DotNetPackConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Restore(DotNetRestoreConfig config, ExecOptions? options = null) => 
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Test(DotNetTestConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
-
-    public static ExecProcess Watch(DotNetWatchConfig config, ExecOptions? options = null) =>
-        Do.Exec(config.ToString(), options);
+    public static class DotNet
+    {
+        public static readonly DotNetBuild Build = new();
+        public static readonly DotNetClean Clean = new();
+        public static readonly DotNetDevCerts DevCerts = new();
+        public static readonly DotNetFormat Format = new();
+        public static readonly DotNetPack Pack = new();
+        public static readonly DotNetRestore Restore = new();
+        public static readonly DotNetTest Test = new();
+        public static readonly DotNetWatch Watch = new();
+    }
 }
 
-public abstract record DotNetTargetConfig : ToolCommandConfig
+public abstract record DotNetTargetCommand : ToolCommand
 {
     public IReadOnlyList<string> Targets { get => GetArgumentArray("target"); init => SetArgumentArray("target", "", value); }
 }
 
-public abstract record DotNetBuildOptionsConfig : DotNetTargetConfig
+public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
 {
     public bool CurrentRuntime { get => GetFlag("use-current-runtime"); init => SetFlag("use-current-runtime", "--use-current-runtime", value); }
     public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
@@ -40,17 +28,16 @@ public abstract record DotNetBuildOptionsConfig : DotNetTargetConfig
     public string? VersionSuffix { get => GetArgument("version-suffix"); init => SetArgument("version-suffix", "--version-suffix ", value); }
     public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
     public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
-    public string? Verbosity{ get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
+    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
     public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
     public bool NoLogo { get => GetFlag("nologo"); init => SetFlag("nologo", "--nologo", value); }
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
 }
 
-public sealed record DotNetBuildConfig : DotNetBuildOptionsConfig
+public sealed record DotNetBuild : DotNetBuildOptionsCommand
 {
     protected override string CommandPrefix => "dotnet build";
-
     public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
     public bool Debug { get => GetFlag("debug"); init => SetFlag("debug", "--debug", value); }
     public bool NoIncremental { get => GetFlag("no-incremental"); init => SetFlag("no-incremental", "--no-incremental", value); }
@@ -60,10 +47,9 @@ public sealed record DotNetBuildConfig : DotNetBuildOptionsConfig
     public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
 }
 
-public sealed record DotNetCleanConfig : DotNetTargetConfig
+public sealed record DotNetClean : DotNetTargetCommand
 {
     protected override string CommandPrefix => "dotnet clean";
-
     public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
     public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
     public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
@@ -75,10 +61,9 @@ public sealed record DotNetCleanConfig : DotNetTargetConfig
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
 }
 
-public sealed record DotNetDevCertsConfig : ToolCommandConfig
+public sealed record DotNetDevCerts : ToolCommand
 {
     protected override string CommandPrefix => "dotnet dev-certs https";
-
     public string? ExportPath { get => GetArgument("export-path"); init => SetArgument("export-path", "--export-path ", value); }
     public string? Password { get => GetArgument("password"); init => SetArgument("password", "--password ", value); }
     public bool NoPassword { get => GetFlag("no-password"); init => SetFlag("no-password", "--no-password", value); }
@@ -92,10 +77,9 @@ public sealed record DotNetDevCertsConfig : ToolCommandConfig
     public bool CheckTrustMachineReadable { get => GetFlag("check-trust-machine-readable"); init => SetFlag("check-trust-machine-readable", "--check-trust-machine-readable", value); }
 }
 
-public sealed record DotNetPackConfig : DotNetBuildOptionsConfig
+public sealed record DotNetPack : DotNetBuildOptionsCommand
 {
     protected override string CommandPrefix => "dotnet pack";
-
     public bool NoBuild { get => GetFlag("no-build"); init => SetFlag("no-build", "--no-build", value); }
     public bool IncludeSymbols { get => GetFlag("include-symbols"); init => SetFlag("include-symbols", "--include-symbols", value); }
     public bool IncludeSource { get => GetFlag("include-source"); init => SetFlag("include-source", "--include-source", value); }
@@ -103,10 +87,9 @@ public sealed record DotNetPackConfig : DotNetBuildOptionsConfig
     public string? Version { get => GetArgument("version"); init => SetArgument("version", "--version ", value); }
 }
 
-public sealed record DotNetRestoreConfig : DotNetTargetConfig
+public sealed record DotNetRestore : DotNetTargetCommand
 {
     protected override string CommandPrefix => "dotnet restore";
-
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
     public IReadOnlyList<string> Sources { get => GetArgumentArray("source", " --source "); init => SetArgumentArray("source", "--source ", value, " --source "); }
     public string? Packages { get => GetArgument("packages"); init => SetArgument("packages", "--packages ", value); }
@@ -129,10 +112,9 @@ public sealed record DotNetRestoreConfig : DotNetTargetConfig
     public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
 }
 
-public sealed record DotNetTestConfig : DotNetTargetConfig
+public sealed record DotNetTest : DotNetTargetCommand
 {
     protected override string CommandPrefix => "dotnet test";
-
     public string? Settings { get => GetArgument("settings"); init => SetArgument("settings", "--settings ", value); }
     public bool ListTests { get => GetFlag("list-tests"); init => SetFlag("list-tests", "--list-tests", value); }
     public IReadOnlyList<string> Environment { get => GetArgumentArray("environment", " --environment "); init => SetArgumentArray("environment", "--environment ", value, " --environment "); }
@@ -164,10 +146,9 @@ public sealed record DotNetTestConfig : DotNetTargetConfig
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
 }
 
-public sealed record DotNetWatchConfig : ToolCommandConfig
+public sealed record DotNetWatch : ToolCommand
 {
     protected override string CommandPrefix => "dotnet watch";
-
     public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
     public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
     public bool List { get => GetFlag("list"); init => SetFlag("list", "--list", value); }
@@ -186,10 +167,9 @@ public sealed record DotNetWatchConfig : ToolCommandConfig
     public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
 }
 
-public sealed record DotNetFormatConfig : DotNetTargetConfig
+public sealed record DotNetFormat : DotNetTargetCommand
 {
     protected override string CommandPrefix => "dotnet format";
-
     public FormatCommand? Command { get => GetEnum<FormatCommand>("command"); init => SetEnum("command", value); }
     public string? CustomCommand { get => GetArgument("command"); init => SetArgument("command", value); }
     public IReadOnlyList<string> Diagnostics { get => GetArgumentArray("diagnostics"); init => SetArgumentArray("diagnostics", "--diagnostics ", value); }

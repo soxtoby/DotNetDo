@@ -1,21 +1,21 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DotNetDo;
 
-public abstract record ToolCommandConfig
+public abstract record ToolCommand
 {
     readonly ArgumentSlots _arguments;
 
-    protected ToolCommandConfig()
-    {
-        _arguments = new ArgumentSlots();
-    }
+    protected ToolCommand() => _arguments = new ArgumentSlots();
 
-    protected ToolCommandConfig(ToolCommandConfig original)
+    protected ToolCommand(ToolCommand original)
     {
         _arguments = original._arguments.Clone();
         AdditionalArguments = original.AdditionalArguments;
     }
+
+    public TaskAwaiter<ExecResult> GetAwaiter() => Do.Exec(this).GetAwaiter();
 
     public string? AdditionalArguments { get; init; }
 

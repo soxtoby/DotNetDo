@@ -7,6 +7,8 @@ namespace DotNetDo;
 
 public static partial class Do
 {
+    public static ExecProcess Exec(ToolCommand command, ExecOptions? options = null) => Exec(command.ToString(), options);
+    
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
         var workingDirectory = options?.WorkingDirectory ?? Environment.CurrentDirectory;
