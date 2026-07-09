@@ -18,6 +18,24 @@ App names are simple file stems: letters, numbers, `_`, `-`, and `.` are allowed
 
 Arguments after the app name in a run command are forwarded to the file-based app.
 
+## Script parameter
+
+A file-based app argument declared by a literal DotNetDo API call. DotNetDo can discover script parameters by source scanning without executing the file-based app.
+
+Script parameters resolve through DotNetDo's configuration pipeline: command-line arguments, `DOTNETDO_`-prefixed environment variables, user secrets, API default value, then `default`.
+
+Script parameters are typed by the declared API call and parsed by DotNetDo from long command-line options.
+
+App help is the DotNetDo-owned discovery surface for script parameters.
+
+Script parameters may include an optional description for app help output.
+
+Script parameter APIs return parameter wrappers. `.Required()` throws immediately when no value exists and otherwise returns a separate required wrapper so nullable flow matches runtime behavior. An immediate `.Required()` call marks a script parameter as always required for discovery; later `.Required()` calls are treated as conditional runtime validation.
+
+## Secret value
+
+A string script parameter value intended to avoid accidental clear-text output. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
+
 ## Run command
 
 The run command executes a file-based app through SDK file execution, equivalent to `dotnet <app-name>.cs -- <app-arguments>`. DotNetDo does not emulate file-based app support for older SDKs.
@@ -43,6 +61,10 @@ DotNetDo v1 includes only app listing, app creation with `:new`, help with `:hel
 A DotNetDo library helper for running an external program from a file-based app.
 
 Exec helper commands are a single command-line string where DotNetDo parses only the program token and passes the remaining argument string to .NET process execution.
+
+## Logging bootstrap
+
+DotNetDo's early setup of the process-wide logger for file-based apps, intended to route app and tool-command logs to useful local and CI destinations while remaining easy for the app to replace.
 
 ## Additional arguments
 

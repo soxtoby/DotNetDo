@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using DotNetDo;
 
 return await Cli.RunAsync(args);
 
@@ -17,7 +18,7 @@ static partial class Cli
         return args[0] switch
             {
                 ":new" => CreateApp(args),
-                ":help" => ShowHelp(),
+                ":help" => ShowHelp(args),
                 var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
                 var appName => await RunAppAsync(appName, args[1..])
             };
@@ -69,12 +70,16 @@ static partial class Cli
         return process.ExitCode;
     }
 
-    static int ShowHelp()
+    static int ShowHelp(string[] args)
     {
+        if (args.Length == 2)
+            return AppHelp.Show(args[1]);
+
         Console.WriteLine("""
             Usage:
               do
               do :new <name>
+              do :help <name>
               do :help
               do <name> [args...]
             """);
