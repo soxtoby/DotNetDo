@@ -62,9 +62,23 @@ A DotNetDo library helper for running an external program from a file-based app.
 
 Exec helper commands are a single command-line string where DotNetDo parses only the program token and passes the remaining argument string to .NET process execution.
 
+Exec combines standard output and standard error into replayable `ExecOutput` objects containing an `Out` or `Error` type and a message. Their cross-pipe order is the order DotNetDo observes, not a guarantee of the external process's original write order.
+
+Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` is an optional action receiving each output type and raw message; apps may replace it to choose another logger or level. A missing or `null` action uses the default. Capture behavior is unchanged.
+
+The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of resolved script-secret values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
+
 ## Logging bootstrap
 
-DotNetDo's early setup of the process-wide logger for file-based apps, intended to route app and tool-command logs to useful local and CI destinations while remaining easy for the app to replace.
+DotNetDo's module-initializer setup of the process-wide logger for file-based apps. When Serilog still has its default silent logger, DotNetDo installs an `Information`-minimum logger using its CI log sink; the app remains free to replace `Log.Logger` normally. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the app.
+
+## Redacting logger
+
+An `ILogger` wrapper created through `LoggerConfiguration.CreateRedactingLogger()`. It clones each log event and redacts resolved script secrets from message templates, exceptions, property names, and recursively nested property values before forwarding the event, following the complete-event approach demonstrated by `nblumhardt/serilog-redaction`. Contextual loggers returned by the wrapper remain wrapped. A replacement global logger is protected only when the app creates it through this extension.
+
+## CI log sink
+
+A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Serilog.Sinks.Console` locally and writes build-agent-native commands on supported CI systems. It detects Azure Pipelines from `TF_BUILD=true`, GitHub Actions from `GITHUB_ACTIONS=true`, then falls back to the standard console sink. Warnings become CI warning annotations; errors and fatal events become CI error annotations; lower levels remain ordinary output. CI annotations contain only the rendered message and exception in v1, with no inferred source-file metadata. The sink changes log rendering and routing, not command execution.
 
 ## Additional arguments
 

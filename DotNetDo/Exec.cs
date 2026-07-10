@@ -1,17 +1,18 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Channels;
+using Serilog;
+using Serilog.Events;
 
 namespace DotNetDo;
 
 public static partial class Do
 {
     public static ExecProcess Exec(ToolCommand command, ExecOptions? options = null) => Exec(command.ToString(), options);
-    
+
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
-        var workingDirectory = options?.WorkingDirectory ?? Environment.CurrentDirectory;
+        options ??= new ExecOptions();
+        var workingDirectory = options.WorkingDirectory ?? Environment.CurrentDirectory;
         var parsed = ExecCommand.Parse(command);
         var startInfo = new ProcessStartInfo(parsed.Program, parsed.Arguments)
             {
@@ -21,23 +22,40 @@ public static partial class Do
                 WorkingDirectory = workingDirectory,
             };
 
-        var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Failed to start command '{command}'.");
+        Log.Debug("Executing {Command} in {WorkingDirectory}", command, workingDirectory);
 
-        return new ExecProcess(process, command, workingDirectory);
+        try
+        {
+            var process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException($"Failed to start command '{command}'.");
+
+            return new ExecProcess(process, command, workingDirectory, options.Log ?? ExecOptions.DefaultLog);
+        }
+        catch (Exception exception)
+        {
+            Log.Error(exception, "Failed to start command {Command}", command);
+            throw;
+        }
     }
 }
 
 public sealed record ExecOptions
 {
     public string? WorkingDirectory { get; init; }
+    public Action<OutputType, string>? Log { get; init; }
+
+    internal static void DefaultLog(OutputType type, string message) =>
+        Serilog.Log.Write(
+            type == OutputType.Out ? LogEventLevel.Information : LogEventLevel.Error,
+            "{ToolOutput:l}",
+            message);
 }
 
 sealed record ExecCommand(string Program, string Arguments)
 {
     public static ExecCommand Parse(string command)
     {
-        var trimmed = command.Trim();
+        var trimmed = command.TrimStart();
         return trimmed.StartsWith('"')
             ? ParseQuoted(trimmed)
             : ParseUnquoted(trimmed);
@@ -62,24 +80,19 @@ sealed record ExecCommand(string Program, string Arguments)
 
 public sealed class ExecProcess
 {
-    internal ExecProcess(Process process, string command, string workingDirectory)
+    internal ExecProcess(
+        Process process,
+        string command,
+        string workingDirectory,
+        Action<OutputType, string> log)
     {
-        var output = new ExecOutput();
-        var error = new ExecOutput();
-
-        Output = output.Lines;
-        Error = error.Lines;
-        OutputChunks = output.Chunks;
-        ErrorChunks = error.Chunks;
-
-        Completed = CompleteAsync(process, command, workingDirectory, output, error);
+        var output = new ExecCapture(log);
+        Output = output.Stream;
+        Completed = CompleteAsync(process, command, workingDirectory, output);
         Succeeded = EnsureSuccessAsync(Completed);
     }
 
-    public IAsyncEnumerable<string> Output { get; }
-    public IAsyncEnumerable<string> Error { get; }
-    public IAsyncEnumerable<string> OutputChunks { get; }
-    public IAsyncEnumerable<string> ErrorChunks { get; }
+    public IAsyncEnumerable<ExecOutput> Output { get; }
     public Task<ExecResult> Completed { get; }
     public Task<ExecResult> Succeeded { get; }
 
@@ -89,26 +102,39 @@ public sealed class ExecProcess
         Process process,
         string command,
         string workingDirectory,
-        ExecOutput output,
-        ExecOutput error)
+        ExecCapture output)
     {
         using (process)
         {
-            var outputTask = output.ReadAsync(process.StandardOutput);
-            var errorTask = error.ReadAsync(process.StandardError);
+            try
+            {
+                await Task.WhenAll(
+                    process.WaitForExitAsync(),
+                    output.ReadAsync(process.StandardOutput, OutputType.Out),
+                    output.ReadAsync(process.StandardError, OutputType.Error));
 
-            await Task.WhenAll(process.WaitForExitAsync(), outputTask, errorTask);
+                var result = new ExecResult
+                    {
+                        Command = command,
+                        WorkingDirectory = workingDirectory,
+                        Output = output.Snapshot,
+                        ExitCode = process.ExitCode,
+                    };
 
-            return new ExecResult
-                {
-                    Command = command,
-                    WorkingDirectory = workingDirectory,
-                    Output = output.LinesSnapshot,
-                    Error = error.LinesSnapshot,
-                    OutputText = output.Text,
-                    ErrorText = error.Text,
-                    ExitCode = process.ExitCode,
-                };
+                output.Complete();
+
+                if (result.ExitCode == 0)
+                    Log.Debug("Command {Command} completed successfully", command);
+                else
+                    Log.Error("Command {Command} failed with exit code {ExitCode}", command, result.ExitCode);
+
+                return result;
+            }
+            catch (Exception exception)
+            {
+                output.Complete(exception);
+                throw;
+            }
         }
     }
 
@@ -125,10 +151,7 @@ public sealed record ExecResult
 {
     public required string Command { get; init; }
     public required string WorkingDirectory { get; init; }
-    public required string[] Output { get; init; }
-    public required string[] Error { get; init; }
-    public required string OutputText { get; init; }
-    public required string ErrorText { get; init; }
+    public required ExecOutput[] Output { get; init; }
     public required int ExitCode { get; init; }
 }
 
@@ -138,187 +161,49 @@ public sealed class ExecFailedException(ExecResult result) : Exception($"Command
     public string Command { get; } = result.Command;
 }
 
-sealed class ExecOutput
+sealed class ExecCapture(Action<OutputType, string> log)
 {
-    readonly ReplayTextStream _lines = new();
-    readonly ReplayTextStream _chunks = new();
-    readonly StringBuilder _text = new();
-    readonly List<string> _lineSnapshot = [];
+    readonly ReplayStream<ExecOutput> _stream = new();
+    readonly List<ExecOutput> _snapshot = [];
     readonly Lock _gate = new();
 
-    public IAsyncEnumerable<string> Lines => _lines;
-    public IAsyncEnumerable<string> Chunks => _chunks;
+    public IAsyncEnumerable<ExecOutput> Stream => _stream;
 
-    public string[] LinesSnapshot
+    public ExecOutput[] Snapshot
     {
         get
         {
             lock (_gate)
-                return [.._lineSnapshot];
+                return [.._snapshot];
         }
     }
 
-    public string Text
+    public async Task ReadAsync(StreamReader reader, OutputType type)
     {
-        get
-        {
-            lock (_gate)
-                return _text.ToString();
-        }
+        while (await reader.ReadLineAsync() is { } message)
+            Append(type, message);
     }
 
-    public async Task ReadAsync(StreamReader reader)
+    void Append(OutputType type, string message)
     {
-        var buffer = new char[4096];
-        var line = new StringBuilder();
-        var pendingCarriageReturn = false;
-        var count = 1;
+        var output = new ExecOutput(type, message);
 
-        try
-        {
-            while (count > 0)
-            {
-                count = await reader.ReadAsync(buffer);
-                if (count > 0)
-                {
-                    var chunk = new string(buffer, 0, count);
-                    AppendChunk(chunk);
-                    _chunks.Append(chunk);
-
-                    foreach (var character in chunk)
-                    {
-                        if (pendingCarriageReturn && character != '\n')
-                        {
-                            AppendLine(line.ToString());
-                            line.Clear();
-                        }
-
-                        pendingCarriageReturn = (!pendingCarriageReturn || character != '\n') && pendingCarriageReturn;
-
-                        if (character == '\r')
-                        {
-                            pendingCarriageReturn = true;
-                        }
-                        else if (character == '\n' && !pendingCarriageReturn)
-                        {
-                            AppendLine(line.ToString());
-                            line.Clear();
-                        }
-                        else if (character != '\n')
-                        {
-                            line.Append(character);
-                            pendingCarriageReturn = false;
-                        }
-                    }
-                }
-            }
-
-            if (pendingCarriageReturn || line.Length > 0)
-                AppendLine(line.ToString());
-
-            _lines.Complete();
-            _chunks.Complete();
-        }
-        catch (Exception exception)
-        {
-            _lines.Complete(exception);
-            _chunks.Complete(exception);
-            throw;
-        }
-    }
-
-    void AppendChunk(string chunk)
-    {
         lock (_gate)
-            _text.Append(chunk);
+        {
+            _snapshot.Add(output);
+            _stream.Append(output);
+        }
+
+        log(type, message);
     }
 
-    void AppendLine(string line)
-    {
-        lock (_gate)
-            _lineSnapshot.Add(line);
-
-        _lines.Append(line);
-    }
+    public void Complete(Exception? exception = null) => _stream.Complete(exception);
 }
 
-sealed class ReplayTextStream : IAsyncEnumerable<string>
+public sealed record ExecOutput(OutputType Type, string Message);
+
+public enum OutputType
 {
-    readonly Lock _gate = new();
-    readonly List<string> _items = [];
-    readonly List<Channel<string>> _subscribers = [];
-    Exception? _exception;
-    bool _completed;
-
-    public async IAsyncEnumerator<string> GetAsyncEnumerator(CancellationToken cancellationToken = default)
-    {
-        var channel = Channel.CreateUnbounded<string>();
-
-        lock (_gate)
-        {
-            foreach (var item in _items)
-                channel.Writer.TryWrite(item);
-
-            if (_completed)
-            {
-                channel.Writer.TryComplete(_exception);
-            }
-            else
-            {
-                _subscribers.Add(channel);
-            }
-        }
-
-        try
-        {
-            await foreach (var item in channel.Reader.ReadAllAsync().WithCancellation(cancellationToken))
-                yield return item;
-        }
-        finally
-        {
-            lock (_gate)
-                _subscribers.Remove(channel);
-        }
-    }
-
-    public void Append(string item)
-    {
-        Channel<string>[] subscribers;
-        lock (_gate)
-        {
-            if (!_completed)
-            {
-                _items.Add(item);
-                subscribers = [.._subscribers];
-            }
-            else
-            {
-                subscribers = [];
-            }
-        }
-
-        foreach (var subscriber in subscribers)
-            subscriber.Writer.TryWrite(item);
-    }
-
-    public void Complete(Exception? exception = null)
-    {
-        Channel<string>[] subscribers;
-        lock (_gate)
-        {
-            if (!_completed)
-            {
-                _completed = true;
-                _exception = exception;
-                subscribers = [.. _subscribers];
-            }
-            else
-            {
-                subscribers = [];
-            }
-        }
-
-        foreach (var subscriber in subscribers)
-            subscriber.Writer.TryComplete(exception);
-    }
+    Out,
+    Error,
 }

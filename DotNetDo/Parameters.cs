@@ -35,12 +35,18 @@ public static partial class Do
             ? value
             : ParameterValue<T>.Resolved(name, defaultValue);
 
-    static ParameterValue<Secret> ReadSecret(string name, string? defaultValue) =>
-        ReadConfigurationValue<string>(name) is { HasValue: true } value
-            ? ParameterValue<Secret>.Resolved(name, new Secret(value.Value))
-            : defaultValue is null
-                ? ParameterValue<Secret>.Missing(name)
-                : ParameterValue<Secret>.Resolved(name, new Secret(defaultValue));
+    static ParameterValue<Secret> ReadSecret(string name, string? defaultValue)
+    {
+        var value = ReadConfigurationValue<string>(name) is { HasValue: true } configured
+            ? configured.Value
+            : defaultValue;
+
+        if (value is null)
+            return ParameterValue<Secret>.Missing(name);
+
+        SecretRedaction.Register(value);
+        return ParameterValue<Secret>.Resolved(name, new Secret(value));
+    }
 
     static ParameterValue<T> ReadConfigurationValue<T>(string name)
     {
