@@ -1,5 +1,21 @@
 # Glossary
 
+## Solution navigation
+
+### Solution
+
+A `.sln` or `.slnx` file and its logical hierarchy. The default solution is the sole solution found in the nearest ancestor directory containing solution files; callers may instead identify one explicitly.
+
+### Solution path
+
+The canonical string identity of a project within a solution, formed from its containing solution folders and project name, separated by `/`. A root project uses only its project name; solution paths have no leading slash. Project lookup is ordinal case-sensitive, requires the complete solution path, and never falls back to a unique project name. The identity is virtual and independent of the project file's location on disk.
+
+_Avoid_: Project path, disk path
+
+### Solution project
+
+A file-backed project entry in a solution. Solution items are not projects; projects unsupported by the available MSBuild toolset remain navigable but may not be evaluable.
+
 ## File-based app
 
 A single C# source file intended to be created and run directly by DotNetDo.

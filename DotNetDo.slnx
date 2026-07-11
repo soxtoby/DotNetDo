@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="DotNetDo.Generators/DotNetDo.Generators.csproj" />
+  <Project Path="DotNetDo.Tests/DotNetDo.Tests.csproj" />
+  <Project Path="DotNetDo/DotNetDo.csproj" />
+</Solution>

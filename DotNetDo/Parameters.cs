@@ -71,7 +71,7 @@ public static partial class Do
         var builder = new ConfigurationBuilder()
             .AddUserSecrets(Assembly.GetEntryAssembly() ?? typeof(Do).Assembly, optional: true)
             .AddEnvironmentVariables("DOTNETDO_")
-            .AddCommandLine(Args);
+            .AddCommandLine(Environment.GetCommandLineArgs().Skip(1).ToArray());
 
         return builder.Build();
     }

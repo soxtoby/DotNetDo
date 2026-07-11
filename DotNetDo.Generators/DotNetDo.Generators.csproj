@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <_EnableDefaultWindowsPlatform>false</_EnableDefaultWindowsPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)\Roslyn\bincore\Microsoft.CodeAnalysis.dll" Private="false" />
+    <Reference Include="Microsoft.CodeAnalysis.CSharp" HintPath="$(MSBuildBinPath)\Roslyn\bincore\Microsoft.CodeAnalysis.CSharp.dll" Private="false" />
+  </ItemGroup>
+</Project>
