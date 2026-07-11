@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotNetDo;
 
-public sealed record AbsolutePath
+public sealed partial record AbsolutePath
 {
     readonly PathRoot _root;
     readonly string[] _segments;
@@ -37,13 +39,30 @@ public sealed record AbsolutePath
 
     public string UnixPath => Render('/');
     public string WindowsPath => Render('\\');
-    public string NativePath => Render(Path.DirectorySeparatorChar);
     public string? Name => _segments.Length == 0 ? null : _segments[^1];
     public string Extension => PathSegments.Extension(Name);
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
     public AbsolutePath? Parent => _segments.Length == 0 ? null : new(_root, _segments[..^1]);
     public AbsolutePath Root => new(_root, []);
+    [MemberNotNullWhen(false, nameof(Name), nameof(Parent))]
     public bool IsRoot => _segments.Length == 0;
+
+    public RelativePath RelativePathTo(AbsolutePath path)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+
+        if (_root != path._root)
+            throw new ArgumentException("Paths must have the same root.", nameof(path));
+
+        var common = 0;
+        while (common < _segments.Length && common < path._segments.Length && _segments[common] == path._segments[common])
+            common++;
+
+        return new([
+                .. Enumerable.Repeat("..", _segments.Length - common),
+                .. path._segments[common..]
+            ]);
+    }
 
     public static AbsolutePath operator /(AbsolutePath left, RelativePath right)
     {
@@ -60,8 +79,10 @@ public sealed record AbsolutePath
     }
 
     public static AbsolutePath operator /(AbsolutePath left, string right) => left / RelativePath.Parse(right);
-    public static implicit operator string(AbsolutePath path) => path.NativePath;
-    public override string ToString() => NativePath;
+    public static implicit operator string(AbsolutePath path) => path.Render(Path.DirectorySeparatorChar);
+    public override string ToString() => Render(Path.DirectorySeparatorChar);
+
+    public bool IsWithin(AbsolutePath directory) => _root == directory._root && _segments.SequenceStartsWith(directory._segments);
 
     public bool Equals(AbsolutePath? other) => other is not null && _root == other._root && PathSegments.Equal(_segments, other._segments);
 

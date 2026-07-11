@@ -2,7 +2,7 @@ namespace DotNetDo;
 
 public sealed record RelativePath
 {
-    RelativePath(string[] segments) => Segments = segments;
+    internal RelativePath(string[] segments) => Segments = segments;
 
     internal string[] Segments { get; }
 
@@ -29,7 +29,6 @@ public sealed record RelativePath
 
     public string UnixPath => Render('/');
     public string WindowsPath => Render('\\');
-    public string NativePath => Render(Path.DirectorySeparatorChar);
     public string? Name => Segments.Length == 0 ? null : Segments[^1];
     public string Extension => PathSegments.Extension(Name);
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
@@ -43,8 +42,8 @@ public sealed record RelativePath
     }
 
     public static RelativePath operator /(RelativePath left, string right) => left / Parse(right);
-    public static implicit operator string(RelativePath path) => path.NativePath;
-    public override string ToString() => NativePath;
+    public static implicit operator string(RelativePath path) => path.Render(Path.DirectorySeparatorChar);
+    public override string ToString() => Render(Path.DirectorySeparatorChar);
 
     public bool Equals(RelativePath? other) => other is not null && PathSegments.Equal(Segments, other.Segments);
 

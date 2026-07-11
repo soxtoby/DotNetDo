@@ -37,9 +37,9 @@ public sealed class Solution
         ArgumentNullException.ThrowIfNull(path);
         Validate(path);
 
-        var serializer = SolutionSerializers.GetSerializerByMoniker(path.NativePath)
+        var serializer = SolutionSerializers.GetSerializerByMoniker(path)
             ?? throw new NotSupportedException($"No solution serializer supports '{path}'.");
-        var model = await serializer.OpenAsync(path.NativePath, cancellationToken).ConfigureAwait(false);
+        var model = await serializer.OpenAsync(path, cancellationToken).ConfigureAwait(false);
         return new Solution(path, model);
     }
 
@@ -88,7 +88,7 @@ public sealed class Solution
         var solutionPath = string.IsNullOrEmpty(parentPath)
             ? project.ActualDisplayName
             : $"{parentPath}/{project.ActualDisplayName}";
-        var projectPath = AbsolutePath.Parse(System.IO.Path.GetFullPath(project.FilePath, Directory.NativePath));
+        var projectPath = AbsolutePath.Parse(System.IO.Path.GetFullPath(project.FilePath, Directory));
         return new ProjectInfo(solutionPath.Replace('\\', '/'), projectPath);
     }
 
@@ -103,7 +103,7 @@ public sealed class Solution
     {
         if (path.Extension is not ".sln" and not ".slnx")
             throw new ArgumentException("A solution path must end in .sln or .slnx.", nameof(path));
-        if (!File.Exists(path.NativePath))
-            throw new FileNotFoundException($"Solution file '{path}' does not exist.", path.NativePath);
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Solution file '{path}' does not exist.", path);
     }
 }

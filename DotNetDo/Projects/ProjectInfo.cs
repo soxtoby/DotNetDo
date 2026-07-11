@@ -17,7 +17,7 @@ public sealed class ProjectInfo
     {
         try
         {
-            return MSBuildLoader.Load(Path.NativePath, globalProperties);
+            return MSBuildLoader.Load(Path, globalProperties);
         }
         catch (Exception exception)
         {

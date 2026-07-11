@@ -1,6 +1,6 @@
 namespace DotNetDo;
 
-public static partial class Tools
+public static class Tools
 {
     public static class DotNet
     {
