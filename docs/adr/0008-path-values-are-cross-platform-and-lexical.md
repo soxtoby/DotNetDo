@@ -1,0 +1,3 @@
+# Path values are cross-platform and lexical
+
+`AbsolutePath` and `RelativePath` parse path text into a typed root and immutable segment collection without consulting the filesystem, and their identity is ordinal and independent of the current operating system. This deliberately trades native filesystem case rules, existence checks, and symlink resolution for deterministic values that can represent and manipulate Unix, drive-rooted Windows, and UNC paths on every supported OS; the current OS affects rendering only. A raw relative-segment escape hatch preserves platform-specific segment text without reparsing it, with correctness owned by its caller.
