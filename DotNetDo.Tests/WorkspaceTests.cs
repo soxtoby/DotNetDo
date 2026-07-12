@@ -38,6 +38,40 @@ public sealed class WorkspaceTests
         Assert.Equal(inner, Do.RootDirectory);
     }
 
+    [Fact]
+    public void Scripts_path_defaults_to_scripts()
+    {
+        using var workspace = Workspace.Create();
+
+        Assert.Equal(RelativePath.Parse("scripts"), WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+    }
+
+    [Theory]
+    [InlineData("scripts-path = \"build/tasks\"", "build/tasks")]
+    [InlineData("scripts-path = \".\"", ".")]
+    [InlineData("[parameters]\nconfiguration = \"Release\"", "scripts")]
+    public void Scripts_path_reads_configuration(string configuration, string expected)
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", configuration);
+
+        Assert.Equal(RelativePath.Parse(expected), WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+    }
+
+    [Theory]
+    [InlineData("script-path = \"scripts\"")]
+    [InlineData("scripts-path = \"\"")]
+    [InlineData("scripts-path = \"../scripts\"")]
+    [InlineData("scripts-path = \"C:\\\\scripts\"")]
+    [InlineData("not valid TOML")]
+    public void Invalid_scripts_configuration_fails(string configuration)
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", configuration);
+
+        Assert.Throws<DotNetDoConfigurationException>(() => WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+    }
+
     sealed class Workspace : IDisposable
     {
         readonly AbsolutePath _originalWorkingDirectory;

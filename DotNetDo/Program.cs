@@ -9,19 +9,26 @@ static partial class Cli
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        if (args.Length == 0)
+        try
         {
-            ListApps();
-            return 0;
-        }
-
-        return args[0] switch
+            if (args.Length == 0)
             {
-                ":new" => CreateApp(args),
-                ":help" => ShowHelp(args),
-                var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
-                var appName => await RunAppAsync(appName, args[1..])
-            };
+                ListApps();
+                return 0;
+            }
+
+            return args[0] switch
+                {
+                    ":new" => CreateApp(args),
+                    ":help" => ShowHelp(args),
+                    var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
+                    var appName => await RunAppAsync(appName, args[1..])
+                };
+        }
+        catch (DotNetDoConfigurationException exception)
+        {
+            return Fail(exception.Message);
+        }
     }
 
     static int CreateApp(string[] args)
@@ -33,13 +40,15 @@ static partial class Cli
         if (!IsValidAppName(appName))
             return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
-        var fileName = $"{appName}.cs";
-        if (File.Exists(fileName))
-            return Fail($"{fileName} already exists.");
+        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var file = Do.RootDirectory / relativeFile;
+        if (file.IsExistingFile)
+            return Fail($"{relativeFile} already exists.");
 
-        File.WriteAllText(fileName, NewAppTemplate(appName));
-        MakeExecutableIfUnix(fileName);
-        Console.WriteLine($"Created {fileName}");
+        Do.ScriptsDirectory.EnsureDirectoryExists();
+        File.WriteAllText(file, NewAppTemplate(appName));
+        MakeExecutableIfUnix(file);
+        Console.WriteLine($"Created {relativeFile}");
         return 0;
     }
 
@@ -48,13 +57,14 @@ static partial class Cli
         if (!IsValidAppName(appName))
             return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
-        var fileName = $"{appName}.cs";
-        if (!File.Exists(fileName))
-            return Fail($"{fileName} does not exist.");
+        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var file = Do.RootDirectory / relativeFile;
+        if (!file.IsExistingFile)
+            return Fail($"{relativeFile} does not exist.");
 
         var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false };
 
-        startInfo.ArgumentList.Add(fileName);
+        startInfo.ArgumentList.Add(file);
         if (appArgs.Length > 0)
         {
             startInfo.ArgumentList.Add("--");
@@ -73,7 +83,9 @@ static partial class Cli
     static int ShowHelp(string[] args)
     {
         if (args.Length == 2)
-            return AppHelp.Show(args[1]);
+            return IsValidAppName(args[1])
+                ? AppHelp.Show(args[1])
+                : Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
         Console.WriteLine("""
             Usage:
@@ -88,8 +100,11 @@ static partial class Cli
 
     static void ListApps()
     {
+        if (!Do.ScriptsDirectory.IsExistingDirectory)
+            return;
+
         var apps = Directory
-            .EnumerateFiles(Do.WorkingDirectory, "*.cs", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(Do.ScriptsDirectory, "*.cs", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileNameWithoutExtension)
             .Where(name => name is not null && IsValidAppName(name))
             .Order(StringComparer.OrdinalIgnoreCase);

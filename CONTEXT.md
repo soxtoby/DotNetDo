@@ -4,7 +4,7 @@
 
 ### DotNetDo configuration
 
-A committed `dotnetdo.toml` file containing shared configuration for file-based apps. Its containing directory establishes the DotNetDo root directory.
+A committed `dotnetdo.toml` file containing shared configuration for scripts. Its containing directory establishes the DotNetDo root directory. Top-level keys are owned by DotNetDo; tables are reserved for parameter namespaces. Unknown top-level keys and invalid configuration fail operations that require configuration; values never silently fall back.
 
 ### Root directory
 
@@ -13,6 +13,10 @@ The nearest ancestor of the current working directory containing DotNetDo config
 ### Working directory
 
 The current process working directory from which a file-based app operates. It may change during execution; reads reflect its current value, and assignment changes it process-wide.
+
+### Scripts path
+
+The root-relative path containing DotNetDo scripts. It defaults to `scripts` and may be configured with the top-level `scripts-path` key in DotNetDo configuration; `.` selects the root directory. Empty, absolute, and root-escaping values are invalid. Containment is lexical; symbolic links retain normal filesystem behavior.
 
 ## Git
 
@@ -44,9 +48,13 @@ Generated file-based apps reference the DotNetDo package and import the `DotNetD
 
 The initial DotNetDo API surface is intentionally tiny. Generated apps reference it to establish a stable import path for future helpers.
 
+## Script
+
+A directly runnable unit discovered by DotNetDo, currently implemented as a file-based app. A future task may orchestrate one or more scripts.
+
 ## App name
 
-The extensionless local name of a file-based app. In v1, an app name resolves only to `<app-name>.cs` in the current directory.
+The extensionless name of a script. An app name resolves only to `<scripts-path>/<app-name>.cs`; nested directories are not searched.
 
 App names are simple file stems: letters, numbers, `_`, `-`, and `.` are allowed; path separators and a `.cs` suffix are rejected.
 
@@ -78,11 +86,11 @@ The run command executes a file-based app through SDK file execution, equivalent
 
 ## App list
 
-Running `do` with no arguments lists file-based apps in the current directory.
+Running `do` with no arguments lists scripts directly inside the scripts path. Nested directories are not searched. A missing scripts path produces an empty list.
 
 ## New command
 
-The `:new` command creates a file-based app and fails if the target file already exists.
+The `:new` command creates a script directly inside the scripts path and fails if the target file already exists. It creates a missing scripts path.
 
 On Unix-like systems, `:new` makes the generated file executable on a best-effort basis. Windows does not need executable bits for DotNetDo usage.
 

@@ -1,0 +1,3 @@
+# Scripts have one root-relative discovery path
+
+DotNetDo discovers scripts only as direct `.cs` children of one root-relative scripts path, defaulting to `scripts` and configurable through the top-level `scripts-path` key in `dotnetdo.toml`. A single flat location keeps names unambiguous and leaves future tasks free to orchestrate scripts; DotNetDo therefore does not recurse, search fallback locations, infer Git or solution roots, or silently recover from invalid configuration. The caller's working directory remains unchanged, while `scripts-path = "."` explicitly supports root-level scripts.

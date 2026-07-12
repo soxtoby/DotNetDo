@@ -6,13 +6,15 @@ static partial class AppHelp
 {
     public static int Show(string appName)
     {
-        if (!File.Exists($"{appName}.cs"))
+        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var file = Do.RootDirectory / relativeFile;
+        if (!file.IsExistingFile)
         {
-            Console.Error.WriteLine($"{appName}.cs does not exist.");
+            Console.Error.WriteLine($"{relativeFile} does not exist.");
             return 1;
         }
 
-        var parameters = Discover($"{appName}.cs").ToArray();
+        var parameters = Discover(file).ToArray();
 
         Console.WriteLine($"Usage: do {appName} [options...]");
 
@@ -64,17 +66,11 @@ static partial class AppHelp
             if (inString)
             {
                 if (escaped)
-                {
                     escaped = false;
-                }
                 else if (character == '\\')
-                {
                     escaped = true;
-                }
                 else if (character == '"')
-                {
                     inString = false;
-                }
             }
             else if (character == '"')
             {
