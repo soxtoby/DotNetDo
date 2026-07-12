@@ -1,5 +1,11 @@
 # Glossary
 
+## Git
+
+### Git repository
+
+A repository bound to a discovered working-tree root. Repository operations remain rooted there even if the process working directory later changes; construction from a path discovers its containing repository and fails when none exists. Its root is stable, while branch, commit, and working-tree information always reflects current repository state.
+
 ## Solution navigation
 
 ### Solution
@@ -105,6 +111,8 @@ Raw argument text appended after a configured tool command's structured argument
 A typed immutable record that describes an executable external tool command.
 
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
+
+`Tools.Git` exposes default Git command values bound lazily through `Do.GitRepo`; a specific Git repository exposes equivalent values permanently bound to its root.
 
 Awaiting a tool command executes it through the Exec helper and requires a successful exit code.
 

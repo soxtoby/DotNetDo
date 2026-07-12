@@ -80,7 +80,7 @@ public abstract record ToolCommand
         return _arguments.Get(key);
     }
 
-    public override string ToString()
+    public sealed override string ToString()
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(CommandPrefix);
 
