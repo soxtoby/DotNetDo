@@ -36,6 +36,26 @@ These properties directly use `File.Exists` and `Directory.Exists`, including th
 
 `EnsureDirectoryExists()` directly uses `Directory.CreateDirectory`, including its native link and error behavior.
 
+`AbsolutePath` exposes synchronous, typed file-content helpers:
+
+```csharp
+string ReadText(Encoding? encoding = null);
+string[] ReadLines(Encoding? encoding = null);
+void WriteText(string text, Encoding? encoding = null);
+void WriteLines(IEnumerable<string> lines, Encoding? encoding = null);
+
+T? ReadJson<T>(JsonSerializerOptions? options = null);
+void WriteJson<T>(T value, JsonSerializerOptions? options = null);
+T? ReadToml<T>(TomlSerializerOptions? options = null);
+void WriteToml<T>(T value, TomlSerializerOptions? options = null);
+T? ReadXml<T>();
+void WriteXml<T>(T value);
+```
+
+Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, and `XmlSerializer` respectively. JSON and TOML expose their native options objects; XML initially uses serializer defaults.
+
+Reads preserve serializer nullability and propagate native missing-file, malformed-content, and type errors. Writes create or overwrite the file directly, return no value, and propagate native errors. They do not create missing parent directories, validate filename extensions, append, write atomically, create backups, or add formatting policy. Structured output uses each serializer's defaults.
+
 `AbsolutePath` also owns uniform copy, move, and delete operations for files and directories. Missing paths and symbolic links follow the underlying `System.IO` behavior. The same method names apply to both filesystem kinds rather than exposing parallel file and directory families.
 
 ```csharp

@@ -1,4 +1,6 @@
 using Xunit;
+using System.Text;
+using System.Text.Json;
 
 namespace DotNetDo.Tests;
 
@@ -127,6 +129,54 @@ public sealed class PathFileSystemTests
 
         Assert.Equal("content", File.ReadAllText(source / "child/file.txt"));
         Assert.False((source / "child/child").Exists);
+    }
+
+    [Fact]
+    public void Reads_and_writes_text_and_lines()
+    {
+        using var workspace = Workspace.Create();
+        var text = workspace.Path / "text.txt";
+        var lines = workspace.Path / "lines.txt";
+
+        text.WriteText("héllo", Encoding.Unicode);
+        lines.WriteLines(["one", "two"]);
+
+        Assert.Equal("héllo", text.ReadText(Encoding.Unicode));
+        Assert.Equal(["one", "two"], lines.ReadLines());
+    }
+
+    [Fact]
+    public void Reads_and_writes_structured_values()
+    {
+        using var workspace = Workspace.Create();
+        var value = new ContentModel { Name = "test", Count = 2 };
+        var json = workspace.Path / "value.json";
+        var toml = workspace.Path / "value.toml";
+        var xml = workspace.Path / "value.xml";
+
+        json.WriteJson(value, new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        toml.WriteToml(value);
+        xml.WriteXml(value);
+
+        Assert.Equal(value, json.ReadJson<ContentModel>(new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+        Assert.Equal(value, toml.ReadToml<ContentModel>());
+        Assert.Equal(value, xml.ReadXml<ContentModel>());
+    }
+
+    [Fact]
+    public void Writes_require_an_existing_parent_directory()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "missing/value.txt";
+
+        Assert.Throws<DirectoryNotFoundException>(() => file.WriteText("value"));
+        Assert.False(file.Parent!.Exists);
+    }
+
+    public sealed record ContentModel
+    {
+        public string Name { get; set; } = "";
+        public int Count { get; set; }
     }
 
     sealed class Workspace : IDisposable
