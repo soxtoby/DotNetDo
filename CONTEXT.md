@@ -1,16 +1,30 @@
 # Glossary
 
+## Workspace
+
+### DotNetDo configuration
+
+A committed `dotnetdo.toml` file containing shared configuration for file-based apps. Its containing directory establishes the DotNetDo root directory.
+
+### Root directory
+
+The nearest ancestor of the current working directory containing DotNetDo configuration. Without configuration, the current working directory is the root directory and discovery is retried whenever requested; once configuration is found, that root remains stable.
+
+### Working directory
+
+The current process working directory from which a file-based app operates. It may change during execution; reads reflect its current value, and assignment changes it process-wide.
+
 ## Git
 
 ### Git repository
 
-A repository bound to a discovered working-tree root. Repository operations remain rooted there even if the process working directory later changes; construction from a path discovers its containing repository and fails when none exists. Its root is stable, while branch, commit, and working-tree information always reflects current repository state.
+A repository bound to a discovered working-tree root. Repository operations remain rooted there even if the process working directory later changes; construction from a path discovers its containing repository and fails when none exists. The default repository is discovered from the DotNetDo root directory. Its root is stable, while branch, commit, and working-tree information always reflects current repository state.
 
 ## Solution navigation
 
 ### Solution
 
-A `.sln` or `.slnx` file and its logical hierarchy. The default solution is the sole solution found in the nearest ancestor directory containing solution files; callers may instead identify one explicitly.
+A `.sln` or `.slnx` file and its logical hierarchy. The default solution is the sole solution found in the nearest ancestor of the DotNetDo root directory containing solution files; callers may instead identify one explicitly.
 
 ### Solution path
 
@@ -44,7 +58,7 @@ Arguments after the app name in a run command are forwarded to the file-based ap
 
 A file-based app argument declared by a literal DotNetDo API call. DotNetDo can discover script parameters by source scanning without executing the file-based app.
 
-Script parameters resolve through DotNetDo's configuration pipeline: command-line arguments, `DOTNETDO_`-prefixed environment variables, user secrets, API default value, then `default`.
+Script parameters resolve through DotNetDo's configuration pipeline: command-line arguments, `DOTNETDO_`-prefixed environment variables, user secrets, committed DotNetDo configuration, API default value, then `default`.
 
 Script parameters are typed by the declared API call and parsed by DotNetDo from long command-line options.
 

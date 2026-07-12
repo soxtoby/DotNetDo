@@ -12,7 +12,7 @@ public static partial class Do
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
         options ??= new ExecOptions();
-        var workingDirectory = options.WorkingDirectory ?? Environment.CurrentDirectory;
+        var workingDirectory = options.WorkingDirectory ?? Do.WorkingDirectory;
         var parsed = ExecCommand.Parse(command);
         var startInfo = new ProcessStartInfo(parsed.Program, parsed.Arguments)
             {

@@ -11,7 +11,7 @@ public static partial class Do
             if (field is not null)
                 return field;
 
-            var repository = field = new GitRepository(AbsolutePath.Parse(Environment.CurrentDirectory));
+            var repository = field = new GitRepository(RootDirectory);
             AppDomain.CurrentDomain.ProcessExit += (_, _) => Interlocked.Exchange(ref repository, null).Dispose();
             return repository;
         }

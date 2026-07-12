@@ -5,7 +5,7 @@ namespace DotNetDo.Tests;
 
 public sealed class GitRepositoryTests : IDisposable
 {
-    readonly string _directory = Path.Combine(Environment.CurrentDirectory, ".test-workspaces", $"git-{Guid.NewGuid():N}");
+    readonly string _directory = Path.Combine(Do.WorkingDirectory, ".test-workspaces", $"git-{Guid.NewGuid():N}");
     readonly Repository _repository;
     readonly Signature _signature = new("DotNetDo Tests", "tests@dotnetdo.test", DateTimeOffset.Now);
 

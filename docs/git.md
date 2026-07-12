@@ -6,7 +6,7 @@ DotNetDo provides build-focused Git repository information and a small set of co
 
 `new GitRepository(AbsolutePath directory)` discovers the working-tree repository containing `directory` and fails when none exists. Bare repositories and file paths are unsupported. The instance is permanently bound to the discovered root and owns its exposed LibGit2Sharp `Repository` until disposed.
 
-`Do.GitRepo` synchronously and lazily discovers from `Environment.CurrentDirectory`. It may be replaced. DotNetDo disposes only the instance it created; replacing it disposes neither value.
+`Do.GitRepo` synchronously and lazily discovers from `Do.RootDirectory`. It may be replaced. DotNetDo disposes only the instance it created; replacing it disposes neither value.
 
 ## Live information
 

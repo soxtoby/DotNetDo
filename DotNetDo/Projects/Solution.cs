@@ -62,7 +62,7 @@ public sealed class Solution
 
     internal static Task<Solution> DiscoverAsync()
     {
-        for (var directory = new DirectoryInfo(Environment.CurrentDirectory); directory is not null; directory = directory.Parent)
+        for (var directory = new DirectoryInfo(Do.RootDirectory); directory is not null; directory = directory.Parent)
         {
             var matches = directory.EnumerateFiles("*.sln", SearchOption.TopDirectoryOnly)
                 .Concat(directory.EnumerateFiles("*.slnx", SearchOption.TopDirectoryOnly))
@@ -79,7 +79,7 @@ public sealed class Solution
             }
         }
 
-        throw new FileNotFoundException($"No .sln or .slnx file was found in '{Environment.CurrentDirectory}' or its ancestors.");
+        throw new FileNotFoundException($"No .sln or .slnx file was found in '{Do.RootDirectory}' or its ancestors.");
     }
 
     ProjectInfo CreateProject(SolutionProjectModel project)
@@ -95,7 +95,7 @@ public sealed class Solution
     static AbsolutePath Resolve(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
-        var fullPath = System.IO.Path.GetFullPath(path, Environment.CurrentDirectory);
+        var fullPath = System.IO.Path.GetFullPath(path, Do.WorkingDirectory);
         return AbsolutePath.Parse(fullPath);
     }
 

@@ -89,7 +89,7 @@ static partial class Cli
     static void ListApps()
     {
         var apps = Directory
-            .EnumerateFiles(Environment.CurrentDirectory, "*.cs", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(Do.WorkingDirectory, "*.cs", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileNameWithoutExtension)
             .Where(name => name is not null && IsValidAppName(name))
             .Order(StringComparer.OrdinalIgnoreCase);
