@@ -1,10 +1,11 @@
-﻿using Serilog;
+using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 
 namespace DotNetDo;
 
+/// <summary>Configures DotNetDo's environment-aware Serilog output.</summary>
 public static class Logging
 {
     internal static readonly LoggingLevelSwitch LevelSwitch = new();

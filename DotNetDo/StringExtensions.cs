@@ -2,8 +2,10 @@ using System.Text;
 
 namespace DotNetDo;
 
+/// <summary>Adds explicit command-line argument formatting helpers.</summary>
 public static class StringExtensions
 {
+    /// <summary>Renders the value as one quoted command-line argument.</summary>
     public static string QuotedArgument(this string value)
     {
         ArgumentNullException.ThrowIfNull(value);

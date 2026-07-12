@@ -3,30 +3,38 @@ using System.Text;
 
 namespace DotNetDo;
 
+/// <summary>Base value object for rendering and awaiting a command-line tool invocation.</summary>
 public abstract record ToolCommand
 {
     readonly ArgumentSlots _arguments;
 
+    /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
     protected ToolCommand() => _arguments = new ArgumentSlots();
 
+    /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
     protected ToolCommand(ToolCommand original)
     {
         _arguments = original._arguments.Clone();
         AdditionalArguments = original.AdditionalArguments;
     }
 
+    /// <summary>Allows awaiting the command and throws when the process exits unsuccessfully.</summary>
     public TaskAwaiter<ExecResult> GetAwaiter() => Do.Exec(this).GetAwaiter();
 
+    /// <summary>Unstructured arguments appended after typed options.</summary>
     public string? AdditionalArguments { get; init; }
 
+    /// <summary>Gets or sets command prefix.</summary>
     protected abstract string CommandPrefix { get; }
 
+    /// <summary>Set argument array.</summary>
     protected void SetArgumentArray(string key, string prefix, IReadOnlyCollection<string> values, string separator = " ")
     {
         ArgumentNullException.ThrowIfNull(values);
         SetArgument(key, prefix, values.Count == 0 ? null : string.Join(separator, values));
     }
 
+    /// <summary>Get argument array.</summary>
     protected string[] GetArgumentArray(string key, string separator = " ")
     {
         var value = GetArgument(key);
@@ -35,10 +43,13 @@ public abstract record ToolCommand
             : value.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 
+    /// <summary>Set flag.</summary>
     protected void SetFlag(string key, string flag, bool value) => SetArgument(key, value ? flag : null);
 
+    /// <summary>Get flag.</summary>
     protected bool GetFlag(string key) => GetArgument(key) is not null;
 
+    /// <summary>Set flag.</summary>
     protected void SetFlag(string key, string trueValue, string falseValue, bool? value) =>
         SetArgument(
             key,
@@ -49,6 +60,7 @@ public abstract record ToolCommand
                     null => null
                 });
 
+    /// <summary>Get flag.</summary>
     protected bool? GetFlag(string key, string trueValue, string falseValue) =>
         GetArgument(key) switch
             {
@@ -57,12 +69,16 @@ public abstract record ToolCommand
                 _ => null
             };
 
+    /// <summary>Set enum.</summary>
     protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetArgument(key, value?.ToString().ToLowerInvariant());
     
+    /// <summary>Get enum.</summary>
     protected T? GetEnum<T>(string key) where T : struct, Enum => Enum.TryParse<T>(GetArgument(key), true, out var value) ? value : null;
 
+    /// <summary>Set argument.</summary>
     protected void SetArgument(string key, string? value) => SetArgument(key, "", value);
 
+    /// <summary>Set argument.</summary>
     protected void SetArgument(string key, string prefix, string? value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
@@ -74,12 +90,14 @@ public abstract record ToolCommand
             _arguments.Set(key, prefix, value);
     }
 
+    /// <summary>Get argument.</summary>
     protected string? GetArgument(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         return _arguments.Get(key);
     }
 
+    /// <inheritdoc />
     public sealed override string ToString()
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(CommandPrefix);

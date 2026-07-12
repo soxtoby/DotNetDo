@@ -2,9 +2,11 @@ using Microsoft.CodeAnalysis;
 
 namespace DotNetDo.Generators;
 
+/// <summary>Generates a module initializer that registers the installed MSBuild toolset before project APIs are used.</summary>
 [Generator]
 public sealed class MSBuildRegistrationGenerator : IIncrementalGenerator
 {
+    /// <summary>Initialize.</summary>
     public void Initialize(IncrementalGeneratorInitializationContext context) =>
         context.RegisterPostInitializationOutput(output => output.AddSource("DotNetDo.MSBuildRegistration.g.cs", Source));
 

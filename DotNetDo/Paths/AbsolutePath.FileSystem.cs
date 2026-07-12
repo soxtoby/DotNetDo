@@ -4,26 +4,34 @@ namespace DotNetDo;
 
 public sealed partial record AbsolutePath
 {
+    /// <summary>Whether a file or directory currently exists at this path.</summary>
     public bool Exists => IsExistingFile || IsExistingDirectory;
+    /// <summary>Exists.</summary>
     public bool IsExistingFile => File.Exists(this);
+    /// <summary>Exists.</summary>
     public bool IsExistingDirectory => Directory.Exists(this);
 
+    /// <summary>Ensure directory exists.</summary>
     public AbsolutePath EnsureDirectoryExists()
     {
         Directory.CreateDirectory(this);
         return this;
     }
 
+    /// <summary>Returns files beneath this directory matched by the ordered include and exclude patterns.</summary>
     public AbsolutePath[] GlobFiles(string pattern, GlobOptions? options = null) => GlobFiles([pattern], options);
 
+    /// <summary>Returns files beneath this directory matched by the ordered include and exclude patterns.</summary>
     public AbsolutePath[] GlobFiles(IEnumerable<string> patterns, GlobOptions? options = null) =>
         CreateMatcher(patterns, options)
             .GetResultsInFullPath(this)
             .Select(Parse)
             .ToArray();
 
+    /// <summary>Returns directories beneath this directory matched by the ordered include and exclude patterns.</summary>
     public AbsolutePath[] GlobDirectories(string pattern, GlobOptions? options = null) => GlobDirectories([pattern], options);
 
+    /// <summary>Returns directories beneath this directory matched by the ordered include and exclude patterns.</summary>
     public AbsolutePath[] GlobDirectories(IEnumerable<string> patterns, GlobOptions? options = null)
     {
         var candidates = Directory
@@ -50,18 +58,23 @@ public sealed partial record AbsolutePath
         return matcher;
     }
 
+    /// <summary>Copies this file or directory to the exact destination path.</summary>
     public AbsolutePath CopyTo(AbsolutePath destination, TransferOptions? options = null) =>
         Copy(destination, options, into: false);
 
+    /// <summary>Copies this item beneath the supplied destination directory using its current name.</summary>
     public AbsolutePath CopyInto(AbsolutePath directory, TransferOptions? options = null) =>
         Copy(directory, options, into: true);
 
+    /// <summary>Moves this file or directory to the exact destination path.</summary>
     public AbsolutePath MoveTo(AbsolutePath destination, TransferOptions? options = null) =>
         Move(destination, options, into: false);
 
+    /// <summary>Moves this item beneath the supplied destination directory using its current name.</summary>
     public AbsolutePath MoveInto(AbsolutePath directory, TransferOptions? options = null) =>
         Move(directory, options, into: true);
 
+    /// <summary>Deletes the file or directory.</summary>
     public void Delete()
     {
         if (IsExistingDirectory)
@@ -164,13 +177,18 @@ public sealed partial record AbsolutePath
     static bool IsCrossDevice(IOException exception) => (exception.HResult & 0xffff) is 17 or 18;
 }
 
+/// <summary>Controls path glob matching.</summary>
 public sealed record GlobOptions
 {
+    /// <summary>The comparison used when matching glob patterns.</summary>
     public StringComparison Comparison { get; init; } = StringComparison.OrdinalIgnoreCase;
 }
 
+/// <summary>Controls overwrite and directory-creation behavior for copies and moves.</summary>
 public sealed record TransferOptions
 {
+    /// <summary>Whether an existing destination may be replaced.</summary>
     public bool Overwrite { get; init; }
+    /// <summary>Whether missing destination directories are created.</summary>
     public bool CreateDirectories { get; init; }
 }

@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
     <_EnableDefaultWindowsPlatform>false</_EnableDefaultWindowsPlatform>
   </PropertyGroup>

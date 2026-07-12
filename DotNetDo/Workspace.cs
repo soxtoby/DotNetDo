@@ -5,12 +5,14 @@ namespace DotNetDo;
 
 public static partial class Do
 {
+    /// <summary>Exposes the configured value or operation to script authors.</summary>
     public static AbsolutePath WorkingDirectory
     {
         get => AbsolutePath.Parse(Environment.CurrentDirectory);
         set => Directory.SetCurrentDirectory(value);
     }
 
+    /// <summary>Exposes the configured value or operation to script authors.</summary>
     public static AbsolutePath RootDirectory
     {
         get
