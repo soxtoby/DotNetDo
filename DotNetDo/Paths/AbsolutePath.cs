@@ -46,6 +46,7 @@ public sealed partial record AbsolutePath
     public AbsolutePath Root => new(_root, []);
     [MemberNotNullWhen(false, nameof(Name), nameof(Parent))]
     public bool IsRoot => _segments.Length == 0;
+    public string QuotedArgument() => ToString().QuotedArgument();
 
     public RelativePath RelativePathTo(AbsolutePath path)
     {

@@ -4,19 +4,21 @@ public static partial class Tools
 {
     public static class DotNet
     {
-        public static readonly DotNetBuild Build = new();
-        public static readonly DotNetClean Clean = new();
-        public static readonly DotNetDevCerts DevCerts = new();
-        public static readonly DotNetFormat Format = new();
-        public static readonly DotNetPack Pack = new();
-        public static readonly DotNetRestore Restore = new();
-        public static readonly DotNetTest Test = new();
-        public static readonly DotNetWatch Watch = new();
+        public static DotNetBuild Build => new();
+        public static DotNetClean Clean => new();
+        public static DotNetDevCerts DevCerts => new();
+        public static DotNetFormat Format => new();
+        public static DotNetPack Pack => new();
+        public static DotNetRestore Restore => new();
+        public static DotNetTest Test => new();
+        public static DotNetWatch Watch => new();
     }
 }
 
 public abstract record DotNetTargetCommand : ToolCommand
 {
+    protected DotNetTargetCommand() => Targets = [Do.Solution.Path.QuotedArgument()];
+
     public IReadOnlyList<string> Targets { get => GetArgumentArray("target"); init => SetArgumentArray("target", "", value); }
 }
 

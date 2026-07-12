@@ -92,7 +92,7 @@ public sealed class GitRepository : IDisposable
     public ExecProcess Exec(string arguments, ExecOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(arguments);
-        return Do.Exec($"git -C {Root.ToString().QuotedArgument()} {arguments}", options);
+        return Do.Exec($"git -C {Root.QuotedArgument()} {arguments}", options);
     }
 
     internal string DefaultPushRemote

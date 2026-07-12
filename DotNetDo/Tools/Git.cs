@@ -6,12 +6,12 @@ public static partial class Tools
 {
     public static class Git
     {
-        public static readonly GitAdd Add = new();
-        public static readonly GitReset Reset = new();
-        public static readonly GitCommit Commit = new();
-        public static readonly GitPush Push = new();
-        public static readonly GitCreateTag CreateTag = new();
-        public static readonly GitPushTag PushTag = new();
+        public static GitAdd Add => new();
+        public static GitReset Reset => new();
+        public static GitCommit Commit => new();
+        public static GitPush Push => new();
+        public static GitCreateTag CreateTag => new();
+        public static GitPushTag PushTag => new();
     }
 }
 
@@ -24,7 +24,7 @@ public abstract record GitCommand : ToolCommand
     protected GitCommand(GitCommand original) : base(original) => _repository = original._repository;
 
     protected GitRepository Repository => _repository ?? Do.GitRepo;
-    protected string GitPrefix => $"git -C {Repository.Root.ToString().QuotedArgument()}";
+    protected string GitPrefix => $"git -C {Repository.Root.QuotedArgument()}";
 
     protected string RenderPaths(IReadOnlyList<RelativePath> paths, bool all, string allArguments)
     {
