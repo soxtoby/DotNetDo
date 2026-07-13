@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -57,7 +58,7 @@ public sealed class PackageToolTests
             Command = "gitversion",
             WorkingDirectory = "work",
             ExitCode = 0,
-            Output =
+            AllOutput =
             [
                 new ExecOutput(OutputType.Out, "{\"Major\":1,\"Minor\":2,\"Patch\":3,\"SemVer\":\"1.2.3\",\"CommitDate\":\"2026-07-12T10:11:12.0000000+10:00\",\"Future\":true}"),
             ],
@@ -71,19 +72,28 @@ public sealed class PackageToolTests
     }
 
     [Fact]
-    public void Invalid_semantic_output_preserves_the_raw_result()
+    public async Task Typed_command_conversion_failure_preserves_the_raw_result()
     {
         var result = new ExecResult
         {
             Command = "gitversion",
             WorkingDirectory = "work",
             ExitCode = 0,
-            Output = [new ExecOutput(OutputType.Out, "not json")],
+            AllOutput = [new ExecOutput(OutputType.Out, "not json")],
         };
 
-        var exception = Assert.Throws<ToolOutputException>(() => GitVersionResult.Parse(result));
+        var exception = await Assert.ThrowsAsync<ToolOutputException>(async () => await new FailingCommand(result));
 
         Assert.Same(result, exception.Result);
-        Assert.Equal(typeof(GitVersionResult), exception.ExpectedType);
+        Assert.Equal(typeof(string), exception.ExpectedType);
+        Assert.IsType<JsonException>(exception.InnerException);
+    }
+
+    sealed record FailingCommand(ExecResult Result) : ToolCommand<string>
+    {
+        protected override string CommandPrefix => "example";
+        protected override Task<ExecResult> ExecuteCommandAsync() => Task.FromResult(Result);
+        protected override string ReadResult(ExecResult result) =>
+            result.ReadJson<string>() ?? throw new JsonException("No value.");
     }
 }

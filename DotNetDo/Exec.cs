@@ -128,7 +128,7 @@ public sealed class ExecProcess
                     {
                         Command = command,
                         WorkingDirectory = workingDirectory,
-                        Output = output.Snapshot,
+                        AllOutput = output.Snapshot,
                         ExitCode = process.ExitCode,
                     };
 
@@ -159,14 +159,14 @@ public sealed class ExecProcess
 }
 
 /// <summary>The captured command, directory, output, and exit code of a finished process.</summary>
-public sealed record ExecResult
+public sealed partial record ExecResult
 {
     /// <summary>The exact rendered command text.</summary>
     public required string Command { get; init; }
     /// <summary>The directory in which the operation executes.</summary>
     public required string WorkingDirectory { get; init; }
     /// <summary>The process output stream in arrival order.</summary>
-    public required ExecOutput[] Output { get; init; }
+    public required ExecOutput[] AllOutput { get; init; }
     /// <summary>The operating-system process exit code.</summary>
     public required int ExitCode { get; init; }
 }

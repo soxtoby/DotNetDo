@@ -86,19 +86,8 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
 /// <summary>The semantic version variables emitted by GitVersion.</summary>
 public sealed record GitVersionResult
 {
-    internal static GitVersionResult Parse(ExecResult result)
-    {
-        try
-        {
-            var json = string.Join(Environment.NewLine, result.Output.Where(line => line.Type == OutputType.Out).Select(line => line.Message));
-            return JsonSerializer.Deserialize<GitVersionResult>(json)
-                ?? throw new JsonException("GitVersion returned no JSON object.");
-        }
-        catch (Exception exception) when (exception is JsonException or NotSupportedException or FormatException)
-        {
-            throw new ToolOutputException(result, typeof(GitVersionResult), exception);
-        }
-    }
+    internal static GitVersionResult Parse(ExecResult result) => 
+        result.ReadJson<GitVersionResult>() ?? throw new JsonException("GitVersion returned no JSON object.");
     /// <summary>The assembly file version.</summary>
     public string? AssemblySemFileVer { get; init; }
     /// <summary>The assembly version.</summary>

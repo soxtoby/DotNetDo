@@ -72,7 +72,7 @@ public static partial class Do
 static class PackageToolRunner
 {
     public static bool IsResolverFailure(ExecResult result) =>
-        result.Output.Any(line =>
+        result.AllOutput.Any(line =>
             line.Message.Contains("dotnet tool restore", StringComparison.OrdinalIgnoreCase)
             || line.Message.Contains("cannot find a tool", StringComparison.OrdinalIgnoreCase));
 }
@@ -153,14 +153,4 @@ public sealed class ToolManifestException(AbsolutePath manifestPath, Exception i
 {
     /// <summary>The invalid manifest path.</summary>
     public AbsolutePath ManifestPath { get; } = manifestPath;
-}
-
-/// <summary>Indicates that a successful raw tool output could not be converted to its semantic result.</summary>
-public sealed class ToolOutputException(ExecResult result, Type expectedType, Exception innerException)
-    : Exception($"Command '{result.Command}' produced output that could not be read as {expectedType.Name}.", innerException)
-{
-    /// <summary>The raw successful process result, retained for inspection.</summary>
-    public ExecResult Result { get; } = result;
-    /// <summary>The semantic result type expected by the tool wrapper.</summary>
-    public Type ExpectedType { get; } = expectedType;
 }

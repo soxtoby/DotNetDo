@@ -154,7 +154,23 @@ public abstract record ToolCommand<TResult> : ToolCommand
     /// <summary>Allows awaiting the command's semantic execution.</summary>
     public TaskAwaiter<TResult> GetAwaiter() => ExecuteAsync().GetAwaiter();
 
-    async Task<TResult> ExecuteAsync() => ReadResult(await ExecuteCommandAsync());
+    async Task<TResult> ExecuteAsync()
+    {
+        var result = await ExecuteCommandAsync();
+
+        try
+        {
+            return ReadResult(result);
+        }
+        catch (ToolOutputException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new ToolOutputException(result, typeof(TResult), exception);
+        }
+    }
 
     /// <summary>Executes the rendered command and returns its successful raw process result.</summary>
     protected virtual async Task<ExecResult> ExecuteCommandAsync() => await Do.Exec(this);
@@ -168,4 +184,14 @@ public abstract record ExecToolCommand : ToolCommand<ExecResult>
 {
     /// <inheritdoc />
     protected override ExecResult ReadResult(ExecResult result) => result;
+}
+
+/// <summary>Indicates that successful raw tool output could not be converted to its semantic result.</summary>
+public sealed class ToolOutputException(ExecResult result, Type expectedType, Exception innerException)
+    : Exception($"Command '{result.Command}' produced output that could not be read as {expectedType.Name}.", innerException)
+{
+    /// <summary>The raw successful process result, retained for inspection.</summary>
+    public ExecResult Result { get; } = result;
+    /// <summary>The semantic result type expected by the tool command.</summary>
+    public Type ExpectedType { get; } = expectedType;
 }
