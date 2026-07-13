@@ -20,13 +20,15 @@ public static partial class Tools
         public static DotNetRestore Restore => new();
         /// <summary>Creates a new <see cref="DotNetTest"/> command definition.</summary>
         public static DotNetTest Test => new();
+        /// <summary>Creates a new <see cref="DotNetToolRestore"/> command definition.</summary>
+        public static DotNetToolRestore ToolRestore => new();
         /// <summary>Creates a new <see cref="DotNetWatch"/> command definition.</summary>
         public static DotNetWatch Watch => new();
     }
 }
 
 /// <summary>Base command definition for .NET CLI commands that accept project or solution targets.</summary>
-public abstract record DotNetTargetCommand : ToolCommand
+public abstract record DotNetTargetCommand : ExecToolCommand
 {
     /// <summary>Dot net target command.</summary>
     protected DotNetTargetCommand() => Targets = [Do.Solution.Path.QuotedArgument()];
@@ -109,7 +111,7 @@ public sealed record DotNetClean : DotNetTargetCommand
 }
 
 /// <summary>Builds a <c>dotnet dev-certs</c> command.</summary>
-public sealed record DotNetDevCerts : ToolCommand
+public sealed record DotNetDevCerts : ExecToolCommand
 {
     /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
     protected override string CommandPrefix => "dotnet dev-certs https";
@@ -266,8 +268,31 @@ public sealed record DotNetTest : DotNetTargetCommand
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
 }
 
+/// <summary>Restores the .NET local tools in scope for the execution directory.</summary>
+public sealed record DotNetToolRestore : ExecToolCommand
+{
+    /// <summary>The executable and subcommand prefix.</summary>
+    protected override string CommandPrefix => "dotnet tool restore";
+    /// <summary>The NuGet configuration file used exclusively for restore.</summary>
+    public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
+    /// <summary>Additional NuGet package sources.</summary>
+    public IReadOnlyList<string> AddSources { get => GetArgumentArray("add-source", " --add-source "); init => SetArgumentArray("add-source", "--add-source ", value, " --add-source "); }
+    /// <summary>An explicit local tool manifest path.</summary>
+    public string? ToolManifest { get => GetArgument("tool-manifest"); init => SetArgument("tool-manifest", "--tool-manifest ", value); }
+    /// <summary>Whether parallel project restore is disabled.</summary>
+    public bool DisableParallel { get => GetFlag("disable-parallel"); init => SetFlag("disable-parallel", "--disable-parallel", value); }
+    /// <summary>Whether unavailable package sources are treated as warnings.</summary>
+    public bool IgnoreFailedSources { get => GetFlag("ignore-failed-sources"); init => SetFlag("ignore-failed-sources", "--ignore-failed-sources", value); }
+    /// <summary>Whether NuGet caches are bypassed.</summary>
+    public bool NoCache { get => GetFlag("no-cache"); init => SetFlag("no-cache", "--no-cache", value); }
+    /// <summary>Whether restore may wait for interactive authentication or input.</summary>
+    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    /// <summary>The restore logging verbosity.</summary>
+    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
+}
+
 /// <summary>Builds a <c>dotnet watch</c> command.</summary>
-public sealed record DotNetWatch : ToolCommand
+public sealed record DotNetWatch : ExecToolCommand
 {
     /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
     protected override string CommandPrefix => "dotnet watch";

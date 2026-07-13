@@ -1,0 +1,3 @@
+# Package tools use manifest-owned versions
+
+Package tool commands use the .NET local tool manifest in scope from the DotNetDo root as the sole owner of package versions. Raw `Do.Exec` verifies that the package is declared and diagnoses an unavailable tool without mutating its environment; a value-producing tool's default await may run a default `dotnet tool restore` from the DotNetDo root and retry once only after the SDK's specific resolver failure, while explicit `Tools.DotNet.ToolRestore` follows the ordinary current working directory. This preserves fast raw execution and inspectable failures without duplicating versions, silently installing tools, or retrying genuine tool failures.

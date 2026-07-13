@@ -18,9 +18,6 @@ public abstract record ToolCommand
         AdditionalArguments = original.AdditionalArguments;
     }
 
-    /// <summary>Allows awaiting the command and throws when the process exits unsuccessfully.</summary>
-    public TaskAwaiter<ExecResult> GetAwaiter() => Do.Exec(this).GetAwaiter();
-
     /// <summary>Unstructured arguments appended after typed options.</summary>
     public string? AdditionalArguments { get; init; }
 
@@ -149,4 +146,26 @@ public abstract record ToolCommand
 
         sealed record Argument(string Key, string Prefix, string Value);
     }
+}
+
+/// <summary>A tool command whose await produces a semantic result.</summary>
+public abstract record ToolCommand<TResult> : ToolCommand
+{
+    /// <summary>Allows awaiting the command's semantic execution.</summary>
+    public TaskAwaiter<TResult> GetAwaiter() => ExecuteAsync().GetAwaiter();
+
+    async Task<TResult> ExecuteAsync() => ReadResult(await ExecuteCommandAsync());
+
+    /// <summary>Executes the rendered command and returns its successful raw process result.</summary>
+    protected virtual async Task<ExecResult> ExecuteCommandAsync() => await Do.Exec(this);
+
+    /// <summary>Converts a successful raw process result to the command's semantic result.</summary>
+    protected abstract TResult ReadResult(ExecResult result);
+}
+
+/// <summary>A process-backed tool command whose await produces its successful raw process result.</summary>
+public abstract record ExecToolCommand : ToolCommand<ExecResult>
+{
+    /// <inheritdoc />
+    protected override ExecResult ReadResult(ExecResult result) => result;
 }

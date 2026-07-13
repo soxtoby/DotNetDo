@@ -128,6 +128,14 @@ A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Seri
 
 Raw argument text appended after a configured tool command's structured argument slots.
 
+## Package tool
+
+A typed external-tool definition associated with a package ID and command name. The local tool manifest in scope from the DotNetDo root owns its version; raw execution verifies declaration and diagnoses missing restoration, while semantic awaiting may restore and retry an unavailable declared tool.
+
+Awaiting a value-producing package tool returns its semantic result. Passing the same value to the Exec helper bypasses result parsing and exposes the raw process result.
+
+_Avoid_: Installed-tool wrapper, dotnet tool wrapper
+
 ## Tool command
 
 A typed immutable record that describes an executable external tool command.

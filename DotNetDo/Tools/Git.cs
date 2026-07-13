@@ -23,7 +23,7 @@ public static partial class Tools
 }
 
 /// <summary>Models the <c>GitCommand</c> command and its typed options.</summary>
-public abstract record GitCommand : ToolCommand
+public abstract record GitCommand : ExecToolCommand
 {
     readonly GitRepository? _repository;
 
