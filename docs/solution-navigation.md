@@ -63,7 +63,7 @@ The concrete dictionary parameter may use the closest shape required by the Micr
 
 ## Default solution
 
-`Do.Solution` is lazily initialized once per process. Discovery starts at the current directory at first access and walks upward. The first directory containing `.sln` or `.slnx` files wins and must contain exactly one such file. No match or multiple matches fail with a useful error.
+`Do.Solution` is lazily initialized once per process. When `solution-path` is configured, its root-relative `.sln` or `.slnx` file is authoritative and invalid values fail without discovery fallback. Otherwise discovery starts at the DotNetDo root and walks upward; the first directory containing solution files wins and must contain exactly one. No match or multiple matches fail with a useful error.
 
 The property is assignable so a script or test can replace the process default before or after discovery. Assigning `null` fails; there is no reset-to-discovery behavior.
 

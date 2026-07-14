@@ -1,11 +1,9 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using DotNetDo;
 
 return await Cli.RunAsync(args);
 
-static partial class Cli
+static class Cli
 {
     public static async Task<int> RunAsync(string[] args)
     {
@@ -20,6 +18,7 @@ static partial class Cli
             return args[0] switch
                 {
                     ":new" => CreateApp(args),
+                    ":init" => InitCommand.Run(args),
                     ":help" => ShowHelp(args),
                     var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
                     var appName => await RunAppAsync(appName, args[1..])
@@ -37,7 +36,7 @@ static partial class Cli
             return Fail("Usage: do :new <name>");
 
         var appName = args[1];
-        if (!IsValidAppName(appName))
+        if (!AppScaffolding.IsValidName(appName))
             return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
         var relativeFile = Do.ScriptsPath / $"{appName}.cs";
@@ -46,15 +45,15 @@ static partial class Cli
             return Fail($"{relativeFile} already exists.");
 
         Do.ScriptsDirectory.EnsureDirectoryExists();
-        File.WriteAllText(file, NewAppTemplate(appName));
-        MakeExecutableIfUnix(file);
+        File.WriteAllText(file, AppScaffolding.Template(appName));
+        AppScaffolding.MakeExecutableIfUnix(file);
         Console.WriteLine($"Created {relativeFile}");
         return 0;
     }
 
     static async Task<int> RunAppAsync(string appName, string[] appArgs)
     {
-        if (!IsValidAppName(appName))
+        if (!AppScaffolding.IsValidName(appName))
             return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
         var relativeFile = Do.ScriptsPath / $"{appName}.cs";
@@ -83,13 +82,14 @@ static partial class Cli
     static int ShowHelp(string[] args)
     {
         if (args.Length == 2)
-            return IsValidAppName(args[1])
+            return AppScaffolding.IsValidName(args[1])
                 ? AppHelp.Show(args[1])
                 : Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
         Console.WriteLine("""
             Usage:
               do
+              do :init
               do :new <name>
               do :help <name>
               do :help
@@ -106,38 +106,11 @@ static partial class Cli
         var apps = Directory
             .EnumerateFiles(Do.ScriptsDirectory, "*.cs", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileNameWithoutExtension)
-            .Where(name => name is not null && IsValidAppName(name))
+            .Where(name => name is not null && AppScaffolding.IsValidName(name))
             .Order(StringComparer.OrdinalIgnoreCase);
 
         foreach (var app in apps)
             Console.WriteLine(app);
-    }
-
-    static string NewAppTemplate(string appName) =>
-        $"""
-        #!/usr/bin/env dotnet
-        #:package DotNetDo@*
-        using DotNetDo;
-
-        Console.WriteLine("Hello from {appName}");
-        """;
-
-    static void MakeExecutableIfUnix(string fileName)
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            try
-            {
-                File.SetUnixFileMode(fileName,
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
-                    UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
-                    UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
-            }
-            catch
-            {
-                // ignored
-            }
-        }
     }
 
     static int Fail(string message)
@@ -146,10 +119,4 @@ static partial class Cli
         return 1;
     }
 
-    static bool IsValidAppName(string appName) =>
-        !appName.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
-        && AppNameRegex().IsMatch(appName);
-
-    [GeneratedRegex("^[A-Za-z0-9_.-]+$")]
-    private static partial Regex AppNameRegex();
 }

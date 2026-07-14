@@ -18,6 +18,10 @@ The current process working directory from which a file-based app operates. It m
 
 The root-relative path containing DotNetDo scripts. It defaults to `scripts` and may be configured with the top-level `scripts-path` key in DotNetDo configuration; `.` selects the root directory. Empty, absolute, and root-escaping values are invalid. Containment is lexical; symbolic links retain normal filesystem behavior.
 
+### Default solution path
+
+The root-relative path of the solution used by default. When `solution-path` is configured it is authoritative; otherwise DotNetDo discovers the default solution.
+
 ## Git
 
 ### Git repository
@@ -94,11 +98,15 @@ The `:new` command creates a script directly inside the scripts path and fails i
 
 On Unix-like systems, `:new` makes the generated file executable on a best-effort basis. Windows does not need executable bits for DotNetDo usage.
 
+## Init command
+
+The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial file-based app. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
+
 ## Tool command
 
 A command whose name starts with `:` is owned by DotNetDo. App names cannot start with `:`.
 
-DotNetDo v1 includes only app listing, app creation with `:new`, help with `:help`, and app execution by name.
+DotNetDo v1 includes workspace initialization with `:init`, app listing, app creation with `:new`, help with `:help`, and app execution by name.
 
 ## Exec helper
 
