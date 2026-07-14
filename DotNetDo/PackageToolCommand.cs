@@ -33,7 +33,7 @@ public abstract record PackageToolCommand<TResult> : ToolCommand<TResult>
         }
         catch (ExecFailedException exception) when (PackageToolRunner.IsResolverFailure(exception.Result))
         {
-            await Do.Exec(DotNet.ToolRestore, new ExecOptions { WorkingDirectory = Do.RootDirectory });
+            await (DotNet.ToolRestore with { WorkingDirectory = Do.RootDirectory });
             return await Do.Exec(this);
         }
     }
@@ -52,11 +52,11 @@ public sealed record PackageToolCommand : PackageToolCommand<ExecResult>
 public static partial class Do
 {
     /// <summary>Runs a declared local package tool without automatically restoring it.</summary>
-    public static ExecProcess Exec<TResult>(PackageToolCommand<TResult> command, ExecOptions? options = null)
+    public static ExecProcess Exec<TResult>(PackageToolCommand<TResult> command)
     {
         ArgumentNullException.ThrowIfNull(command);
         PackageToolManifests.Require(command, RootDirectory);
-        var process = Exec((ToolCommand)command, options);
+        var process = Exec((ToolCommand)command);
         _ = DiagnoseMissingRestoreAsync(process.Completed, command.PackageId);
         return process;
     }

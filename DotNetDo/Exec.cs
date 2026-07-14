@@ -9,7 +9,11 @@ namespace DotNetDo;
 public static partial class Do
 {
     /// <summary>Starts the rendered command directly, without a shell, in the configured working directory.</summary>
-    public static ExecProcess Exec(ToolCommand command, ExecOptions? options = null) => Exec(command.ToString(), options);
+    public static ExecProcess Exec(ToolCommand command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return Exec(command.ToString(), command);
+    }
 
     /// <summary>Starts the rendered command directly, without a shell, in the configured working directory.</summary>
     public static ExecProcess Exec(string command, ExecOptions? options = null)
@@ -43,10 +47,10 @@ public static partial class Do
 }
 
 /// <summary>Controls process working directory and output logging.</summary>
-public sealed record ExecOptions
+public record ExecOptions
 {
     /// <summary>The directory in which the operation executes.</summary>
-    public string? WorkingDirectory { get; init; }
+    public AbsolutePath? WorkingDirectory { get; init; }
     /// <summary>Receives each standard-output and standard-error line; when omitted, the default logger is used.</summary>
     public Action<OutputType, string>? Log { get; init; }
 

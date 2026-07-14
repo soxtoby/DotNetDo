@@ -78,7 +78,7 @@ Script parameter APIs return parameter wrappers. `.Required()` throws immediatel
 
 ## Secret value
 
-A string script parameter value intended to avoid accidental clear-text output. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
+A string script parameter value intended to avoid accidental clear-text output. Resolving one registers it with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
 
 ## Run command
 
@@ -124,6 +124,18 @@ An `ILogger` wrapper created through `LoggerConfiguration.CreateRedactingLogger(
 
 A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Serilog.Sinks.Console` locally and writes build-agent-native commands on supported CI systems. It detects Azure Pipelines from `TF_BUILD=true`, GitHub Actions from `GITHUB_ACTIONS=true`, then falls back to the standard console sink. Warnings become CI warning annotations; errors and fatal events become CI error annotations; lower levels remain ordinary output. CI annotations contain only the rendered message and exception in v1, with no inferred source-file metadata. The sink changes log rendering and routing, not command execution.
 
+## Runner command
+
+A control message written by a file-based app to the active CI build agent, such as setting an output or opening a log group. Runner commands exclude service CLIs such as `gh` and `az`.
+
+_Avoid_: CI server tool, workflow command
+
+## Provider-native runner API
+
+A public API modeling one CI provider's runner commands and build metadata with that provider's own semantics. `Do.GitHubActions` and `Do.AzurePipelines` remain separate APIs; `GitHub` is reserved for the `gh` CLI. Shared infrastructure does not imply a portable command surface. Each internally resolved singleton is available only on its detected host and is otherwise `null`; its typed, provider-grouped metadata is snapshotted when resolved.
+
+_Avoid_: Universal CI API, provider-neutral command
+
 ## Additional arguments
 
 Raw argument text appended after a configured tool command's structured argument slots.
@@ -141,6 +153,8 @@ _Avoid_: Installed-tool wrapper, dotnet tool wrapper
 A typed immutable record that describes an executable external tool command.
 
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
+
+Tool commands carry their own process working directory and output logging configuration. Raw command strings use separate Exec options because no command value exists to own that configuration.
 
 `Tools.Git` exposes default Git command values bound lazily through `Do.GitRepo`; a specific Git repository exposes equivalent values permanently bound to its root.
 

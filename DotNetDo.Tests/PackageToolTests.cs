@@ -17,6 +17,22 @@ public sealed class PackageToolTests
     }
 
     [Fact]
+    public void Tool_commands_own_execution_options_without_rendering_them()
+    {
+        var workingDirectory = AbsolutePath.Parse(Path.GetTempPath());
+        Action<OutputType, string> log = (_, _) => { };
+        var command = new PackageToolCommand("Example.Tool", "example")
+        {
+            WorkingDirectory = workingDirectory,
+            Log = log,
+        };
+
+        Assert.Equal(workingDirectory, command.WorkingDirectory);
+        Assert.Same(log, command.Log);
+        Assert.Equal("dotnet tool run example", command.ToString());
+    }
+
+    [Fact]
     public void Renders_dotnet_tool_restore_options()
     {
         var command = Tools.DotNet.ToolRestore with

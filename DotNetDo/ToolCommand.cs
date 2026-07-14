@@ -4,7 +4,7 @@ using System.Text;
 namespace DotNetDo;
 
 /// <summary>Base value object for rendering and awaiting a command-line tool invocation.</summary>
-public abstract record ToolCommand
+public abstract record ToolCommand : ExecOptions
 {
     readonly ArgumentSlots _arguments;
 
@@ -12,7 +12,7 @@ public abstract record ToolCommand
     protected ToolCommand() => _arguments = new ArgumentSlots();
 
     /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
-    protected ToolCommand(ToolCommand original)
+    protected ToolCommand(ToolCommand original) : base(original)
     {
         _arguments = original._arguments.Clone();
         AdditionalArguments = original.AdditionalArguments;
