@@ -122,7 +122,7 @@ An `ILogger` wrapper created through `LoggerConfiguration.CreateRedactingLogger(
 
 ## CI log sink
 
-A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Serilog.Sinks.Console` locally and writes build-agent-native commands on supported CI systems. It detects Azure Pipelines from `TF_BUILD=true`, GitHub Actions from `GITHUB_ACTIONS=true`, then falls back to the standard console sink. Warnings become CI warning annotations; errors and fatal events become CI error annotations; lower levels remain ordinary output. CI annotations contain only the rendered message and exception in v1, with no inferred source-file metadata. The sink changes log rendering and routing, not command execution.
+A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Serilog.Sinks.Console` locally and writes build-agent-native commands on supported CI systems. Verbose and debug events become native debug messages, warnings become warning annotations, and errors or fatal events become error annotations for every detected provider. Information remains one ordinary output line even when both providers are detected. CI annotations contain only the rendered message and exception in v1, with no inferred source-file metadata. The sink changes log rendering and routing, not command execution.
 
 ## Runner command
 

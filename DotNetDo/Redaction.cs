@@ -16,7 +16,6 @@ static class SecretRedaction
     {
         if (string.IsNullOrEmpty(value))
             return;
-
         var variants = new[]
             {
                 value,
@@ -26,6 +25,12 @@ static class SecretRedaction
                 JavaScriptEncoder.Default.Encode(value),
                 Uri.EscapeDataString(value)
             };
+
+        foreach (var variant in variants)
+        {
+            Do.AzurePipelines?.SetSecret(variant);
+            Do.GitHubActions?.AddMask(variant);
+        }
 
         lock (Gate)
         {

@@ -17,16 +17,15 @@ public static class Logging
 
     /// <summary>
     /// Writes log events to the default output sink, which is determined by the environment.
-    /// If running in GitHub Actions, it will use the GitHub Actions log format.
-    /// If running in Azure Pipelines, it will use the Azure Pipelines log format.
+    /// Supported CI providers receive native annotations; otherwise output uses the console sink.
     /// Otherwise, it will write to the console.
     /// </summary>
     public static LoggerConfiguration DefaultOutput(this LoggerSinkConfiguration sinkConfiguration)
     {
         ArgumentNullException.ThrowIfNull(sinkConfiguration);
 
-        return BuildEnvironment.IsAzurePipelines ? sinkConfiguration.Sink(new AzurePipelinesSink())
-            : BuildEnvironment.IsGitHubActions ? sinkConfiguration.Sink(new GitHubActionsSink())
+        return Do.GitHubActions is not null || Do.AzurePipelines is not null
+            ? sinkConfiguration.Sink(new CISink())
             : sinkConfiguration.Console();
     }
 
