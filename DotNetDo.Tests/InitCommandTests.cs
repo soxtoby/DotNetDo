@@ -13,6 +13,8 @@ public sealed class InitCommandTests
         var result = await RunInit(workspace.Directory, "\n\n");
 
         Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Scripts path (default: scripts):", result.Output);
+        Assert.Contains("Initial task name (default: build):", result.Output);
         Assert.Equal("scripts-path = \"scripts\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
         Assert.Contains("Hello from build", File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs")));
         Assert.Contains("Created scripts path: scripts", result.Output);
@@ -64,7 +66,9 @@ public sealed class InitCommandTests
         var result = await RunInit(child, "\n");
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains(Path.Combine(workspace.Directory, "dotnetdo.toml"), result.Output);
+        Assert.Contains("The current directory is inside an existing DotNetDo workspace.", result.Output);
+        Assert.Contains($"Existing workspace root: {workspace.Directory}", result.Output);
+        Assert.Contains($"Create a nested DotNetDo workspace in '{child}'? [y/N]:", result.Output);
         Assert.False(File.Exists(Path.Combine(child, "dotnetdo.toml")));
     }
 

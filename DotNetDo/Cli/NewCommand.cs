@@ -17,8 +17,7 @@ static class NewCommand
             return Fail($"{relativeFile} already exists.");
 
         Do.ScriptsDirectory.EnsureDirectoryExists();
-        File.WriteAllText(file, TaskScaffolding.Template(taskName));
-        TaskScaffolding.MakeExecutableIfUnix(file);
+        TaskScaffolding.Create(file, taskName);
         Console.WriteLine($"Created {relativeFile}");
         return 0;
     }

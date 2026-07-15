@@ -15,23 +15,23 @@ static class InitCommand
         if (configurationFile.IsExistingFile)
             return Fail($"{configurationFile} already exists.");
 
-        var ancestorConfiguration = FindAncestorConfiguration(root);
-        if (ancestorConfiguration is not null)
+        RelativePath scriptsPath;
+        string taskName;
+        RelativePath? solutionPath;
+        try
         {
-            Console.WriteLine($"Containing DotNetDo workspace: {ancestorConfiguration}");
-            var createNested = PromptNestedWorkspace();
-            if (createNested is null)
-                return Fail("Initialization cancelled.");
-            if (!createNested.Value)
+            var ancestorConfiguration = FindAncestorConfiguration(root);
+            if (ancestorConfiguration is not null && !PromptCreateNestedWorkspace(root, ancestorConfiguration))
                 return 0;
-        }
 
-        var scriptsPath = PromptScriptsPath();
-        if (scriptsPath is null)
+            scriptsPath = PromptScriptsPath();
+            taskName = PromptTaskName();
+            solutionPath = SelectSolution(root);
+        }
+        catch (InitializationCancelledException)
+        {
             return Fail("Initialization cancelled.");
-        var taskName = PromptTaskName();
-        if (taskName is null || !TrySelectSolution(root, out var solutionPath))
-            return Fail("Initialization cancelled.");
+        }
 
         var scriptsDirectory = root / scriptsPath;
         var scriptFile = scriptsDirectory / $"{taskName}.cs";
@@ -44,13 +44,8 @@ static class InitCommand
         try
         {
             EnsureDirectories(root, scriptsDirectory, createdDirectories);
-            using (var stream = new FileStream(scriptFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            using (var writer = new StreamWriter(stream))
-            {
-                scriptCreated = true;
-                writer.Write(TaskScaffolding.Template(taskName));
-            }
-            TaskScaffolding.MakeExecutableIfUnix(scriptFile);
+            TaskScaffolding.Create(scriptFile, taskName);
+            scriptCreated = true;
 
             var configuration = new TomlTable { ["scripts-path"] = scriptsPath.UnixPath };
             if (solutionPath is not null)
@@ -73,7 +68,7 @@ static class InitCommand
         }
 
         Console.WriteLine("Created dotnetdo.toml");
-        Console.WriteLine($"{(createdDirectories.Count > 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
+        Console.WriteLine($"{(createdDirectories.Count != 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
         Console.WriteLine($"Created {scriptsPath.UnixPath}/{taskName}.cs");
         if (solutionPath is not null)
             Console.WriteLine($"Selected solution: {solutionPath.UnixPath}");
@@ -108,14 +103,17 @@ static class InitCommand
         return null;
     }
 
-    static bool? PromptNestedWorkspace()
+    static bool PromptCreateNestedWorkspace(AbsolutePath root, AbsolutePath ancestorConfiguration)
     {
+        Console.WriteLine("The current directory is inside an existing DotNetDo workspace.");
+        Console.WriteLine($"Existing workspace root: {ancestorConfiguration.Parent}");
+
         while (true)
         {
-            Console.Write("Create nested workspace? [y/N]: ");
+            Console.Write($"Create a nested DotNetDo workspace in '{root}'? [y/N]: ");
             var input = Console.ReadLine();
             if (input is null)
-                return null;
+                throw new InitializationCancelledException();
             if (input.Length == 0 || input.Equals("n", StringComparison.OrdinalIgnoreCase) || input.Equals("no", StringComparison.OrdinalIgnoreCase))
                 return false;
             if (input.Equals("y", StringComparison.OrdinalIgnoreCase) || input.Equals("yes", StringComparison.OrdinalIgnoreCase))
@@ -124,14 +122,15 @@ static class InitCommand
         }
     }
 
-    static RelativePath? PromptScriptsPath()
+    static RelativePath PromptScriptsPath()
     {
         while (true)
         {
-            Console.Write("Scripts path [scripts]: ");
+            Console.Write("Scripts path (default: scripts): ");
             var input = Console.ReadLine();
             if (input is null)
-                return null;
+                throw new InitializationCancelledException();
+            
             try
             {
                 return WorkspaceConfiguration.ParseRootRelativePath(input.Length == 0 ? "scripts" : input);
@@ -143,14 +142,14 @@ static class InitCommand
         }
     }
 
-    static string? PromptTaskName()
+    static string PromptTaskName()
     {
         while (true)
         {
-            Console.Write("Initial task name [build]: ");
+            Console.Write("Initial task name (default: build): ");
             var input = Console.ReadLine();
             if (input is null)
-                return null;
+                throw new InitializationCancelledException();
             if (input.Length == 0)
                 input = "build";
             if (TaskScaffolding.IsValidName(input))
@@ -159,7 +158,7 @@ static class InitCommand
         }
     }
 
-    static bool TrySelectSolution(AbsolutePath root, out RelativePath? solutionPath)
+    static RelativePath? SelectSolution(AbsolutePath root)
     {
         var solutions = root.GlobFiles(["**/*.sln", "**/*.slnx"])
             .Select(root.RelativePathTo)
@@ -167,10 +166,7 @@ static class InitCommand
             .ThenBy(path => path.UnixPath, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         if (solutions.Length <= 1)
-        {
-            solutionPath = solutions.SingleOrDefault();
-            return true;
-        }
+            return solutions.SingleOrDefault();
 
         Console.WriteLine("Solutions:");
         for (var index = 0; index < solutions.Length; index++)
@@ -180,18 +176,14 @@ static class InitCommand
             Console.Write("Select solution: ");
             var input = Console.ReadLine();
             if (input is null)
-            {
-                solutionPath = null;
-                return false;
-            }
+                throw new InitializationCancelledException();
             if (int.TryParse(input, out var selection) && selection >= 1 && selection <= solutions.Length)
-            {
-                solutionPath = solutions[selection - 1];
-                return true;
-            }
+                return solutions[selection - 1];
             Console.Error.WriteLine($"Select a number from 1 to {solutions.Length}.");
         }
     }
+
+    sealed class InitializationCancelledException : Exception { }
 
     static int Fail(string message)
     {

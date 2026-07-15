@@ -19,7 +19,28 @@ static partial class TaskScaffolding
         Console.WriteLine("Hello from {name}");
         """;
 
-    public static void MakeExecutableIfUnix(string fileName)
+    public static void Create(AbsolutePath file, string name)
+    {
+        var created = false;
+        try
+        {
+            using (var stream = new FileStream(file, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            using (var writer = new StreamWriter(stream))
+            {
+                created = true;
+                writer.Write(Template(name));
+            }
+            MakeExecutableIfUnix(file);
+        }
+        catch
+        {
+            if (created)
+                file.Delete();
+            throw;
+        }
+    }
+
+    static void MakeExecutableIfUnix(string fileName)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return;
