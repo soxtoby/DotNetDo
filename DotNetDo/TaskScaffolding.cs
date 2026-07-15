@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace DotNetDo;
 
-static partial class AppScaffolding
+static partial class TaskScaffolding
 {
     public static bool IsValidName(string name) =>
         !name.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) && NameRegex().IsMatch(name);

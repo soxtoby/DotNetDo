@@ -5,7 +5,7 @@ using Serilog.Events;
 
 namespace DotNetDo;
 
-/// <summary>Provides the script-authoring entry points and workspace-scoped defaults.</summary>
+/// <summary>Provides the task-authoring entry points and workspace-scoped defaults.</summary>
 public static partial class Do
 {
     /// <summary>Starts the rendered command directly, without a shell, in the configured working directory.</summary>

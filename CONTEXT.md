@@ -12,7 +12,7 @@ The nearest ancestor of the current working directory containing DotNetDo config
 
 ### Working directory
 
-The current process working directory from which a file-based app operates. It may change during execution; reads reflect its current value, and assignment changes it process-wide.
+The current process working directory from which a task operates. It may change during execution; reads reflect its current value, and assignment changes it process-wide.
 
 ### Scripts path
 
@@ -44,85 +44,81 @@ _Avoid_: Project path, disk path
 
 A file-backed project entry in a solution. Solution items are not projects; projects unsupported by the available MSBuild toolset remain navigable but may not be evaluable.
 
-## File-based app
+## Task
 
-A single C# source file intended to be created and run directly by DotNetDo.
+A directly runnable unit discovered by DotNetDo, implemented as a single C# source file. Future orchestration composes tasks.
 
-Generated file-based apps reference the DotNetDo package and import the `DotNetDo` namespace by default.
+Generated tasks reference the DotNetDo package and import the `DotNetDo` namespace by default.
 
-The initial DotNetDo API surface is intentionally tiny. Generated apps reference it to establish a stable import path for future helpers.
+The initial DotNetDo API surface is intentionally tiny. Generated tasks reference it to establish a stable import path for future helpers.
 
-## Script
+## Task name
 
-A directly runnable unit discovered by DotNetDo, currently implemented as a file-based app. A future task may orchestrate one or more scripts.
+The extensionless name of a task. A task name resolves only to `<scripts-path>/<task-name>.cs`; nested directories are not searched.
 
-## App name
+Task names are simple file stems: letters, numbers, `_`, `-`, and `.` are allowed; path separators and a `.cs` suffix are rejected.
 
-The extensionless name of a script. An app name resolves only to `<scripts-path>/<app-name>.cs`; nested directories are not searched.
+## Task arguments
 
-App names are simple file stems: letters, numbers, `_`, `-`, and `.` are allowed; path separators and a `.cs` suffix are rejected.
+Arguments after the task name in a run command are forwarded to the task.
 
-## App arguments
+## Task parameter
 
-Arguments after the app name in a run command are forwarded to the file-based app.
+A task argument declared by a literal DotNetDo API call. DotNetDo can discover task parameters by source scanning without executing the task.
 
-## Script parameter
+Task parameters resolve through DotNetDo's configuration pipeline: command-line arguments, `DOTNETDO_`-prefixed environment variables, user secrets, committed DotNetDo configuration, API default value, then `default`.
 
-A file-based app argument declared by a literal DotNetDo API call. DotNetDo can discover script parameters by source scanning without executing the file-based app.
+Task parameters are typed by the declared API call and parsed by DotNetDo from long command-line options.
 
-Script parameters resolve through DotNetDo's configuration pipeline: command-line arguments, `DOTNETDO_`-prefixed environment variables, user secrets, committed DotNetDo configuration, API default value, then `default`.
+Task help is the DotNetDo-owned discovery surface for task parameters.
 
-Script parameters are typed by the declared API call and parsed by DotNetDo from long command-line options.
+Task parameters may include an optional description for task help output.
 
-App help is the DotNetDo-owned discovery surface for script parameters.
-
-Script parameters may include an optional description for app help output.
-
-Script parameter APIs return parameter wrappers. `.Required()` throws immediately when no value exists and otherwise returns a separate required wrapper so nullable flow matches runtime behavior. An immediate `.Required()` call marks a script parameter as always required for discovery; later `.Required()` calls are treated as conditional runtime validation.
+Task parameter APIs return parameter wrappers. `.Required()` throws immediately when no value exists and otherwise returns a separate required wrapper so nullable flow matches runtime behavior. An immediate `.Required()` call marks a task parameter as always required for discovery; later `.Required()` calls are treated as conditional runtime validation.
 
 ## Secret value
 
-A string script parameter value intended to avoid accidental clear-text output. Resolving one registers it with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
+A string task parameter value intended to avoid accidental clear-text output. Resolving one registers it with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
 
 ## Run command
 
-The run command executes a file-based app through SDK file execution, equivalent to `dotnet <app-name>.cs -- <app-arguments>`. DotNetDo does not emulate file-based app support for older SDKs.
+The run command executes a task through SDK file execution, equivalent to `dotnet <task-name>.cs -- <task-arguments>`. DotNetDo does not emulate file-based task support for older SDKs.
 
-## App list
+## Task list
 
 Running `do` with no arguments lists scripts directly inside the scripts path. Nested directories are not searched. A missing scripts path produces an empty list.
 
 ## New command
 
-The `:new` command creates a script directly inside the scripts path and fails if the target file already exists. It creates a missing scripts path.
+The `:new` command creates a task directly inside the scripts path and fails if the target file already exists. It creates a missing scripts path.
 
 On Unix-like systems, `:new` makes the generated file executable on a best-effort basis. Windows does not need executable bits for DotNetDo usage.
 
 ## Init command
 
-The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial file-based app. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
+The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial task. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
 
 ## Tool command
 
-A command whose name starts with `:` is owned by DotNetDo. App names cannot start with `:`.
+A command whose name starts with `:` is owned by DotNetDo. Task names cannot start with `:`.
 
-DotNetDo v1 includes workspace initialization with `:init`, app listing, app creation with `:new`, help with `:help`, and app execution by name.
+DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, and task execution by name.
 
 ## Exec helper
 
-A DotNetDo library helper for running an external program from a file-based app.
+A DotNetDo library helper for running an external program from a task.
 
 Exec helper commands are a single command-line string where DotNetDo parses only the program token and passes the remaining argument string to .NET process execution.
 
 Exec combines standard output and standard error into replayable `ExecOutput` objects containing an `Out` or `Error` type and a message. Their cross-pipe order is the order DotNetDo observes, not a guarantee of the external process's original write order.
 
-Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` is an optional action receiving each output type and raw message; apps may replace it to choose another logger or level. A missing or `null` action uses the default. Capture behavior is unchanged.
+Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` is an optional action receiving each output type and raw message; tasks may replace it to choose another logger or level. A missing or `null` action uses the default. Capture behavior is unchanged.
 
 The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of resolved script-secret values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
 
 ## Logging bootstrap
 
-DotNetDo's module-initializer setup of the process-wide logger for file-based apps. When Serilog still has its default silent logger, DotNetDo installs an `Information`-minimum logger using its CI log sink; the app remains free to replace `Log.Logger` normally. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the app.
+DotNetDo's module-initializer setup of the process-wide logger for tasks. When Serilog still has its default silent logger, DotNetDo installs an `Information`-minimum logger using its CI log sink; the task remains free to replace `Log.Logger` normally. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the task.
 
 ## Redacting logger
 
@@ -134,7 +130,7 @@ A Serilog sink exposed through `WriteTo.DefaultOutput()` that delegates to `Seri
 
 ## Runner command
 
-A control message written by a file-based app to the active CI build agent, such as setting an output or opening a log group. Runner commands exclude service CLIs such as `gh` and `az`.
+A control message written by a task to the active CI build agent, such as setting an output or opening a log group. Runner commands exclude service CLIs such as `gh` and `az`.
 
 _Avoid_: CI server tool, workflow command
 

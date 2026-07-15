@@ -11,17 +11,17 @@ static class Cli
         {
             if (args.Length == 0)
             {
-                ListApps();
+                ListTasks();
                 return 0;
             }
 
             return args[0] switch
                 {
-                    ":new" => CreateApp(args),
+                    ":new" => CreateTask(args),
                     ":init" => InitCommand.Run(args),
                     ":help" => ShowHelp(args),
                     var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
-                    var appName => await RunAppAsync(appName, args[1..])
+                    var taskName => await RunTaskAsync(taskName, args[1..])
                 };
         }
         catch (DotNetDoConfigurationException exception)
@@ -30,33 +30,33 @@ static class Cli
         }
     }
 
-    static int CreateApp(string[] args)
+    static int CreateTask(string[] args)
     {
         if (args.Length != 2)
             return Fail("Usage: do :new <name>");
 
-        var appName = args[1];
-        if (!AppScaffolding.IsValidName(appName))
-            return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
+        var taskName = args[1];
+        if (!TaskScaffolding.IsValidName(taskName))
+            return Fail("Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
-        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
         var file = Do.RootDirectory / relativeFile;
         if (file.IsExistingFile)
             return Fail($"{relativeFile} already exists.");
 
         Do.ScriptsDirectory.EnsureDirectoryExists();
-        File.WriteAllText(file, AppScaffolding.Template(appName));
-        AppScaffolding.MakeExecutableIfUnix(file);
+        File.WriteAllText(file, TaskScaffolding.Template(taskName));
+        TaskScaffolding.MakeExecutableIfUnix(file);
         Console.WriteLine($"Created {relativeFile}");
         return 0;
     }
 
-    static async Task<int> RunAppAsync(string appName, string[] appArgs)
+    static async Task<int> RunTaskAsync(string taskName, string[] taskArgs)
     {
-        if (!AppScaffolding.IsValidName(appName))
-            return Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
+        if (!TaskScaffolding.IsValidName(taskName))
+            return Fail("Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
-        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
         var file = Do.RootDirectory / relativeFile;
         if (!file.IsExistingFile)
             return Fail($"{relativeFile} does not exist.");
@@ -64,10 +64,10 @@ static class Cli
         var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false };
 
         startInfo.ArgumentList.Add(file);
-        if (appArgs.Length > 0)
+        if (taskArgs.Length > 0)
         {
             startInfo.ArgumentList.Add("--");
-            foreach (var arg in appArgs)
+            foreach (var arg in taskArgs)
                 startInfo.ArgumentList.Add(arg);
         }
 
@@ -82,9 +82,9 @@ static class Cli
     static int ShowHelp(string[] args)
     {
         if (args.Length == 2)
-            return AppScaffolding.IsValidName(args[1])
-                ? AppHelp.Show(args[1])
-                : Fail("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
+            return TaskScaffolding.IsValidName(args[1])
+                ? TaskHelp.Show(args[1])
+                : Fail("Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
 
         Console.WriteLine("""
             Usage:
@@ -98,19 +98,19 @@ static class Cli
         return 0;
     }
 
-    static void ListApps()
+    static void ListTasks()
     {
         if (!Do.ScriptsDirectory.IsExistingDirectory)
             return;
 
-        var apps = Directory
+        var tasks = Directory
             .EnumerateFiles(Do.ScriptsDirectory, "*.cs", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileNameWithoutExtension)
-            .Where(name => name is not null && AppScaffolding.IsValidName(name))
+            .Where(name => name is not null && TaskScaffolding.IsValidName(name))
             .Order(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var app in apps)
-            Console.WriteLine(app);
+        foreach (var task in tasks)
+            Console.WriteLine(task);
     }
 
     static int Fail(string message)

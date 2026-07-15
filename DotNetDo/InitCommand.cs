@@ -29,14 +29,14 @@ static class InitCommand
         var scriptsPath = PromptScriptsPath();
         if (scriptsPath is null)
             return Fail("Initialization cancelled.");
-        var appName = PromptAppName();
-        if (appName is null || !TrySelectSolution(root, out var solutionPath))
+        var taskName = PromptTaskName();
+        if (taskName is null || !TrySelectSolution(root, out var solutionPath))
             return Fail("Initialization cancelled.");
 
         var scriptsDirectory = root / scriptsPath;
-        var scriptFile = scriptsDirectory / $"{appName}.cs";
+        var scriptFile = scriptsDirectory / $"{taskName}.cs";
         if (scriptFile.Exists)
-            return Fail($"{scriptsPath.UnixPath}/{appName}.cs already exists.");
+            return Fail($"{scriptsPath.UnixPath}/{taskName}.cs already exists.");
 
         var createdDirectories = new List<AbsolutePath>();
         var scriptCreated = false;
@@ -48,9 +48,9 @@ static class InitCommand
             using (var writer = new StreamWriter(stream))
             {
                 scriptCreated = true;
-                writer.Write(AppScaffolding.Template(appName));
+                writer.Write(TaskScaffolding.Template(taskName));
             }
-            AppScaffolding.MakeExecutableIfUnix(scriptFile);
+            TaskScaffolding.MakeExecutableIfUnix(scriptFile);
 
             var configuration = new TomlTable { ["scripts-path"] = scriptsPath.UnixPath };
             if (solutionPath is not null)
@@ -74,10 +74,10 @@ static class InitCommand
 
         Console.WriteLine("Created dotnetdo.toml");
         Console.WriteLine($"{(createdDirectories.Count > 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
-        Console.WriteLine($"Created {scriptsPath.UnixPath}/{appName}.cs");
+        Console.WriteLine($"Created {scriptsPath.UnixPath}/{taskName}.cs");
         if (solutionPath is not null)
             Console.WriteLine($"Selected solution: {solutionPath.UnixPath}");
-        Console.WriteLine($"Run with: do {appName}");
+        Console.WriteLine($"Run with: do {taskName}");
         return 0;
     }
 
@@ -143,19 +143,19 @@ static class InitCommand
         }
     }
 
-    static string? PromptAppName()
+    static string? PromptTaskName()
     {
         while (true)
         {
-            Console.Write("Initial app name [build]: ");
+            Console.Write("Initial task name [build]: ");
             var input = Console.ReadLine();
             if (input is null)
                 return null;
             if (input.Length == 0)
                 input = "build";
-            if (AppScaffolding.IsValidName(input))
+            if (TaskScaffolding.IsValidName(input))
                 return input;
-            Console.Error.WriteLine("App name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
+            Console.Error.WriteLine("Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
         }
     }
 

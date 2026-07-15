@@ -87,7 +87,7 @@ The loaded solution model is immutable and cached by the `Solution` instance. It
 
 ## MSBuild evaluation
 
-Use `Microsoft.Build.Locator` to load the active .NET SDK's Microsoft MSBuild object model. This supports SDK-style projects and ordinary old-style .NET Framework projects from a .NET 10 file-based app. Projects requiring unavailable imports, targeting packs, workloads, or Visual Studio-only toolsets fail with their native MSBuild error, augmented with project context. DotNetDo does not fall back to partial XML interpretation.
+Use `Microsoft.Build.Locator` to load the active .NET SDK's Microsoft MSBuild object model. This supports SDK-style projects and ordinary old-style .NET Framework projects from a .NET 10 task. Projects requiring unavailable imports, targeting packs, workloads, or Visual Studio-only toolsets fail with their native MSBuild error, augmented with project context. DotNetDo does not fall back to partial XML interpretation.
 
 `Load()` returns an owning `LoadedProject` containing the raw, mutable Microsoft `Project`. Each call freshly loads and evaluates the project and its imports. Disposing the wrapper unloads the project and disposes its `ProjectCollection`.
 
