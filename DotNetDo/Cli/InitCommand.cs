@@ -1,7 +1,7 @@
 using Tomlyn;
 using Tomlyn.Model;
 
-namespace DotNetDo;
+namespace DotNetDo.Cli;
 
 static class InitCommand
 {
@@ -155,7 +155,7 @@ static class InitCommand
                 input = "build";
             if (TaskScaffolding.IsValidName(input))
                 return input;
-            Console.Error.WriteLine("Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.");
+            Console.Error.WriteLine(TaskScaffolding.InvalidNameMessage);
         }
     }
 

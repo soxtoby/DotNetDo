@@ -1,10 +1,12 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace DotNetDo;
+namespace DotNetDo.Cli;
 
 static partial class TaskScaffolding
 {
+    public const string InvalidNameMessage = "Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.";
+
     public static bool IsValidName(string name) =>
         !name.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) && NameRegex().IsMatch(name);
 

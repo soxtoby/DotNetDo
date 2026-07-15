@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace DotNetDo;
+namespace DotNetDo.Cli;
 
 static partial class TaskHelp
 {
@@ -30,7 +30,7 @@ static partial class TaskHelp
         return 0;
     }
 
-    static IEnumerable<AppParameter> Discover(string fileName)
+    static IEnumerable<TaskParameter> Discover(string fileName)
     {
         var source = File.ReadAllText(fileName);
         foreach (Match match in ParameterRegex().Matches(source))
@@ -48,7 +48,7 @@ static partial class TaskHelp
                         ? FriendlyTypeName(match.Groups["type"].Value)
                         : InferType(defaultValue);
 
-                yield return new AppParameter(name, type, description, defaultValue, required, secret);
+                yield return new TaskParameter(name, type, description, defaultValue, required, secret);
             }
         }
     }
@@ -117,7 +117,7 @@ static partial class TaskHelp
             : null;
     }
 
-    static string Format(AppParameter parameter)
+    static string Format(TaskParameter parameter)
     {
         var line = $"  --{parameter.Name} <{parameter.Type}>";
 
@@ -163,7 +163,7 @@ static partial class TaskHelp
     [GeneratedRegex("[^A-Za-z0-9]+")]
     private static partial Regex NonAlphaNumericRegex();
 
-    sealed record AppParameter(
+    sealed record TaskParameter(
         string Name,
         string Type,
         string? Description,
