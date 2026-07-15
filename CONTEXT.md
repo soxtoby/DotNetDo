@@ -48,9 +48,19 @@ A file-backed project entry in a solution. Solution items are not projects; proj
 
 A directly runnable unit discovered by DotNetDo, implemented as a single C# source file. Future orchestration composes tasks.
 
-Generated tasks reference the DotNetDo package and import the `DotNetDo` namespace by default.
+Generated tasks reference the DotNetDo.Core package and import the `DotNetDo` namespace by default.
 
 The initial DotNetDo API surface is intentionally tiny. Generated tasks reference it to establish a stable import path for future helpers.
+
+## Release automation
+
+### Release preparation
+
+A local, reviewable transition of Unreleased changelog entries into a versioned release. It updates the package version and advances automation to the current published DotNetDo version, but does not commit, tag, push, or publish.
+
+### Release
+
+A tagged, immutable package version whose project version, changelog heading, Git tag, NuGet package, and GitHub release share the same `v`-prefixed identity, except that NuGet's package version omits the prefix.
 
 ## Task name
 

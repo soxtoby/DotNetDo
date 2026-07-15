@@ -20,7 +20,7 @@ static class SecretRedaction
             {
                 value,
                 value.QuotedArgument(),
-                JsonSerializer.Serialize(value),
+                $"\"{JsonEncodedText.Encode(value)}\"",
                 SecurityElement.Escape(value),
                 JavaScriptEncoder.Default.Encode(value),
                 Uri.EscapeDataString(value)

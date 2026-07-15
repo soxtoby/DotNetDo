@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotnetdo": {
+      "version": "0.1.0-bootstrap.1",
+      "commands": [
+        "do"
+      ]
+    }
+  }
+}

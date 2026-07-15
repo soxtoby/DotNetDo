@@ -2,4 +2,13 @@
   <Project Path="DotNetDo.Generators/DotNetDo.Generators.csproj" />
   <Project Path="DotNetDo.Tests/DotNetDo.Tests.csproj" />
   <Project Path="DotNetDo/DotNetDo.csproj" />
+  <Folder Name="/scripts/">
+    <File Path="scripts/build.cs" />
+    <File Path="scripts/make-release.cs" />
+    <File Path="scripts/release.cs" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="CHANGELOG.md" />
+  </Folder>
+  <Project Path="DotNetDo.Core/DotNetDo.Core.csproj" />
 </Solution>

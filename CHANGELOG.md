@@ -8,7 +8,7 @@
 - `Do.Param` and `Do.Secret` functions for easily reading configuration values and secrets.
 - Serilog logging for simple logging that integrates with CI providers and automatically redacts secret values.
 - `AbsolutePath` and `RelativePath` types for working with file paths.
-- Helpers for parsing and serializing JSON, XML, and TOML files.
+- Helpers for parsing and serializing JSON, TOML, YAML, and XML files.
 - Azure Pipelines and GitHub Actions helpers.
 - `Do.GitRepo` for accessing information about the current repo.
 - `Do.Solution` for accessing information about the current solution and parsing project files.

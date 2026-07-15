@@ -13,7 +13,7 @@ static partial class TaskScaffolding
     public static string Template(string name) =>
         $"""
         #!/usr/bin/env dotnet
-        #:package DotNetDo@*
+        #:package DotNetDo.Core@*
         using DotNetDo;
 
         Console.WriteLine("Hello from {name}");

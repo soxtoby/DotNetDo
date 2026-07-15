@@ -124,7 +124,7 @@ public sealed class InitCommandTests
             RedirectStandardError = true,
             UseShellExecute = false
         };
-        startInfo.ArgumentList.Add(typeof(Do).Assembly.Location);
+        startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "DotNetDo.dll"));
         startInfo.ArgumentList.Add(":init");
 
         using var process = Process.Start(startInfo)!;
