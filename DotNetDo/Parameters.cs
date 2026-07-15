@@ -83,7 +83,7 @@ public static partial class Do
     }
 }
 
-/// <summary>An optional script parameter whose absence is represented by <see langword="null"/>.</summary>
+/// <summary>An optional task parameter whose absence is represented by <see langword="null"/>.</summary>
 public readonly record struct Param<T>
 {
     readonly ParameterValue<T> _value;
@@ -97,7 +97,7 @@ public readonly record struct Param<T>
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string Name { get; }
-    /// <summary>Human-readable help text supplied by the script author.</summary>
+    /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
     /// <summary>The resolved parameter value.</summary>
     public T? Value => _value.ValueOrDefault;
@@ -112,7 +112,7 @@ public readonly record struct Param<T>
     public static implicit operator T?(Param<T> parameter) => parameter.Value;
 }
 
-/// <summary>A script parameter guaranteed to have resolved to a value.</summary>
+/// <summary>A task parameter guaranteed to have resolved to a value.</summary>
 public readonly record struct RequiredParam<T>
 {
     internal RequiredParam(string name, T value, string? description)
@@ -124,7 +124,7 @@ public readonly record struct RequiredParam<T>
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string Name { get; }
-    /// <summary>Human-readable help text supplied by the script author.</summary>
+    /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
     /// <summary>The resolved parameter value.</summary>
     public T Value { get; }
@@ -147,7 +147,7 @@ public readonly record struct SecretParam
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string Name { get; }
-    /// <summary>Human-readable help text supplied by the script author.</summary>
+    /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
 
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
@@ -177,7 +177,7 @@ public readonly record struct RequiredSecretParam
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string Name { get; }
-    /// <summary>Human-readable help text supplied by the script author.</summary>
+    /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
 
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>

@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
 
-namespace DotNetDo;
+namespace DotNetDo.Cli;
 
-static partial class AppHelp
+static partial class TaskHelp
 {
-    public static int Show(string appName)
+    public static int Show(string taskName)
     {
-        var relativeFile = Do.ScriptsPath / $"{appName}.cs";
+        var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
         var file = Do.RootDirectory / relativeFile;
         if (!file.IsExistingFile)
         {
@@ -16,7 +16,7 @@ static partial class AppHelp
 
         var parameters = Discover(file).ToArray();
 
-        Console.WriteLine($"Usage: do {appName} [options...]");
+        Console.WriteLine($"Usage: do {taskName} [options...]");
 
         if (parameters.Length == 0)
             return 0;
@@ -30,7 +30,7 @@ static partial class AppHelp
         return 0;
     }
 
-    static IEnumerable<AppParameter> Discover(string fileName)
+    static IEnumerable<TaskParameter> Discover(string fileName)
     {
         var source = File.ReadAllText(fileName);
         foreach (Match match in ParameterRegex().Matches(source))
@@ -48,7 +48,7 @@ static partial class AppHelp
                         ? FriendlyTypeName(match.Groups["type"].Value)
                         : InferType(defaultValue);
 
-                yield return new AppParameter(name, type, description, defaultValue, required, secret);
+                yield return new TaskParameter(name, type, description, defaultValue, required, secret);
             }
         }
     }
@@ -117,7 +117,7 @@ static partial class AppHelp
             : null;
     }
 
-    static string Format(AppParameter parameter)
+    static string Format(TaskParameter parameter)
     {
         var line = $"  --{parameter.Name} <{parameter.Type}>";
 
@@ -163,7 +163,7 @@ static partial class AppHelp
     [GeneratedRegex("[^A-Za-z0-9]+")]
     private static partial Regex NonAlphaNumericRegex();
 
-    sealed record AppParameter(
+    sealed record TaskParameter(
         string Name,
         string Type,
         string? Description,

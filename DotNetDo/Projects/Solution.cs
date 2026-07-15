@@ -70,6 +70,10 @@ public sealed class Solution
 
     internal static Task<Solution> DiscoverAsync()
     {
+        var configuredPath = WorkspaceConfiguration.ReadSolutionPath(Do.RootDirectory);
+        if (configuredPath is not null)
+            return Load(Do.RootDirectory / configuredPath);
+
         for (var directory = new DirectoryInfo(Do.RootDirectory); directory is not null; directory = directory.Parent)
         {
             var matches = directory.EnumerateFiles("*.sln", SearchOption.TopDirectoryOnly)
