@@ -84,16 +84,18 @@ static Bump InferBump(string notes)
 static void UpdatePins(string version, AbsolutePath manifestFile)
 {
     var manifest = manifestFile.ReadText();
-    var updatedManifest = new Regex("""(?m)("version"\s*:\s*")[^"]+(")""")
-        .Replace(manifest, $"$1{version}$2", 1);
-    if (manifest == updatedManifest)
+    var manifestVersion = new Regex("""(?m)("version"\s*:\s*")[^"]+(")""");
+    if (!manifestVersion.IsMatch(manifest))
         throw new InvalidOperationException("Tool manifest has no package version.");
-    manifestFile.WriteText(updatedManifest);
+    manifestFile.WriteText(manifestVersion.Replace(manifest, $"${{1}}{version}${{2}}", 1));
 
-    foreach (var script in Directory.EnumerateFiles(Do.RootDirectory / "scripts", "*.cs"))
+    foreach (var script in (Do.RootDirectory / "scripts").GlobFiles("*.cs"))
     {
-        var content = File.ReadAllText(script);
-        File.WriteAllText(script, Regex.Replace(content, @"DotNetDo\.Core@[^\s]+", $"DotNetDo.Core@{version}"));
+        var content = script.ReadText();
+        script.WriteText(Regex.Replace(
+            content,
+            @"(?m)^(#:package\s+DotNetDo\.Core@)[^\s]+",
+            $"${{1}}{version}"));
     }
 }
 
