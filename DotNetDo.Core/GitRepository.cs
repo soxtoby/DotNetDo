@@ -62,7 +62,7 @@ public sealed class GitRepository : IDisposable
         .Select(entry => new GitChange(RelativePath.Parse(entry.FilePath), entry.State))
         .ToArray();
     /// <summary>Whether the repository currently has tracked or untracked changes.</summary>
-    public bool IsDirty => Changes.Count != 0;
+    public bool IsDirty => Changes.Any(change => change.State != FileStatus.Ignored);
     /// <summary>The repository's live tag collection.</summary>
     public TagCollection Tags => Repository.Tags;
     /// <summary>The underlying LibGit2Sharp repository; owned and disposed by this wrapper.</summary>

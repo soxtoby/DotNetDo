@@ -16,7 +16,7 @@ Only `Root` is stable. Every other read reflects current repository state.
 - `CurrentBranch` is the friendly branch name, or `null` for detached HEAD.
 - `CurrentCommit` is a LibGit2Sharp `Commit` and throws when the repository has no commit.
 - `Changes` adapts each LibGit2Sharp status entry into a `GitChange` containing a root-relative `RelativePath` and the unchanged LibGit2Sharp `FileStatus`.
-- `IsDirty` is equivalent to `Changes.Count != 0`.
+- `IsDirty` reports tracked or untracked changes; ignored files alone are not dirty.
 - `Tags` exposes LibGit2Sharp's live tag collection.
 - `Repository` exposes the underlying LibGit2Sharp repository for deeper operations.
 

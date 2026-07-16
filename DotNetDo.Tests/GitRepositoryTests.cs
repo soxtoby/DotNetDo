@@ -35,6 +35,18 @@ public sealed class GitRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void IgnoredFilesAreNotDirty()
+    {
+        File.WriteAllText(Path.Combine(_directory, ".gitignore"), "ignored.txt\n");
+        Commands.Stage(_repository, ".gitignore");
+        _repository.Commit("ignore file", _signature, _signature);
+        File.WriteAllText(Path.Combine(_directory, "ignored.txt"), "content");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        Assert.False(git.IsDirty);
+    }
+
+    [Fact]
     public void CommitsSinceWalksHeadBackToMergeBase()
     {
         var first = Commit("first");

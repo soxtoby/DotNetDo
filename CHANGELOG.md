@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+- `GitRepository.IsDirty` ignores ignored files.
+
+## v0.1.0
+
 ### Added
 - `dotnet do` CLI with workspace-local `do.cmd` and `do` launchers created by `:init`.
 - `Do.Exec` function for easily running console commands.
