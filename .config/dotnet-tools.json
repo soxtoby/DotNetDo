@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "dotnetdo": {
-      "version": "0.1.0-bootstrap.1",
+      "version": "0.1.0",
       "commands": [
         "do"
       ]

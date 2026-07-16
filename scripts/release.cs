@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.1.0-bootstrap.1
+#:package DotNetDo.Core@0.1.0
 using System.Text.RegularExpressions;
 using DotNetDo;
 
