@@ -17,14 +17,14 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-      - run: dnx DotNetDo build
+      - run: ./do build
       - name: NuGet login
         id: nuget
         uses: NuGet/login@v1
         with:
           user: ${{ vars.NUGET_USER }}
       - name: Publish release
-        run: dnx DotNetDo release
+        run: ./do release
         env:
           DOTNETDO_NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
           GH_TOKEN: ${{ github.token }}

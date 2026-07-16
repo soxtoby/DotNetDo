@@ -17,8 +17,12 @@ public sealed class InitCommandTests
         Assert.Contains("Initial task name (default: build):", result.Output);
         Assert.Equal("scripts-path = \"scripts\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
         Assert.Contains("Hello from build", File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs")));
+        Assert.Equal("@dnx DotNetDo %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
         Assert.Contains("Created scripts path: scripts", result.Output);
-        Assert.Contains("Run with: do build", result.Output);
+        Assert.Contains("Created do.cmd", result.Output);
+        Assert.Contains("Created do", result.Output);
+        Assert.Contains(OperatingSystem.IsWindows() ? @"Run with: .\do build" : "Run with: ./do build", result.Output);
     }
 
     [Fact]
@@ -112,6 +116,23 @@ public sealed class InitCommandTests
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("already exists", result.Error);
         Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+    }
+
+    [Theory]
+    [InlineData("do")]
+    [InlineData("do.cmd")]
+    public async Task Existing_launcher_fails_without_writing(string launcher)
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(Path.Combine(workspace.Directory, launcher), "existing");
+
+        var result = await RunInit(workspace.Directory, "\n\n");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("already exists", result.Error);
+        Assert.False(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        Assert.False(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
+        Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, launcher)));
     }
 
     static async Task<Result> RunInit(string directory, string input)

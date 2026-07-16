@@ -11,12 +11,12 @@ static class HelpCommand
 
         Console.WriteLine("""
             Usage:
-              do
-              do :init
-              do :new <name>
-              do :help <name>
-              do :help
-              do <name> [args...]
+              dotnet do
+              dotnet do :init
+              dotnet do :new <name>
+              dotnet do :help <name>
+              dotnet do :help
+              dotnet do <name> [args...]
             """);
         return 0;
     }

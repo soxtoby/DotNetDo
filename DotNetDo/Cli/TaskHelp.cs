@@ -16,7 +16,7 @@ static partial class TaskHelp
 
         var parameters = Discover(file).ToArray();
 
-        Console.WriteLine($"Usage: do {taskName} [options...]");
+        Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
 
         if (parameters.Length == 0)
             return 0;

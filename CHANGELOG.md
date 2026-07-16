@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- `do` CLI tool for creating, listing, and running tasks.
+- `dotnet do` CLI with workspace-local `do.cmd` and `do` launchers created by `:init`.
 - `Do.Exec` function for easily running console commands.
 - `Do.Param` and `Do.Secret` functions for easily reading configuration values and secrets.
 - Serilog logging for simple logging that integrates with CI providers and automatically redacts secret values.

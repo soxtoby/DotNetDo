@@ -1,6 +1,6 @@
 # Workspace initialization
 
-`do :init` is a wizard that initializes the current directory as a DotNetDo workspace. It has no non-interactive argument form.
+`dotnet do :init` is a wizard that initializes the current directory as a DotNetDo workspace. It has no non-interactive argument form.
 
 ## Flow
 
@@ -9,8 +9,8 @@
 3. Prompt for the scripts path, defaulting to `scripts`. Accept any valid root-relative scripts path, including `.`.
 4. Prompt for the extensionless initial task name, defaulting to `build`. Task-name validation matches `:new`.
 5. Find solutions with `GlobFiles(["**/*.sln", "**/*.slnx"])`. Order them by relative-path depth, then alphabetically. Select the only result automatically; require an explicit numbered choice when several exist.
-6. Preflight all targets before writing. A pre-existing scripts directory is reused; a pre-existing initial script fails initialization.
-7. Create the scripts directory if needed, create the initial app using the same template and executable handling as `:new`, then write `dotnetdo.toml` last.
+6. Preflight all targets before writing. A pre-existing scripts directory is reused; a pre-existing initial script, `do.cmd`, or `do` launcher fails initialization.
+7. Create the scripts directory if needed, create the initial app using the same template and executable handling as `:new`, create root-local Windows and Unix launchers, then write `dotnetdo.toml` last.
 
 Empty prompt input accepts a default. Invalid input explains the error and prompts again. EOF or cancellation exits nonzero without writing.
 
@@ -29,4 +29,6 @@ A configured `solution-path` is authoritative. It must be a root-contained relat
 
 Initialization performs best-effort rollback of only the artifacts it created. It never removes a pre-existing scripts directory. Writing configuration last ensures the workspace marker represents completed initialization.
 
-On success, report the created configuration, directory and task, any selected solution, and `Run with: do <task-name>`. Do not run the task.
+The generated `do.cmd` runs `dnx DotNetDo %*`. The generated executable `do` script runs `exec dnx DotNetDo "$@"`. Invoke them by path: `.\do <task-name>` in PowerShell or `./do <task-name>` in a Unix shell.
+
+On success, report the created configuration, directory, task, launchers, any selected solution, and the platform-appropriate local command. Do not run the task.

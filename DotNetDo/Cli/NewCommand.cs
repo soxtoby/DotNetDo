@@ -5,7 +5,7 @@ static class NewCommand
     public static int Run(string[] args)
     {
         if (args.Length != 2)
-            return Fail("Usage: do :new <name>");
+            return Fail("Usage: dotnet do :new <name>");
 
         var taskName = args[1];
         if (!TaskScaffolding.IsValidName(taskName))

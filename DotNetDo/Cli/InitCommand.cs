@@ -8,7 +8,7 @@ static class InitCommand
     public static int Run(string[] args)
     {
         if (args.Length != 1)
-            return Fail("Usage: do :init");
+            return Fail("Usage: dotnet do :init");
 
         var root = AbsolutePath.Parse(Environment.CurrentDirectory);
         var configurationFile = root / "dotnetdo.toml";
@@ -37,15 +37,28 @@ static class InitCommand
         var scriptFile = scriptsDirectory / $"{taskName}.cs";
         if (scriptFile.Exists)
             return Fail($"{scriptsPath.UnixPath}/{taskName}.cs already exists.");
+        var windowsLauncher = root / "do.cmd";
+        var unixLauncher = root / "do";
+        if (windowsLauncher.Exists)
+            return Fail("do.cmd already exists.");
+        if (unixLauncher.Exists)
+            return Fail("do already exists.");
 
         var createdDirectories = new List<AbsolutePath>();
         var scriptCreated = false;
         var configurationCreated = false;
+        var windowsLauncherCreated = false;
+        var unixLauncherCreated = false;
         try
         {
             EnsureDirectories(root, scriptsDirectory, createdDirectories);
             TaskScaffolding.Create(scriptFile, taskName);
             scriptCreated = true;
+            File.WriteAllText(windowsLauncher, "@dnx DotNetDo %*\r\n");
+            windowsLauncherCreated = true;
+            File.WriteAllText(unixLauncher, "#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n");
+            unixLauncherCreated = true;
+            FileScaffolding.MakeExecutableIfUnix(unixLauncher);
 
             var configuration = new TomlTable { ["scripts-path"] = scriptsPath.UnixPath };
             if (solutionPath is not null)
@@ -60,6 +73,10 @@ static class InitCommand
         {
             if (configurationCreated)
                 configurationFile.Delete();
+            if (unixLauncherCreated)
+                unixLauncher.Delete();
+            if (windowsLauncherCreated)
+                windowsLauncher.Delete();
             if (scriptCreated)
                 scriptFile.Delete();
             foreach (var directory in createdDirectories)
@@ -70,9 +87,13 @@ static class InitCommand
         Console.WriteLine("Created dotnetdo.toml");
         Console.WriteLine($"{(createdDirectories.Count != 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
         Console.WriteLine($"Created {scriptsPath.UnixPath}/{taskName}.cs");
+        Console.WriteLine("Created do.cmd");
+        Console.WriteLine("Created do");
         if (solutionPath is not null)
             Console.WriteLine($"Selected solution: {solutionPath.UnixPath}");
-        Console.WriteLine($"Run with: do {taskName}");
+        Console.WriteLine(OperatingSystem.IsWindows()
+            ? $"Run with: .\\do {taskName}"
+            : $"Run with: ./do {taskName}");
         return 0;
     }
 

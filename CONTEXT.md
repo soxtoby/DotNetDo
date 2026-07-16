@@ -96,7 +96,7 @@ The run command executes a task through SDK file execution, equivalent to `dotne
 
 ## Task list
 
-Running `do` with no arguments lists scripts directly inside the scripts path. Nested directories are not searched. A missing scripts path produces an empty list.
+Running `dotnet do` with no arguments lists scripts directly inside the scripts path. Nested directories are not searched. A missing scripts path produces an empty list. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
 
 ## New command
 
@@ -107,6 +107,8 @@ On Unix-like systems, `:new` makes the generated file executable on a best-effor
 ## Init command
 
 The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial task. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
+
+Initialization also creates root-local `do.cmd` and executable `do` launchers which forward all arguments to `dnx DotNetDo`.
 
 ## Tool command
 
