@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Serialization;
 using Tomlyn;
+using YamlDotNet.Serialization;
 
 namespace DotNetDo;
 
@@ -61,6 +62,20 @@ public sealed partial record AbsolutePath
         TomlSerializer.Serialize(stream, value, options);
     }
 
+    /// <summary>Deserializes one YAML document from the file into the requested value type.</summary>
+    public T? ReadYaml<T>(IDeserializer? deserializer = null)
+    {
+        using var reader = File.OpenText(this);
+        return (deserializer ?? YamlSerialization.Deserializer).Deserialize<T>(reader);
+    }
+
+    /// <summary>Serializes the value as one YAML document to this file.</summary>
+    public void WriteYaml<T>(T value, ISerializer? serializer = null)
+    {
+        using var writer = File.CreateText(this);
+        (serializer ?? YamlSerialization.Serializer).Serialize(writer, value);
+    }
+
     /// <summary>Deserializes the file into the requested value type.</summary>
     public T? ReadXml<T>()
     {
@@ -74,4 +89,10 @@ public sealed partial record AbsolutePath
         using var stream = File.Create(this);
         new XmlSerializer(typeof(T)).Serialize(stream, value);
     }
+}
+
+static class YamlSerialization
+{
+    public static IDeserializer Deserializer { get; } = new DeserializerBuilder().Build();
+    public static ISerializer Serializer { get; } = new SerializerBuilder().Build();
 }

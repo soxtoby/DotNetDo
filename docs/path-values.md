@@ -48,13 +48,15 @@ T? ReadJson<T>(JsonSerializerOptions? options = null);
 void WriteJson<T>(T value, JsonSerializerOptions? options = null);
 T? ReadToml<T>(TomlSerializerOptions? options = null);
 void WriteToml<T>(T value, TomlSerializerOptions? options = null);
+T? ReadYaml<T>(IDeserializer? deserializer = null);
+void WriteYaml<T>(T value, ISerializer? serializer = null);
 T? ReadXml<T>();
 void WriteXml<T>(T value);
 ```
 
-Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, and `XmlSerializer` respectively. JSON and TOML expose their native options objects; XML initially uses serializer defaults.
+Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, YamlDotNet, and `XmlSerializer` respectively. JSON and TOML expose their native options objects. YAML accepts native YamlDotNet `IDeserializer` and `ISerializer` instances; null uses cached plain builder-created instances with no DotNetDo naming, converter, or tolerance policy. Supplied instances remain caller-owned. YAML uses UTF-8, exposes no encoding parameter, and reads or writes one typed document. Reads retain the `T?` shape and writes pass nullable values through to YamlDotNet. Output is not normalized after serialization. XML initially uses serializer defaults.
 
-Reads preserve serializer nullability and propagate native missing-file, malformed-content, and type errors. Writes create or overwrite the file directly, return no value, and propagate native errors. They do not create missing parent directories, validate filename extensions, append, write atomically, create backups, or add formatting policy. Structured output uses each serializer's defaults.
+Reads preserve serializer nullability and propagate native missing-file, malformed-content, and type errors without DotNetDo exception wrapping. Writes create or overwrite the file directly, return no value, and propagate native errors. They do not create missing parent directories, validate filename extensions, append, write atomically, create backups, or add formatting policy. Structured output uses each serializer's defaults.
 
 `AbsolutePath` also owns uniform copy, move, and delete operations for files and directories. Missing paths and symbolic links follow the underlying `System.IO` behavior. The same method names apply to both filesystem kinds rather than exposing parallel file and directory families.
 

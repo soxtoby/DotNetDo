@@ -1,6 +1,8 @@
 using Xunit;
 using System.Text;
 using System.Text.Json;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace DotNetDo.Tests;
 
@@ -152,14 +154,24 @@ public sealed class PathFileSystemTests
         var value = new ContentModel { Name = "test", Count = 2 };
         var json = workspace.Path / "value.json";
         var toml = workspace.Path / "value.toml";
+        var yaml = workspace.Path / "value.yaml";
         var xml = workspace.Path / "value.xml";
+        var yamlSerializer = new SerializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+        var yamlDeserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
 
         json.WriteJson(value, new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         toml.WriteToml(value);
+        yaml.WriteYaml(value, yamlSerializer);
         xml.WriteXml(value);
 
         Assert.Equal(value, json.ReadJson<ContentModel>(new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
         Assert.Equal(value, toml.ReadToml<ContentModel>());
+        Assert.Contains("name: test", yaml.ReadText());
+        Assert.Equal(value, yaml.ReadYaml<ContentModel>(yamlDeserializer));
         Assert.Equal(value, xml.ReadXml<ContentModel>());
     }
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Xml.Serialization;
 using Tomlyn;
+using YamlDotNet.Serialization;
 
 namespace DotNetDo;
 
@@ -28,6 +29,10 @@ public sealed partial record ExecResult
     /// <summary>Deserializes the captured standard output into the requested value type.</summary>
     public T? ReadToml<T>(TomlSerializerOptions? options = null) =>
         TomlSerializer.Deserialize<T>(ReadText(), options);
+
+    /// <summary>Deserializes one YAML document from the captured standard output.</summary>
+    public T? ReadYaml<T>(IDeserializer? deserializer = null) =>
+        (deserializer ?? YamlSerialization.Deserializer).Deserialize<T>(ReadText());
 
     /// <summary>Deserializes the captured standard output into the requested value type.</summary>
     public T? ReadXml<T>()

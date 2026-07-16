@@ -1,4 +1,5 @@
 using System.Text.Json;
+using YamlDotNet.Core;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -29,6 +30,8 @@ public sealed class ExecResultTests
             .ReadJson<Content>()!.Value);
         Assert.Equal("toml", Result(new ExecOutput(OutputType.Out, "Value = \"toml\""))
             .ReadToml<Content>()!.Value);
+        Assert.Equal("yaml", Result(new ExecOutput(OutputType.Out, "Value: yaml"))
+            .ReadYaml<Content>()!.Value);
         Assert.Equal("xml", Result(new ExecOutput(OutputType.Out, "<Content><Value>xml</Value></Content>"))
             .ReadXml<Content>()!.Value);
     }
@@ -37,6 +40,7 @@ public sealed class ExecResultTests
     public void Structured_readers_expose_serializer_failures()
     {
         Assert.Throws<JsonException>(() => Result(new ExecOutput(OutputType.Out, "not json")).ReadJson<Content>());
+        Assert.Throws<YamlException>(() => Result(new ExecOutput(OutputType.Out, "[not yaml")).ReadYaml<Content>());
     }
 
     static ExecResult Result(params ExecOutput[] output) => new()
