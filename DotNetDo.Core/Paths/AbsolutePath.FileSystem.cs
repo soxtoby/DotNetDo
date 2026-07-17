@@ -25,6 +25,7 @@ public sealed partial record AbsolutePath
     public AbsolutePath[] GlobFiles(IEnumerable<string> patterns, GlobOptions? options = null) =>
         CreateMatcher(patterns, options)
             .GetResultsInFullPath(this)
+            .Order(StringComparer.Ordinal)
             .Select(Parse)
             .ToArray();
 
@@ -40,6 +41,7 @@ public sealed partial record AbsolutePath
         return CreateMatcher(patterns, options)
             .Match(candidates)
             .Files
+            .OrderBy(match => match.Path, StringComparer.Ordinal)
             .Select(match => this / match.Path)
             .ToArray();
     }
