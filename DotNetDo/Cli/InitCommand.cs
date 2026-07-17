@@ -91,6 +91,8 @@ static class InitCommand
         Console.WriteLine("Created do");
         if (solutionPath is not null)
             Console.WriteLine($"Selected solution: {solutionPath.UnixPath}");
+        if (OperatingSystem.IsWindows())
+            Console.WriteLine("Before committing, run: git add --chmod=+x do");
         Console.WriteLine(OperatingSystem.IsWindows()
             ? $"Run with: .\\do {taskName}"
             : $"Run with: ./do {taskName}");

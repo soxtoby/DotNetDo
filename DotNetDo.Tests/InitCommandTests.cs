@@ -22,6 +22,10 @@ public sealed class InitCommandTests
         Assert.Contains("Created scripts path: scripts", result.Output);
         Assert.Contains("Created do.cmd", result.Output);
         Assert.Contains("Created do", result.Output);
+        if (OperatingSystem.IsWindows())
+            Assert.Contains("Before committing, run: git add --chmod=+x do", result.Output);
+        else
+            Assert.DoesNotContain("git add --chmod=+x do", result.Output);
         Assert.Contains(OperatingSystem.IsWindows() ? @"Run with: .\do build" : "Run with: ./do build", result.Output);
     }
 
