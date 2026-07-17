@@ -8,6 +8,7 @@
     <PackageId>DotNetDo.Core</PackageId>
     <Description>Typed tools and helpers for C# automation.</Description>
     <NoWarn>$(NoWarn);CA2255</NoWarn>
+    <RootNamespace>DotNetDo</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

@@ -24,18 +24,17 @@ public sealed class WorkspaceTests
         var inner = outer / "inner";
         var child = inner / "child";
         child.EnsureDirectoryExists();
-        Do.WorkingDirectory = child;
+        var rootDirectory = new WorkspaceRoot();
 
-        Assert.Equal(child, Do.RootDirectory);
+        Assert.Equal(child, rootDirectory.Resolve(child));
 
         File.WriteAllText(outer / "dotnetdo.toml", "invalid TOML still marks the root");
         File.WriteAllText(inner / "dotnetdo.toml", "");
 
-        Assert.Equal(inner, Do.RootDirectory);
+        Assert.Equal(inner, rootDirectory.Resolve(child));
 
         File.Delete(inner / "dotnetdo.toml");
-        Do.WorkingDirectory = outer;
-        Assert.Equal(inner, Do.RootDirectory);
+        Assert.Equal(inner, rootDirectory.Resolve(outer));
     }
 
     [Fact]

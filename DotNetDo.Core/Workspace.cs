@@ -5,6 +5,8 @@ namespace DotNetDo;
 
 public static partial class Do
 {
+    static readonly WorkspaceRoot WorkspaceRoot = new();
+
     /// <summary>Exposes the configured value or operation to task authors.</summary>
     public static AbsolutePath WorkingDirectory
     {
@@ -13,25 +15,28 @@ public static partial class Do
     }
 
     /// <summary>Exposes the configured value or operation to task authors.</summary>
-    public static AbsolutePath RootDirectory
-    {
-        get
-        {
-            if (field is not null)
-                return field;
-
-            var workingDirectory = WorkingDirectory;
-            for (var directory = workingDirectory; directory is not null; directory = directory.Parent)
-                if ((directory / "dotnetdo.toml").IsExistingFile)
-                    return field = directory;
-
-            return workingDirectory;
-        }
-    }
+    public static AbsolutePath RootDirectory => WorkspaceRoot.Resolve(WorkingDirectory);
 
     internal static RelativePath ScriptsPath => WorkspaceConfiguration.ReadScriptsPath(RootDirectory);
 
     internal static AbsolutePath ScriptsDirectory => RootDirectory / ScriptsPath;
+}
+
+sealed class WorkspaceRoot
+{
+    AbsolutePath? _configured;
+
+    public AbsolutePath Resolve(AbsolutePath workingDirectory)
+    {
+        if (_configured is not null)
+            return _configured;
+
+        for (var directory = workingDirectory; directory is not null; directory = directory.Parent)
+            if ((directory / "dotnetdo.toml").IsExistingFile)
+                return _configured = directory;
+
+        return workingDirectory;
+    }
 }
 
 static class WorkspaceConfiguration
