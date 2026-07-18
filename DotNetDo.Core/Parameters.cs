@@ -16,7 +16,7 @@ public static partial class Do
         new(name, ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
-    public static SecretParam Secret(string name, string? defaultValue = null, string? description = null) =>
+    public static Secret Secret(string name, string? defaultValue = null, string? description = null) =>
         new(name, ReadSecret(name, defaultValue), description);
 
     static ParameterValue<T> ReadParam<T>(string name) =>
@@ -29,17 +29,16 @@ public static partial class Do
             ? value
             : ParameterValue<T>.Resolved(name, defaultValue);
 
-    static ParameterValue<Secret> ReadSecret(string name, string? defaultValue)
+    static ParameterValue<string> ReadSecret(string name, string? defaultValue)
     {
         var value = ReadConfigurationValue<string>(name) is { HasValue: true } configured
             ? configured.Value
             : defaultValue;
 
         if (value is null)
-            return ParameterValue<Secret>.Missing(name);
+            return ParameterValue<string>.Missing(name);
 
-        SecretRedaction.Register(value);
-        return ParameterValue<Secret>.Resolved(name, new Secret(value));
+        return ParameterValue<string>.Resolved(name, value);
     }
 
     static ParameterValue<T> ReadConfigurationValue<T>(string name)
@@ -122,29 +121,41 @@ public readonly record struct RequiredParam<T>
 }
 
 /// <summary>An optional string parameter that masks its value in text and logs.</summary>
-public readonly record struct SecretParam
+public readonly record struct Secret
 {
-    readonly ParameterValue<Secret> _value;
+    readonly ParameterValue<string> _value;
 
-    internal SecretParam(string name, ParameterValue<Secret> value, string? description)
+    /// <summary>Wraps and registers a plaintext value for log redaction.</summary>
+    public Secret(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        Name = null;
+        _value = ParameterValue<string>.Resolved(string.Empty, value);
+        Description = null;
+        SecretRedaction.Register(value);
+    }
+
+    internal Secret(string name, ParameterValue<string> value, string? description)
     {
         Name = name;
         _value = value;
         Description = description;
+        if (value.HasValue)
+            SecretRedaction.Register(value.Value);
     }
 
-    /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
-    public string Name { get; }
+    /// <summary>The parameter name, or <see langword="null"/> when constructed directly.</summary>
+    public string? Name { get; }
     /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
 
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
-    public string? Unwrap() => _value.HasValue ? _value.Value.Unwrap() : null;
+    public string? Unwrap() => _value.ValueOrDefault;
 
     /// <summary>Converts the optional parameter to its required form, throwing when no value was supplied.</summary>
-    public RequiredSecretParam Required() =>
+    public RequiredSecret Required() =>
         _value.HasValue
-            ? new RequiredSecretParam(Name, _value.Value, Description)
+            ? new RequiredSecret(Name, _value.Value, Description)
             : throw new InvalidOperationException($"Secret parameter '{Name}' is required.");
 
     /// <inheritdoc />
@@ -152,11 +163,11 @@ public readonly record struct SecretParam
 }
 
 /// <summary>A required secret parameter with an available plaintext value.</summary>
-public readonly record struct RequiredSecretParam
+public readonly record struct RequiredSecret
 {
-    readonly Secret _value;
+    readonly string _value;
 
-    internal RequiredSecretParam(string name, Secret value, string? description)
+    internal RequiredSecret(string? name, string value, string? description)
     {
         Name = name;
         _value = value;
@@ -164,23 +175,9 @@ public readonly record struct RequiredSecretParam
     }
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
-    public string Name { get; }
+    public string? Name { get; }
     /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
-
-    /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
-    public string Unwrap() => _value.Unwrap();
-
-    /// <inheritdoc />
-    public override string ToString() => "***";
-}
-
-/// <summary>A plaintext secret wrapper that renders only a mask.</summary>
-public readonly record struct Secret
-{
-    readonly string _value;
-
-    internal Secret(string value) => _value = value;
 
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
     public string Unwrap() => _value;

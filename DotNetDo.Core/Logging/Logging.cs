@@ -30,7 +30,7 @@ public static class Logging
     }
 
     /// <summary>
-    /// Redacts <see cref="SecretParam"/> values from log events.
+    /// Redacts <see cref="Secret"/> values from log events.
     /// </summary>
     public static ILogger CreateRedactingLogger(this LoggerConfiguration configuration)
     {

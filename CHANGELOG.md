@@ -5,6 +5,9 @@
 ### Added
 - Configured meta-tasks in `dotnetdo.toml` for composing ordered, fail-fast task sequences with argument forwarding.
 
+### Changed
+- `Do.Secret` now returns `Secret`, `new Secret(value)` automatically registers the value for redaction, and the required wrapper is now named `RequiredSecret`.
+
 ## v0.2.0
 
 ### Changed

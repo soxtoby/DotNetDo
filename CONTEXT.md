@@ -110,7 +110,7 @@ Task parameter APIs return parameter wrappers. `.Required()` throws immediately 
 
 ## Secret value
 
-A string task parameter value intended to avoid accidental clear-text output. Resolving one registers it with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters are represented as `null`.
+A string value intended to avoid accidental clear-text output. `Do.Secret(...)` returns a `Secret`; callers may also construct one directly with `new Secret(value)`. Both register the value with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters unwrap to `null`.
 
 ## Run command
 
@@ -148,7 +148,7 @@ Exec combines standard output and standard error into replayable `ExecOutput` ob
 
 Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` is an optional action receiving each output type and raw message; tasks may replace it to choose another logger or level. A missing or `null` action uses the default. Capture behavior is unchanged.
 
-The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of resolved script-secret values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
+The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of registered `Secret` values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
 
 ## Logging bootstrap
 
@@ -156,7 +156,7 @@ DotNetDo's module-initializer setup of the process-wide logger for tasks. When S
 
 ## Redacting logger
 
-An `ILogger` wrapper created through `LoggerConfiguration.CreateRedactingLogger()`. It clones each log event and redacts resolved script secrets from message templates, exceptions, property names, and recursively nested property values before forwarding the event, following the complete-event approach demonstrated by `nblumhardt/serilog-redaction`. Contextual loggers returned by the wrapper remain wrapped. A replacement global logger is protected only when the app creates it through this extension.
+An `ILogger` wrapper created through `LoggerConfiguration.CreateRedactingLogger()`. It clones each log event and redacts registered secrets from message templates, exceptions, property names, and recursively nested property values before forwarding the event, following the complete-event approach demonstrated by `nblumhardt/serilog-redaction`. Contextual loggers returned by the wrapper remain wrapped. A replacement global logger is protected only when the app creates it through this extension.
 
 ## CI log sink
 

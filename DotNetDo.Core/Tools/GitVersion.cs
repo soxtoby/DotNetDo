@@ -42,7 +42,7 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
     /// <summary>The remote repository username.</summary>
     public string? Username { get => GetArgument("username"); init => SetArgument("username", "-u ", value?.QuotedArgument()); }
     /// <summary>The redacted remote repository password.</summary>
-    public RequiredSecretParam? Password { get; init; }
+    public RequiredSecret? Password { get; init; }
     /// <summary>The remote commit to inspect.</summary>
     public string? Commit { get => GetArgument("commit"); init => SetArgument("commit", "-c ", value?.QuotedArgument()); }
     /// <summary>The directory used for a dynamically cloned remote repository.</summary>
