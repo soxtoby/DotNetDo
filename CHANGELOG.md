@@ -7,6 +7,7 @@
 
 ### Changed
 - `Do.Secret` now returns `Secret`, `new Secret(value)` automatically registers the value for redaction, and the required wrapper is now named `RequiredSecret`.
+- Typed tool commands now quote structured argument values automatically while preserving raw additional arguments.
 
 ## v0.2.0
 

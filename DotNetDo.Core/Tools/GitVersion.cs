@@ -36,15 +36,15 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
     /// <summary>The diagnostic log output file.</summary>
     public AbsolutePath? LogFile { get => ParsePath(GetArgument("logfile")); init => SetPath("logfile", "-l ", value); }
     /// <summary>The remote repository URL.</summary>
-    public string? Url { get => GetArgument("url"); init => SetArgument("url", "-url ", value?.QuotedArgument()); }
+    public string? Url { get => GetArgument("url"); init => SetArgument("url", "-url ", value); }
     /// <summary>The remote branch name.</summary>
-    public string? Branch { get => GetArgument("branch"); init => SetArgument("branch", "-b ", value?.QuotedArgument()); }
+    public string? Branch { get => GetArgument("branch"); init => SetArgument("branch", "-b ", value); }
     /// <summary>The remote repository username.</summary>
-    public string? Username { get => GetArgument("username"); init => SetArgument("username", "-u ", value?.QuotedArgument()); }
+    public string? Username { get => GetArgument("username"); init => SetArgument("username", "-u ", value); }
     /// <summary>The redacted remote repository password.</summary>
     public RequiredSecret? Password { get; init; }
     /// <summary>The remote commit to inspect.</summary>
-    public string? Commit { get => GetArgument("commit"); init => SetArgument("commit", "-c ", value?.QuotedArgument()); }
+    public string? Commit { get => GetArgument("commit"); init => SetArgument("commit", "-c ", value); }
     /// <summary>The directory used for a dynamically cloned remote repository.</summary>
     public AbsolutePath? DynamicRepositoryLocation { get => ParsePath(GetArgument("dynamic-repository-location")); init => SetPath("dynamic-repository-location", "-dynamicRepoLocation ", value); }
 
@@ -58,7 +58,7 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
             if (value.Keys.Any(key => key.Equals("commit-date-format", StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException("commit-date-format is reserved by the GitVersion result contract.", nameof(value));
             field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
-            SetArgumentArray("override-config", "-overrideconfig ", value.Select(pair => $"{pair.Key}={pair.Value.QuotedArgument()}").ToArray(), " -overrideconfig ");
+            SetArgumentArray("override-config", "-overrideconfig ", value.Select(pair => $"{pair.Key}={pair.Value}").ToArray(), " -overrideconfig ");
         }
     } = new Dictionary<string, string>();
 
@@ -79,8 +79,8 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
     /// <inheritdoc />
     protected override GitVersionResult ReadResult(ExecResult result) => GitVersionResult.Parse(result);
 
-    void SetPath(string key, string prefix, AbsolutePath? value) => SetArgument(key, prefix, value?.QuotedArgument());
-    static AbsolutePath? ParsePath(string? value) => value is null ? null : AbsolutePath.Parse(value.Trim('"'));
+    void SetPath(string key, string prefix, AbsolutePath? value) => SetArgument(key, prefix, value?.ToString());
+    static AbsolutePath? ParsePath(string? value) => value is null ? null : AbsolutePath.Parse(value);
 }
 
 /// <summary>The semantic version variables emitted by GitVersion.</summary>

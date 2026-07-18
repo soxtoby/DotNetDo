@@ -1,0 +1,1 @@
+﻿Update `CHANGELOG.md` when implementing a feature or fixing a bug.

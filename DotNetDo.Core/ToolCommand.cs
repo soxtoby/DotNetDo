@@ -24,24 +24,26 @@ public abstract record ToolCommand : ExecOptions
     /// <summary>Gets or sets command prefix.</summary>
     protected abstract string CommandPrefix { get; }
 
-    /// <summary>Set argument array.</summary>
-    protected void SetArgumentArray(string key, string prefix, IReadOnlyCollection<string> values, string separator = " ")
+    /// <summary>Stores semantic argument values, quoting each during rendering unless disabled.</summary>
+    protected void SetArgumentArray(string key, string prefix, IReadOnlyCollection<string> values, string separator = " ", bool quote = true)
     {
         ArgumentNullException.ThrowIfNull(values);
-        SetArgument(key, prefix, values.Count == 0 ? null : string.Join(separator, values));
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(prefix);
+        ArgumentNullException.ThrowIfNull(separator);
+
+        _arguments.Set(key, prefix, values.ToArray(), separator, quote);
     }
 
-    /// <summary>Get argument array.</summary>
-    protected string[] GetArgumentArray(string key, string separator = " ")
+    /// <summary>Returns a snapshot of the semantic values stored for an argument slot.</summary>
+    protected IReadOnlyList<string> GetArgumentArray(string key)
     {
-        var value = GetArgument(key);
-        return string.IsNullOrWhiteSpace(value)
-            ? []
-            : value.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        return _arguments.GetValues(key) ?? [];
     }
 
     /// <summary>Set flag.</summary>
-    protected void SetFlag(string key, string flag, bool value) => SetArgument(key, value ? flag : null);
+    protected void SetFlag(string key, string flag, bool value) => SetArgument(key, value ? flag : null, quote: false);
 
     /// <summary>Get flag.</summary>
     protected bool GetFlag(string key) => GetArgument(key) is not null;
@@ -55,7 +57,8 @@ public abstract record ToolCommand : ExecOptions
                     true => trueValue,
                     false => falseValue,
                     null => null
-                });
+                },
+            quote: false);
 
     /// <summary>Get flag.</summary>
     protected bool? GetFlag(string key, string trueValue, string falseValue) =>
@@ -67,27 +70,23 @@ public abstract record ToolCommand : ExecOptions
             };
 
     /// <summary>Set enum.</summary>
-    protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetArgument(key, value?.ToString().ToLowerInvariant());
+    protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetArgument(key, value?.ToString().ToLowerInvariant(), quote: false);
     
     /// <summary>Get enum.</summary>
     protected T? GetEnum<T>(string key) where T : struct, Enum => Enum.TryParse<T>(GetArgument(key), true, out var value) ? value : null;
 
-    /// <summary>Set argument.</summary>
-    protected void SetArgument(string key, string? value) => SetArgument(key, "", value);
+    /// <summary>Stores a semantic argument value, quoting it during rendering unless disabled.</summary>
+    protected void SetArgument(string key, string? value, bool quote = true) => SetArgument(key, "", value, quote);
 
-    /// <summary>Set argument.</summary>
-    protected void SetArgument(string key, string prefix, string? value)
+    /// <summary>Stores a prefixed semantic argument value, quoting it during rendering unless disabled.</summary>
+    protected void SetArgument(string key, string prefix, string? value, bool quote = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(prefix);
-
-        if (string.IsNullOrWhiteSpace(value))
-            _arguments.Set(key, "", "");
-        else
-            _arguments.Set(key, prefix, value);
+        _arguments.Set(key, prefix, value is null ? null : [value], " ", quote);
     }
 
-    /// <summary>Get argument.</summary>
+    /// <summary>Returns the exact semantic value stored for an argument slot.</summary>
     protected string? GetArgument(string key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
@@ -121,15 +120,17 @@ public abstract record ToolCommand : ExecOptions
         readonly List<Argument> _arguments = [];
 
         public IEnumerable<string> All => _arguments
-            .Select(argument => argument.Prefix + argument.Value)
+            .Select(Render)
             .Where(argument => !string.IsNullOrWhiteSpace(argument));
 
-        public string? Get(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Value;
+        public string? Get(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Values?.FirstOrDefault();
 
-        public void Set(string key, string prefix, string value)
+        public IReadOnlyList<string>? GetValues(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Values;
+
+        public void Set(string key, string prefix, string[]? values, string separator, bool quote)
         {
             var index = _arguments.FindIndex(argument => argument.Key == key);
-            var argument = new Argument(key, prefix, value);
+            var argument = new Argument(key, prefix, values, separator, quote);
 
             if (index >= 0)
                 _arguments[index] = argument;
@@ -144,7 +145,19 @@ public abstract record ToolCommand : ExecOptions
             return clone;
         }
 
-        sealed record Argument(string Key, string Prefix, string Value);
+        static string Render(Argument argument)
+        {
+            var values = argument.Values?
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => argument.Quote ? value.QuotedArgument() : value)
+                .ToArray() ?? [];
+
+            return values.Length == 0
+                ? ""
+                : argument.Prefix + string.Join(argument.Separator, values);
+        }
+
+        sealed record Argument(string Key, string Prefix, string[]? Values, string Separator, bool Quote);
     }
 }
 

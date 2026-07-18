@@ -67,6 +67,21 @@ public sealed class PackageToolTests
     }
 
     [Fact]
+    public void GitVersion_quotes_complete_semantic_arguments()
+    {
+        var command = Tools.GitVersion with
+        {
+            Branch = "feature/my branch",
+            OverrideConfig = new Dictionary<string, string> { ["tag-prefix"] = "release candidate/" },
+        };
+
+        Assert.Equal("feature/my branch", command.Branch);
+        Assert.Equal(
+            "dotnet tool run dotnet-gitversion -output json -overrideconfig commit-date-format=O -b \"feature/my branch\" -overrideconfig \"tag-prefix=release candidate/\"",
+            command.ToString());
+    }
+
+    [Fact]
     public void Parses_all_known_fields_and_preserves_unknown_fields()
     {
         var result = new ExecResult

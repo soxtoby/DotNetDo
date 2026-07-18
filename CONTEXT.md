@@ -178,6 +178,14 @@ _Avoid_: Universal CI API, provider-neutral command
 
 Raw argument text appended after a configured tool command's structured argument slots.
 
+## Structured tool argument
+
+A semantic value exposed by a tool command's typed properties. Property getters preserve that authored value; the owning tool command renders it as one or more command-line-safe arguments. Callers do not pre-format or quote it.
+
+Each element of a structured argument list represents exactly one command-line argument and is rendered independently. Intentional multi-argument syntax belongs in additional arguments.
+
+When a tool command combines values into one structured argument, it constructs the complete semantic argument before rendering and quoting it once.
+
 ## Package tool
 
 A typed external-tool definition associated with a package ID and command name. The local tool manifest in scope from the DotNetDo root owns its version; raw execution verifies declaration and diagnoses missing restoration, while semantic awaiting may restore and retry an unavailable declared tool.
@@ -189,6 +197,8 @@ _Avoid_: Installed-tool wrapper, dotnet tool wrapper
 ## Tool command
 
 A typed immutable record that describes an executable external tool command.
+
+Each concrete tool command owns the command-line rendering of its structured tool arguments. Generic argument setters quote semantic values by default; a concrete command explicitly disables quoting for raw syntax. Additional arguments remain raw.
 
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
 

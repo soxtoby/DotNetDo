@@ -31,7 +31,7 @@ public static partial class Tools
 public abstract record DotNetTargetCommand : ExecToolCommand
 {
     /// <summary>Dot net target command.</summary>
-    protected DotNetTargetCommand() => Targets = [Do.Solution.Path.QuotedArgument()];
+    protected DotNetTargetCommand() => Targets = [Do.Solution.Path];
 
     /// <summary>Supplies the values emitted by the <c>--target</c> option.</summary>
     public IReadOnlyList<string> Targets { get => GetArgumentArray("target"); init => SetArgumentArray("target", "", value); }
@@ -164,7 +164,7 @@ public sealed record DotNetRestore : DotNetTargetCommand
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
     public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
     /// <summary>Supplies the values emitted by the <c>--source</c> option.</summary>
-    public IReadOnlyList<string> Sources { get => GetArgumentArray("source", " --source "); init => SetArgumentArray("source", "--source ", value, " --source "); }
+    public IReadOnlyList<string> Sources { get => GetArgumentArray("source"); init => SetArgumentArray("source", "--source ", value, " --source "); }
     /// <summary>Supplies the value emitted by the <c>--packages</c> option.</summary>
     public string? Packages { get => GetArgument("packages"); init => SetArgument("packages", "--packages ", value); }
     /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
@@ -213,13 +213,13 @@ public sealed record DotNetTest : DotNetTargetCommand
     /// <summary>Controls emission of the <c>--list-tests</c> switch.</summary>
     public bool ListTests { get => GetFlag("list-tests"); init => SetFlag("list-tests", "--list-tests", value); }
     /// <summary>Supplies the values emitted by the <c>--environment</c> option.</summary>
-    public IReadOnlyList<string> Environment { get => GetArgumentArray("environment", " --environment "); init => SetArgumentArray("environment", "--environment ", value, " --environment "); }
+    public IReadOnlyList<string> Environment { get => GetArgumentArray("environment"); init => SetArgumentArray("environment", "--environment ", value, " --environment "); }
     /// <summary>Supplies the value emitted by the <c>--filter</c> option.</summary>
     public string? Filter { get => GetArgument("filter"); init => SetArgument("filter", "--filter ", value); }
     /// <summary>Supplies the value emitted by the <c>--test-adapter-path</c> option.</summary>
     public string? TestAdapterPath { get => GetArgument("test-adapter-path"); init => SetArgument("test-adapter-path", "--test-adapter-path ", value); }
     /// <summary>Supplies the values emitted by the <c>--logger</c> option.</summary>
-    public IReadOnlyList<string> Loggers { get => GetArgumentArray("logger", " --logger "); init => SetArgumentArray("logger", "--logger ", value, " --logger "); }
+    public IReadOnlyList<string> Loggers { get => GetArgumentArray("logger"); init => SetArgumentArray("logger", "--logger ", value, " --logger "); }
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
     public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
@@ -276,7 +276,7 @@ public sealed record DotNetToolRestore : ExecToolCommand
     /// <summary>The NuGet configuration file used exclusively for restore.</summary>
     public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
     /// <summary>Additional NuGet package sources.</summary>
-    public IReadOnlyList<string> AddSources { get => GetArgumentArray("add-source", " --add-source "); init => SetArgumentArray("add-source", "--add-source ", value, " --add-source "); }
+    public IReadOnlyList<string> AddSources { get => GetArgumentArray("add-source"); init => SetArgumentArray("add-source", "--add-source ", value, " --add-source "); }
     /// <summary>An explicit local tool manifest path.</summary>
     public string? ToolManifest { get => GetArgument("tool-manifest"); init => SetArgument("tool-manifest", "--tool-manifest ", value); }
     /// <summary>Whether parallel project restore is disabled.</summary>

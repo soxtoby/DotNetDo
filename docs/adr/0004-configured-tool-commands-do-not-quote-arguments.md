@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0017
+---
+
 # Configured Tool Commands Do Not Quote Arguments
 
 Configured tool helpers build command text for `Do.Exec` by concatenating the configured executable, fixed arguments, positional arguments, named arguments, flags, and additional arguments.

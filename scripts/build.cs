@@ -27,18 +27,18 @@ await (DotNet.Test with
 
 await (DotNet.Pack with
     {
-        Targets = [(Do.RootDirectory / "DotNetDo.Core" / "DotNetDo.Core.csproj").QuotedArgument()],
+        Targets = [(Do.RootDirectory / "DotNetDo.Core" / "DotNetDo.Core.csproj").ToString()],
         Configuration = configuration,
         NoBuild = true,
         NoRestore = true,
-        Output = packages.QuotedArgument(),
+        Output = packages.ToString(),
     });
 
 await (DotNet.Pack with
     {
-        Targets = [(Do.RootDirectory / "DotNetDo" / "DotNetDo.csproj").QuotedArgument()],
+        Targets = [(Do.RootDirectory / "DotNetDo" / "DotNetDo.csproj").ToString()],
         Configuration = configuration,
         NoBuild = true,
         NoRestore = true,
-        Output = packages.QuotedArgument(),
+        Output = packages.ToString(),
     });
