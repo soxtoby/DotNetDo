@@ -1,0 +1,7 @@
+interface:
+  display_name: "Generate Tool Command"
+  short_description: "Add a typed DotNetDo tool command"
+  default_prompt: "Use $generate-tool-command to add a typed command for this CLI tool."
+
+policy:
+  allow_implicit_invocation: false
