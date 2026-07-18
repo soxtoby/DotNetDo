@@ -6,11 +6,24 @@ static partial class TaskHelp
 {
     public static int Show(string taskName)
     {
-        var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
+        var catalog = TaskCatalog.Load();
+        if (catalog.TryGetMetaTask(taskName, out var invocations))
+        {
+            Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
+            Console.WriteLine();
+            Console.WriteLine("Invocations:");
+            foreach (var invocation in invocations)
+                Console.WriteLine($"  {invocation.TaskName}{(invocation.Arguments.Length == 0 ? "" : $" {invocation.Arguments}")}");
+            Console.WriteLine();
+            Console.WriteLine("Arguments are forwarded to each task.");
+            return 0;
+        }
+
+        var relativeFile = catalog.ScriptsPath / $"{taskName}.cs";
         var file = Do.RootDirectory / relativeFile;
         if (!file.IsExistingFile)
         {
-            Console.Error.WriteLine($"{relativeFile} does not exist.");
+            Console.Error.WriteLine($"Task '{taskName}' does not exist.");
             return 1;
         }
 

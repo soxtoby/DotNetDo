@@ -1,5 +1,6 @@
-using Tomlyn;
+using System.Text.Json.Serialization;
 using Tomlyn.Model;
+using Tomlyn.Serialization;
 
 namespace DotNetDo;
 
@@ -17,7 +18,7 @@ public static partial class Do
     /// <summary>Exposes the configured value or operation to task authors.</summary>
     public static AbsolutePath RootDirectory => WorkspaceRoot.Resolve(WorkingDirectory);
 
-    internal static RelativePath ScriptsPath => WorkspaceConfiguration.ReadScriptsPath(RootDirectory);
+    internal static RelativePath ScriptsPath => WorkspaceConfiguration.Load(RootDirectory).ScriptsPath;
 
     internal static AbsolutePath ScriptsDirectory => RootDirectory / ScriptsPath;
 }
@@ -32,20 +33,94 @@ sealed class WorkspaceRoot
             return _configured;
 
         for (var directory = workingDirectory; directory is not null; directory = directory.Parent)
-            if ((directory / "dotnetdo.toml").IsExistingFile)
+            if ((directory / WorkspaceConfiguration.FileName).IsExistingFile)
                 return _configured = directory;
 
         return workingDirectory;
     }
 }
 
-static class WorkspaceConfiguration
+sealed record WorkspaceConfiguration
 {
-    public static RelativePath ReadScriptsPath(AbsolutePath rootDirectory) =>
-        ReadRelativePath(Read(rootDirectory), rootDirectory, "scripts-path") ?? RelativePath.Parse("scripts");
+    public const string FileName = "dotnetdo.toml";
 
-    public static RelativePath? ReadSolutionPath(AbsolutePath rootDirectory) =>
-        ReadRelativePath(Read(rootDirectory), rootDirectory, "solution-path");
+    public required RelativePath ScriptsPath { get; init; }
+    public RelativePath? SolutionPath { get; init; }
+    public required IReadOnlyDictionary<string, string[]> MetaTasks { get; init; }
+
+    public static WorkspaceConfiguration Load(AbsolutePath rootDirectory)
+    {
+        var configurationFile = rootDirectory / FileName;
+        if (!configurationFile.IsExistingFile)
+            return new()
+                {
+                    ScriptsPath = RelativePath.Parse("scripts"),
+                    MetaTasks = new Dictionary<string, string[]>(StringComparer.Ordinal)
+                };
+
+        try
+        {
+            var document = configurationFile.ReadToml<WorkspaceConfigurationDocument>()
+                ?? throw new InvalidOperationException("TOML document produced no configuration.");
+
+            foreach (var (key, value) in document.ExtensionData)
+                if (value is not TomlTable)
+                    throw new DotNetDoConfigurationException($"Unknown DotNetDo setting '{key}' in '{configurationFile}'.");
+
+            return new()
+                {
+                    ScriptsPath = ReadRelativePath(document.ScriptsPath, configurationFile, "scripts-path") ?? RelativePath.Parse("scripts"),
+                    SolutionPath = ReadRelativePath(document.SolutionPath, configurationFile, "solution-path"),
+                    MetaTasks = ReadMetaTasks(document.Tasks, configurationFile)
+                };
+        }
+        catch (DotNetDoConfigurationException) { throw; }
+        catch (Exception exception)
+        {
+            throw new DotNetDoConfigurationException($"Invalid DotNetDo configuration in '{configurationFile}'.", exception);
+        }
+    }
+
+    static Dictionary<string, string[]> ReadMetaTasks(Dictionary<string, object?> tasks, AbsolutePath configurationFile)
+    {
+        var result = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        foreach (var (name, value) in tasks)
+        {
+            if (!TaskName.IsValid(name))
+                throw new DotNetDoConfigurationException($"Invalid meta-task name '{name}' in '{configurationFile}'. {TaskName.InvalidMessage}");
+
+            var invocations = value switch
+                {
+                    string invocation => [invocation],
+                    TomlArray array when array.All(item => item is string) => array.Cast<string>().ToArray(),
+                    _ => throw new DotNetDoConfigurationException($"Meta-task '{name}' in '{configurationFile}' must be a string or an array of strings.")
+                };
+
+            if (invocations.Length == 0 || invocations.Any(string.IsNullOrWhiteSpace))
+                throw new DotNetDoConfigurationException($"Meta-task '{name}' in '{configurationFile}' must contain at least one non-empty invocation.");
+
+            result.Add(name, invocations);
+        }
+
+        return result;
+    }
+
+    static RelativePath? ReadRelativePath(string? path, AbsolutePath configurationFile, string key)
+    {
+        if (path is null)
+            return null;
+        if (string.IsNullOrWhiteSpace(path))
+            throw new DotNetDoConfigurationException($"DotNetDo setting '{key}' in '{configurationFile}' must be a non-empty relative path.");
+
+        try
+        {
+            return ParseRootRelativePath(path);
+        }
+        catch (ArgumentException exception)
+        {
+            throw new DotNetDoConfigurationException($"DotNetDo setting '{key}' in '{configurationFile}' must remain within the root directory.", exception);
+        }
+    }
 
     public static RelativePath ParseRootRelativePath(string path)
     {
@@ -57,44 +132,19 @@ static class WorkspaceConfiguration
             : relativePath;
     }
 
-    static TomlTable Read(AbsolutePath rootDirectory)
+    sealed class WorkspaceConfigurationDocument
     {
-        var configurationFile = rootDirectory / "dotnetdo.toml";
-        if (!configurationFile.IsExistingFile)
-            return [];
+        [JsonPropertyName("scripts-path")]
+        public string? ScriptsPath { get; init; }
 
-        try
-        {
-            var configuration = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(configurationFile))
-                ?? throw new InvalidOperationException("TOML document produced no configuration.");
-            foreach (var (key, value) in configuration)
-                if (value is not TomlTable && key is not "scripts-path" and not "solution-path")
-                    throw new DotNetDoConfigurationException($"Unknown DotNetDo setting '{key}' in '{configurationFile}'.");
-            return configuration;
-        }
-        catch (DotNetDoConfigurationException) { throw; }
-        catch (Exception exception)
-        {
-            throw new DotNetDoConfigurationException($"Invalid DotNetDo configuration in '{configurationFile}'.", exception);
-        }
-    }
+        [JsonPropertyName("solution-path")]
+        public string? SolutionPath { get; init; }
 
-    static RelativePath? ReadRelativePath(TomlTable configuration, AbsolutePath rootDirectory, string key)
-    {
-        if (!configuration.TryGetValue(key, out var configuredPath))
-            return null;
-        var configurationFile = rootDirectory / "dotnetdo.toml";
-        if (configuredPath is not string path || string.IsNullOrWhiteSpace(path))
-            throw new DotNetDoConfigurationException($"DotNetDo setting '{key}' in '{configurationFile}' must be a non-empty relative path.");
+        [JsonPropertyName("tasks")]
+        public Dictionary<string, object?> Tasks { get; init; } = [];
 
-        try
-        {
-            return ParseRootRelativePath(path);
-        }
-        catch (ArgumentException exception)
-        {
-            throw new DotNetDoConfigurationException($"DotNetDo setting '{key}' in '{configurationFile}' must remain within the root directory.", exception);
-        }
+        [TomlExtensionData]
+        public Dictionary<string, object?> ExtensionData { get; init; } = [];
     }
 }
 

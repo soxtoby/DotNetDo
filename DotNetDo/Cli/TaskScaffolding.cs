@@ -1,23 +1,7 @@
-using System.Text.RegularExpressions;
-
 namespace DotNetDo.Cli;
 
-static partial class TaskScaffolding
+static class TaskScaffolding
 {
-    public const string InvalidNameMessage = "Task name must be a file stem using letters, numbers, '_', '-', or '.'. Do not include '.cs'.";
-
-    public static bool IsValidName(string name) =>
-        !name.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) && NameRegex().IsMatch(name);
-
-    public static string Template(string name) =>
-        $"""
-        #!/usr/bin/env dotnet
-        #:package DotNetDo.Core@*
-        using DotNetDo;
-
-        Console.WriteLine("Hello from {name}");
-        """;
-
     public static void Create(AbsolutePath file, string name)
     {
         var created = false;
@@ -39,6 +23,12 @@ static partial class TaskScaffolding
         }
     }
 
-    [GeneratedRegex("^[A-Za-z0-9_.-]+$")]
-    private static partial Regex NameRegex();
+    static string Template(string name) =>
+        $"""
+        #!/usr/bin/env dotnet
+        #:package DotNetDo.Core@*
+        using DotNetDo;
+
+        Console.WriteLine("Hello from {name}");
+        """;
 }

@@ -11,7 +11,7 @@ static class InitCommand
             return Fail("Usage: dotnet do :init");
 
         var root = AbsolutePath.Parse(Environment.CurrentDirectory);
-        var configurationFile = root / "dotnetdo.toml";
+        var configurationFile = root / WorkspaceConfiguration.FileName;
         if (configurationFile.IsExistingFile)
             return Fail($"{configurationFile} already exists.");
 
@@ -84,7 +84,7 @@ static class InitCommand
             throw;
         }
 
-        Console.WriteLine("Created dotnetdo.toml");
+        Console.WriteLine($"Created {WorkspaceConfiguration.FileName}");
         Console.WriteLine($"{(createdDirectories.Count != 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
         Console.WriteLine($"Created {scriptsPath.UnixPath}/{taskName}.cs");
         Console.WriteLine("Created do.cmd");
@@ -119,7 +119,7 @@ static class InitCommand
     {
         for (var directory = root.Parent; directory is not null; directory = directory.Parent)
         {
-            var configurationFile = directory / "dotnetdo.toml";
+            var configurationFile = directory / WorkspaceConfiguration.FileName;
             if (configurationFile.IsExistingFile)
                 return configurationFile;
         }
@@ -175,9 +175,9 @@ static class InitCommand
                 throw new InitializationCancelledException();
             if (input.Length == 0)
                 input = "build";
-            if (TaskScaffolding.IsValidName(input))
+            if (TaskName.IsValid(input))
                 return input;
-            Console.Error.WriteLine(TaskScaffolding.InvalidNameMessage);
+            Console.Error.WriteLine(TaskName.InvalidMessage);
         }
     }
 

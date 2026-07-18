@@ -42,7 +42,7 @@ public sealed class WorkspaceTests
     {
         using var workspace = Workspace.Create();
 
-        Assert.Equal(RelativePath.Parse("scripts"), WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+        Assert.Equal(RelativePath.Parse("scripts"), WorkspaceConfiguration.Load(workspace.Path).ScriptsPath);
     }
 
     [Theory]
@@ -54,7 +54,31 @@ public sealed class WorkspaceTests
         using var workspace = Workspace.Create();
         File.WriteAllText(workspace.Path / "dotnetdo.toml", configuration);
 
-        Assert.Equal(RelativePath.Parse(expected), WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+        Assert.Equal(RelativePath.Parse(expected), WorkspaceConfiguration.Load(workspace.Path).ScriptsPath);
+    }
+
+    [Fact]
+    public void Loads_typed_workspace_configuration()
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(
+            workspace.Path / "dotnetdo.toml",
+            """
+            scripts-path = "automation"
+            solution-path = "Product.slnx"
+
+            [tasks]
+            test = ["build", "test-csharp --no-build"]
+
+            [build]
+            configuration = "Release"
+            """);
+
+        var configuration = WorkspaceConfiguration.Load(workspace.Path);
+
+        Assert.Equal(RelativePath.Parse("automation"), configuration.ScriptsPath);
+        Assert.Equal(RelativePath.Parse("Product.slnx"), configuration.SolutionPath);
+        Assert.Equal(new[] { "build", "test-csharp --no-build" }, configuration.MetaTasks["test"]);
     }
 
     [Theory]
@@ -68,7 +92,7 @@ public sealed class WorkspaceTests
         using var workspace = Workspace.Create();
         File.WriteAllText(workspace.Path / "dotnetdo.toml", configuration);
 
-        Assert.Throws<DotNetDoConfigurationException>(() => WorkspaceConfiguration.ReadScriptsPath(workspace.Path));
+        Assert.Throws<DotNetDoConfigurationException>(() => WorkspaceConfiguration.Load(workspace.Path));
     }
 
     sealed class Workspace : IDisposable

@@ -15,7 +15,7 @@ static class RootCommand
                 ":new" => NewCommand.Run(args),
                 ":help" => HelpCommand.Run(args),
                 var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
-                var taskName => await RunCommand.RunAsync(taskName, args[1..])
+                var taskName => await RunCommand.RunTask(taskName, args[1..])
             };
         }
         catch (DotNetDoConfigurationException exception)

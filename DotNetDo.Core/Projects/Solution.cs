@@ -70,7 +70,7 @@ public sealed class Solution
 
     internal static Task<Solution> DiscoverAsync()
     {
-        var configuredPath = WorkspaceConfiguration.ReadSolutionPath(Do.RootDirectory);
+        var configuredPath = WorkspaceConfiguration.Load(Do.RootDirectory).SolutionPath;
         if (configuredPath is not null)
             return Load(Do.RootDirectory / configuredPath);
 

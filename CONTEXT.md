@@ -4,7 +4,7 @@
 
 ### DotNetDo configuration
 
-A committed `dotnetdo.toml` file containing shared configuration for scripts. Its containing directory establishes the DotNetDo root directory. Top-level keys are owned by DotNetDo; tables are reserved for parameter namespaces. Unknown top-level keys and invalid configuration fail operations that require configuration; values never silently fall back.
+A committed `dotnetdo.toml` file containing shared configuration for tasks. Its containing directory establishes the DotNetDo root directory. Top-level keys and the `tasks` table are owned by DotNetDo; other tables are parameter namespaces. Unknown top-level keys and invalid configuration fail operations that require configuration; values never silently fall back.
 
 ### Root directory
 
@@ -46,11 +46,33 @@ A file-backed project entry in a solution. Solution items are not projects; proj
 
 ## Task
 
-A directly runnable unit discovered by DotNetDo, implemented as a single C# source file. Future orchestration composes tasks.
+A named runnable unit discovered by DotNetDo. A task is either implemented as a single C# source file or defined as a meta-task in DotNetDo configuration.
 
 Generated tasks reference the DotNetDo.Core package and import the `DotNetDo` namespace by default.
 
 The initial DotNetDo API surface is intentionally tiny. Generated tasks reference it to establish a stable import path for future helpers.
+
+## Meta-task
+
+A task defined under the `tasks` table in DotNetDo configuration. A string value defines one task invocation; a string array defines an ordered sequence of task invocations. Each invocation parses its first token as the task name and preserves the remaining text as raw task arguments.
+
+Each invocation may supply fixed task arguments. Arguments supplied to the meta-task are inherited by every invocation and placed before its fixed arguments, giving fixed arguments precedence. Invocations run sequentially; the first failure stops execution and becomes the meta-task result. Meta-tasks have no cleanup or finally phase.
+
+Argument inheritance is unconditional. Invoked tasks using custom argument parsing must tolerate inherited arguments that may primarily concern sibling tasks.
+
+Meta-tasks express scenario-specific composition; DotNetDo does not track prerequisite satisfaction, infer freshness, or deduplicate task executions.
+
+Meta-task composition is static. It has no conditions, parallel execution, environment filters, or library API for dynamically invoking discovered tasks; complex automation remains C# task logic.
+
+DotNetDo resolves and traverses nested meta-tasks within the current tool process. Each invoked C# task still runs in a separate process with the same behavior as direct task execution; meta-task nesting does not recursively launch the DotNetDo tool.
+
+Configured meta-tasks and C# task files share one task-name namespace. Defining both with the same name is invalid configuration; neither representation takes precedence.
+
+Meta-tasks may invoke other meta-tasks. Every configured invocation must resolve to a task, and the complete configured graph must be acyclic; invalid references or cycles fail configuration loading before any task executes.
+
+A meta-task must contain at least one invocation. Empty arrays and empty or whitespace-only invocation strings are invalid configuration.
+
+Task help for a meta-task displays its authored invocation sequence and explains argument forwarding. It does not merge or infer parameter declarations from invoked tasks.
 
 ## Release automation
 
@@ -64,9 +86,9 @@ A tagged, immutable package version whose project version, changelog heading, Gi
 
 ## Task name
 
-The extensionless name of a task. A task name resolves only to `<scripts-path>/<task-name>.cs`; nested directories are not searched.
+The unique name of a C# task or configured meta-task. A C# task name resolves only to `<scripts-path>/<task-name>.cs`; nested directories are not searched.
 
-Task names are simple file stems: letters, numbers, `_`, `-`, and `.` are allowed; path separators and a `.cs` suffix are rejected.
+Task names use one grammar across both representations: letters, numbers, `_`, `-`, and `.` are allowed; path separators, a `.cs` suffix, and a leading `:` are rejected.
 
 ## Task arguments
 
@@ -96,7 +118,7 @@ The run command executes a task through SDK file execution, equivalent to `dotne
 
 ## Task list
 
-Running `dotnet do` with no arguments lists scripts directly inside the scripts path. Nested directories are not searched. A missing scripts path produces an empty list. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
+Running `dotnet do` with no arguments lists C# tasks directly inside the scripts path and meta-tasks from DotNetDo configuration together, alphabetically and without representation markers. Nested directories are not searched. A missing scripts path produces only configured meta-tasks. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
 
 ## New command
 

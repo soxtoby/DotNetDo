@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- Configured meta-tasks in `dotnetdo.toml` for composing ordered, fail-fast task sequences with argument forwarding.
+
 ## v0.2.0
 
 ### Changed

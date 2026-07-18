@@ -5,9 +5,9 @@ static class HelpCommand
     public static int Run(string[] args)
     {
         if (args.Length == 2)
-            return TaskScaffolding.IsValidName(args[1])
+            return TaskName.IsValid(args[1])
                 ? TaskHelp.Show(args[1])
-                : Fail(TaskScaffolding.InvalidNameMessage);
+                : Fail(TaskName.InvalidMessage);
 
         Console.WriteLine("""
             Usage:

@@ -8,8 +8,8 @@ static class NewCommand
             return Fail("Usage: dotnet do :new <name>");
 
         var taskName = args[1];
-        if (!TaskScaffolding.IsValidName(taskName))
-            return Fail(TaskScaffolding.InvalidNameMessage);
+        if (!TaskName.IsValid(taskName))
+            return Fail(TaskName.InvalidMessage);
 
         var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
         var file = Do.RootDirectory / relativeFile;
