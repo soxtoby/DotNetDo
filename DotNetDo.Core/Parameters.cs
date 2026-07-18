@@ -8,27 +8,15 @@ public static partial class Do
     static readonly Lazy<IConfiguration> ParameterConfiguration = new(CreateParameterConfiguration);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
-    public static Param<string> Param(string name) =>
-        new(name, ReadParam<string>(name), null);
-
-    /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
-    public static Param<string> Param(string name, string? defaultValue, string? description = null) =>
+    public static Param<string> Param(string name, string? defaultValue = null, string? description = null) =>
         new(name, defaultValue is null ? ReadParam<string>(name) : ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
-    public static Param<T> Param<T>(string name, string? description = null) =>
-        new(name, ReadParam<T>(name), description);
-
-    /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
     public static Param<T> Param<T>(string name, T defaultValue, string? description = null) =>
-        new(name, ReadParam<T>(name, defaultValue), description);
+        new(name, ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
-    public static SecretParam Secret(string name) =>
-        new(name, ReadSecret(name, null), null);
-
-    /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
-    public static SecretParam Secret(string name, string? defaultValue, string? description = null) =>
+    public static SecretParam Secret(string name, string? defaultValue = null, string? description = null) =>
         new(name, ReadSecret(name, defaultValue), description);
 
     static ParameterValue<T> ReadParam<T>(string name) =>
