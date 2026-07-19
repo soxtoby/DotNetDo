@@ -41,6 +41,7 @@ Add the command beside its peers under DotNetDo.Core/Tools/.
 - Model commands as sealed records. Introduce a base record only for genuinely shared CLI semantics.
 - For package tools, pass the package ID and exposed command to PackageToolCommand<TResult> and let its prefix/lifecycle stand. Keep versions in .config/dotnet-tools.json, adding a manifest entry only when this repository must execute the package.
 - Store structured options with SetArgument, SetArgumentArray, SetFlag, and SetEnum; read them through the matching getters.
+- Prefer DotNetDo helpers and value types over native framework APIs when they express the same operation, such as `AbsolutePath` composition and existence checks instead of `Path.Combine` and `File.Exists`.
 - Pass semantic values unquoted. Rendering quotes them. Use quote: false for intentional raw CLI fragments and AdditionalArguments as the raw escape hatch.
 - Put stable forced arguments in the constructor. Keep result conversion in ReadResult; the generic command boundary owns conversion error wrapping.
 - Document behavior, ownership, constraints, and gotchas in XML comments.

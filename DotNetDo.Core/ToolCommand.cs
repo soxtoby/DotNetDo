@@ -71,7 +71,11 @@ public abstract record ToolCommand : ExecOptions
             };
 
     /// <summary>Set enum.</summary>
-    protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetArgument(key, value?.ToString().ToLowerInvariant(), quote: false);
+    protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetEnum(key, "", value);
+
+    /// <summary>Set prefixed enum.</summary>
+    protected void SetEnum<T>(string key, string prefix, T? value) where T : struct, Enum =>
+        SetArgument(key, prefix, value?.ToString().ToLowerInvariant(), quote: false);
     
     /// <summary>Get enum.</summary>
     protected T? GetEnum<T>(string key) where T : struct, Enum => Enum.TryParse<T>(GetArgument(key), true, out var value) ? value : null;

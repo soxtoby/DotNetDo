@@ -74,6 +74,39 @@ public sealed class DotNetToolTests
         Assert.Equal("dotnet nuget push --timeout 1", fractionalTimeout.ToString());
     }
 
+    [Fact]
+    public void Renders_msbuild_with_located_toolset_and_typed_options()
+    {
+        var command = Tools.MSBuild with
+        {
+            Projects = ["My App.csproj"],
+            Targets = ["Clean", "Compile"],
+            Properties = new Dictionary<string, string> { ["Configuration"] = "Release Candidate" },
+            Verbosity = MSBuildVerbosity.Detailed,
+            MaxCpuCount = 4,
+            Restore = true,
+            NoLogo = true,
+            NodeReuse = false,
+        };
+
+        Assert.Equal(["My App.csproj"], command.Projects);
+        Assert.Equal(["Clean", "Compile"], command.Targets);
+        Assert.Equal("Release Candidate", command.Properties["Configuration"]);
+        Assert.Matches("^(?:\".*MSBuild\\.exe\"|dotnet \".*MSBuild\\.dll\") ", command.ToString());
+        Assert.EndsWith("\"My App.csproj\" -target:Clean;Compile -property:\"Configuration=Release Candidate\" -verbosity:detailed -maxCpuCount:4 -restore -noLogo -nodeReuse:false", command.ToString());
+    }
+
+    [Fact]
+    public void MSBuild_defaults_are_fresh_and_target_Do_Solution()
+    {
+        var first = Tools.MSBuild;
+        var second = Tools.MSBuild;
+
+        Assert.NotSame(first, second);
+        Assert.Equal([Do.Solution.Path], first.Projects);
+        Assert.EndsWith(Do.Solution.Path.QuotedArgument(), first.ToString());
+    }
+
     sealed record TestToolCommand : ExecToolCommand
     {
         protected override string CommandPrefix => "example";

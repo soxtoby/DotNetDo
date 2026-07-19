@@ -5,6 +5,7 @@
 ### Added
 - Configured meta-tasks in `dotnetdo.toml` for composing ordered, fail-fast task sequences with argument forwarding.
 - `Tools.DotNet.NuGetPush` for publishing NuGet packages.
+- `Tools.MSBuild` for running the MSBuild toolset discovered by MSBuild Locator.
 
 ### Changed
 - `Do.Secret` now returns `Secret`, `new Secret(value)` automatically registers the value for redaction, and the required wrapper is now named `RequiredSecret`.
