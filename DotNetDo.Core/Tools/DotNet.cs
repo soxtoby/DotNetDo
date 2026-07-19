@@ -16,6 +16,8 @@ public static partial class Tools
         public static DotNetFormat Format => new();
         /// <summary>Creates a new <see cref="DotNetPack"/> command definition.</summary>
         public static DotNetPack Pack => new();
+        /// <summary>Creates a new <see cref="DotNetNuGetPush"/> command definition.</summary>
+        public static DotNetNuGetPush NuGetPush => new();
         /// <summary>Creates a new <see cref="DotNetRestore"/> command definition.</summary>
         public static DotNetRestore Restore => new();
         /// <summary>Creates a new <see cref="DotNetTest"/> command definition.</summary>
@@ -154,6 +156,46 @@ public sealed record DotNetPack : DotNetBuildOptionsCommand
     public bool Serviceable { get => GetFlag("serviceable"); init => SetFlag("serviceable", "--serviceable", value); }
     /// <summary>Supplies the value emitted by the <c>--version</c> option.</summary>
     public string? Version { get => GetArgument("version"); init => SetArgument("version", "--version ", value); }
+}
+
+/// <summary>Builds a <c>dotnet nuget push</c> command.</summary>
+public sealed record DotNetNuGetPush : ExecToolCommand
+{
+    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
+    protected override string CommandPrefix => "dotnet nuget push";
+    /// <summary>Supplies the package path to push.</summary>
+    public string? Package { get => GetArgument("package"); init => SetArgument("package", value); }
+    /// <summary>Allows connections to package sources using HTTP.</summary>
+    public bool AllowInsecureConnections { get => GetFlag("allow-insecure-connections"); init => SetFlag("allow-insecure-connections", "--allow-insecure-connections", value); }
+    /// <summary>Disables buffering when pushing to an HTTP(S) server.</summary>
+    public bool DisableBuffering { get => GetFlag("disable-buffering"); init => SetFlag("disable-buffering", "--disable-buffering", value); }
+    /// <summary>Forces invariant English output.</summary>
+    public bool ForceEnglishOutput { get => GetFlag("force-english-output"); init => SetFlag("force-english-output", "--force-english-output", value); }
+    /// <summary>Allows the command to wait for interactive authentication or input.</summary>
+    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    /// <summary>Supplies the API key for the package source.</summary>
+    public string? ApiKey { get => GetArgument("api-key"); init => SetArgument("api-key", "--api-key ", value); }
+    /// <summary>Prevents symbol packages from being pushed.</summary>
+    public bool NoSymbols { get => GetFlag("no-symbols"); init => SetFlag("no-symbols", "--no-symbols", value); }
+    /// <summary>Prevents <c>api/v2/package</c> from being appended to the source URL.</summary>
+    public bool NoServiceEndpoint { get => GetFlag("no-service-endpoint"); init => SetFlag("no-service-endpoint", "--no-service-endpoint", value); }
+    /// <summary>Supplies the package source URL.</summary>
+    public string? Source { get => GetArgument("source"); init => SetArgument("source", "--source ", value); }
+    /// <summary>Skips packages whose version already exists at the source.</summary>
+    public bool SkipDuplicate { get => GetFlag("skip-duplicate"); init => SetFlag("skip-duplicate", "--skip-duplicate", value); }
+    /// <summary>Supplies the API key for the symbol source.</summary>
+    public string? SymbolApiKey { get => GetArgument("symbol-api-key"); init => SetArgument("symbol-api-key", "--symbol-api-key ", value); }
+    /// <summary>Supplies the symbol server URL.</summary>
+    public string? SymbolSource { get => GetArgument("symbol-source"); init => SetArgument("symbol-source", "--symbol-source ", value); }
+
+    /// <summary>Supplies the push timeout in seconds.</summary>
+    public TimeSpan? Timeout
+    {
+        get => GetInt("timeout") is { } seconds ? TimeSpan.FromSeconds(seconds) : null;
+        init => SetInt("timeout", "--timeout ", value is { } timeout ? (int)timeout.TotalSeconds : null);
+    }
+    /// <summary>Supplies the NuGet configuration file.</summary>
+    public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
 }
 
 /// <summary>Builds a <c>dotnet restore</c> command.</summary>

@@ -56,6 +56,24 @@ public sealed class DotNetToolTests
         Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --raw --first second", preQuoted.ToString());
     }
 
+    [Fact]
+    public void Renders_dotnet_nuget_push()
+    {
+        var command = Tools.DotNet.NuGetPush with
+        {
+            Package = "artifacts/My Package.nupkg",
+            Source = "https://api.nuget.org/v3/index.json",
+            ApiKey = "secret key",
+            SkipDuplicate = true,
+            Timeout = TimeSpan.FromMinutes(6),
+        };
+
+        Assert.Equal(TimeSpan.FromMinutes(6), command.Timeout);
+        Assert.Equal("dotnet nuget push \"artifacts/My Package.nupkg\" --source https://api.nuget.org/v3/index.json --api-key \"secret key\" --skip-duplicate --timeout 360", command.ToString());
+        var fractionalTimeout = Tools.DotNet.NuGetPush with { Timeout = TimeSpan.FromMilliseconds(1500) };
+        Assert.Equal("dotnet nuget push --timeout 1", fractionalTimeout.ToString());
+    }
+
     sealed record TestToolCommand : ExecToolCommand
     {
         protected override string CommandPrefix => "example";

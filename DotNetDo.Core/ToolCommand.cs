@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -92,6 +93,14 @@ public abstract record ToolCommand : ExecOptions
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         return _arguments.Get(key);
     }
+
+    /// <summary>Stores an integer argument using invariant formatting.</summary>
+    protected void SetInt(string key, string prefix, int? value) =>
+        SetArgument(key, prefix, value?.ToString(CultureInfo.InvariantCulture), quote: false);
+
+    /// <summary>Returns an integer argument parsed using invariant formatting.</summary>
+    protected int? GetInt(string key) =>
+        int.TryParse(GetArgument(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
 
     /// <inheritdoc />
     public sealed override string ToString()
