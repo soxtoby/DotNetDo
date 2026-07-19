@@ -1,3 +1,5 @@
+using Serilog.Events;
+
 namespace DotNetDo;
 
 /// <summary>Provides strongly typed definitions for supported command-line tools.</summary>
@@ -33,10 +35,16 @@ public static partial class Tools
 public abstract record DotNetTargetCommand : ExecToolCommand
 {
     /// <summary>Dot net target command.</summary>
-    protected DotNetTargetCommand() => Targets = [Do.Solution.Path];
+    protected DotNetTargetCommand()
+    {
+        Targets = [Do.Solution.Path];
+        Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
+    }
 
     /// <summary>Supplies the values emitted by the <c>--target</c> option.</summary>
     public IReadOnlyList<string> Targets { get => GetArgumentArray("target"); init => SetArgumentArray("target", "", value); }
+    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
+    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
 }
 
 /// <summary>Base command definition for .NET CLI commands sharing build options.</summary>
@@ -54,8 +62,6 @@ public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
     public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
     public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
     public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
@@ -100,8 +106,6 @@ public sealed record DotNetClean : DotNetTargetCommand
     public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
     public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
     public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
@@ -115,6 +119,12 @@ public sealed record DotNetClean : DotNetTargetCommand
 /// <summary>Builds a <c>dotnet dev-certs</c> command.</summary>
 public sealed record DotNetDevCerts : ExecToolCommand
 {
+    /// <summary>Creates a command with output volume derived from the current logging level.</summary>
+    public DotNetDevCerts()
+    {
+        (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
+    }
+
     /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
     protected override string CommandPrefix => "dotnet dev-certs https";
     /// <summary>Supplies the value emitted by the <c>--export-path</c> option.</summary>
@@ -225,8 +235,6 @@ public sealed record DotNetRestore : DotNetTargetCommand
     public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
     /// <summary>Controls emission of the <c>--no-dependencies</c> switch.</summary>
     public bool NoDependencies { get => GetFlag("no-dependencies"); init => SetFlag("no-dependencies", "--no-dependencies", value); }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
     public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
@@ -300,8 +308,6 @@ public sealed record DotNetTest : DotNetTargetCommand
     public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
     public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
     public string? Architecture { get => GetArgument("arch"); init => SetArgument("arch", "--arch ", value); }
     /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
@@ -313,6 +319,8 @@ public sealed record DotNetTest : DotNetTargetCommand
 /// <summary>Restores the .NET local tools in scope for the execution directory.</summary>
 public sealed record DotNetToolRestore : ExecToolCommand
 {
+    /// <summary>Creates a command with output volume derived from the current logging level.</summary>
+    public DotNetToolRestore() => Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
     /// <summary>The executable and subcommand prefix.</summary>
     protected override string CommandPrefix => "dotnet tool restore";
     /// <summary>The NuGet configuration file used exclusively for restore.</summary>
@@ -336,6 +344,13 @@ public sealed record DotNetToolRestore : ExecToolCommand
 /// <summary>Builds a <c>dotnet watch</c> command.</summary>
 public sealed record DotNetWatch : ExecToolCommand
 {
+    /// <summary>Creates a command with output volume derived from the current logging level.</summary>
+    public DotNetWatch()
+    {
+        (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
+        Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
+    }
+
     /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
     protected override string CommandPrefix => "dotnet watch";
     /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
@@ -397,8 +412,6 @@ public sealed record DotNetFormat : DotNetTargetCommand
     public IReadOnlyList<string> Exclude { get => GetArgumentArray("exclude"); init => SetArgumentArray("exclude", "--exclude ", value); }
     /// <summary>Controls emission of the <c>--include-generated</c> switch.</summary>
     public bool IncludeGenerated { get => GetFlag("include-generated"); init => SetFlag("include-generated", "--include-generated", value); }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
     /// <summary>Supplies the value emitted by the <c>--binarylog</c> option.</summary>
     public string? BinaryLog { get => GetArgument("binarylog"); init => SetArgument("binarylog", "--binarylog ", value); }
     /// <summary>Supplies the value emitted by the <c>--report</c> option.</summary>
@@ -414,4 +427,10 @@ public enum FormatCommand
     Style,
     /// <summary>Applies analyzer fixes.</summary>
     Analyzers,
+}
+
+static class DotNetOutputVolume
+{
+    public static (bool Quiet, bool Verbose) From(LogEventLevel level) =>
+        (level >= LogEventLevel.Warning, level <= LogEventLevel.Debug);
 }

@@ -152,7 +152,7 @@ The default log action passes the raw message to the redacting logger. DotNetDo'
 
 ## Logging bootstrap
 
-DotNetDo's module-initializer setup of the process-wide logger for tasks. When Serilog still has its default silent logger, DotNetDo installs an `Information`-minimum logger using its CI log sink; the task remains free to replace `Log.Logger` normally. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the task.
+DotNetDo's module-initializer setup of the process-wide logger for tasks. When Serilog still has its default silent logger, DotNetDo installs a logger using its CI log sink and `Logging.Level`, which defaults to `Information`; the task remains free to replace `Log.Logger` normally. `Logging.Level` remains DotNetDo's explicit task-wide output-volume preference when the logger is replaced, and fresh typed tool commands snapshot it into best-effort native volume controls. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the task.
 
 ## Redacting logger
 
@@ -203,6 +203,8 @@ Each concrete tool command owns the command-line rendering of its structured too
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
 
 Tool commands carry their own process working directory and output logging configuration. Raw command strings use separate Exec options because no command value exists to own that configuration.
+
+Fresh tool commands snapshot `Logging.Level` into dedicated native output-volume controls. Explicit typed values override or clear only their own control; raw additional arguments remain opaque.
 
 `Tools.Git` exposes default Git command values bound lazily through `Do.GitRepo`; a specific Git repository exposes equivalent values permanently bound to its root.
 

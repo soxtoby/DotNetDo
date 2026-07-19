@@ -43,7 +43,7 @@ public sealed class PackageToolTests
             Verbosity = "minimal",
         };
 
-        Assert.Equal("dotnet tool restore --add-source private --add-source mirror --disable-parallel --interactive --verbosity minimal", command.ToString());
+        Assert.Equal("dotnet tool restore --verbosity minimal --add-source private --add-source mirror --disable-parallel --interactive", command.ToString());
     }
 
     [Fact]

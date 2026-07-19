@@ -39,6 +39,7 @@ Add the command beside its peers under DotNetDo.Core/Tools/.
 - Use a nested static tool class for a command suite, such as Tools.DotNet.Build; use a direct getter for a single command, such as Tools.GitVersion.
 - Return new() from every default getter so each access is a fresh record.
 - Model commands as sealed records. Introduce a base record only for genuinely shared CLI semantics.
+- Model dedicated native output-volume controls such as verbosity, quiet, and verbose. Set their best-effort Logging.Level defaults in the constructor.
 - For package tools, pass the package ID and exposed command to PackageToolCommand<TResult> and let its prefix/lifecycle stand. Keep versions in .config/dotnet-tools.json, adding a manifest entry only when this repository must execute the package.
 - Store structured options with SetArgument, SetArgumentArray, SetFlag, and SetEnum; read them through the matching getters.
 - Prefer DotNetDo helpers and value types over native framework APIs when they express the same operation, such as `AbsolutePath` composition and existence checks instead of `Path.Combine` and `File.Exists`.
@@ -50,7 +51,7 @@ Complete when the public usage is terse, with-customizable, awaitable, and follo
 
 ## 5. Lock behavior
 
-Add focused tests covering the default render, every argument shape, values containing spaces, with replacement, and validation constraints. For a package tool, assert package ID, exposed command, and dotnet tool run rendering. For a typed result, test representative parsing and preservation of useful unknown fields when the format is extensible.
+Add focused tests covering the default render, every argument shape, values containing spaces, with replacement, and validation constraints. For native output-volume controls, cover Logging.Level mapping, creation-time snapshotting, per-control overrides, and clearing back to native behavior. For a package tool, assert package ID, exposed command, and dotnet tool run rendering. For a typed result, test representative parsing and preservation of useful unknown fields when the format is extensible.
 
 Update CHANGELOG.md. Run the focused tests, then the full test suite and build. Inspect the final diff for handwritten quoting, cached default records, embedded package versions, and unrelated changes.
 

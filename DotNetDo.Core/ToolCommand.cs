@@ -126,6 +126,9 @@ public abstract record ToolCommand : ExecOptions
     protected int? GetInt(string key) =>
         int.TryParse(GetArgument(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
 
+    /// <summary>Raw positional arguments emitted after structured argument slots.</summary>
+    private protected virtual string? TrailingArguments => null;
+
     /// <inheritdoc />
     public sealed override string ToString()
     {
@@ -135,6 +138,10 @@ public abstract record ToolCommand : ExecOptions
 
         foreach (var argument in _arguments.All)
             Append(command, argument);
+
+        var trailingArguments = TrailingArguments;
+        if (!string.IsNullOrWhiteSpace(trailingArguments))
+            Append(command, trailingArguments.Trim());
 
         if (!string.IsNullOrWhiteSpace(AdditionalArguments))
             Append(command, AdditionalArguments.Trim());

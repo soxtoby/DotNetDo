@@ -1,3 +1,5 @@
+using Serilog.Events;
+
 namespace DotNetDo;
 
 public static partial class Tools
@@ -10,7 +12,11 @@ public static partial class Tools
 public sealed record MSBuildCommand : ExecToolCommand
 {
     /// <summary>Creates an MSBuild invocation targeting <see cref="Do.Solution"/>.</summary>
-    public MSBuildCommand() => Projects = [Do.Solution.Path];
+    public MSBuildCommand()
+    {
+        Projects = [Do.Solution.Path];
+        Verbosity = MSBuildOutputVolume.Snapshot();
+    }
 
     /// <summary>Projects or solutions to build.</summary>
     public IReadOnlyList<string> Projects { get => GetArgumentArray("projects"); init => SetArgumentArray("projects", "", value); }
@@ -44,6 +50,21 @@ public sealed record MSBuildCommand : ExecToolCommand
     /// <summary>The located MSBuild executable, or the .NET host plus the located SDK MSBuild assembly.</summary>
     protected override string CommandPrefix => MSBuildToolset.MSBuild;
 
+}
+
+static class MSBuildOutputVolume
+{
+    public static MSBuildVerbosity Snapshot() => From(Logging.Level);
+
+    public static MSBuildVerbosity From(LogEventLevel level) => level switch
+        {
+            LogEventLevel.Verbose => MSBuildVerbosity.Diagnostic,
+            LogEventLevel.Debug => MSBuildVerbosity.Detailed,
+            LogEventLevel.Information => MSBuildVerbosity.Normal,
+            LogEventLevel.Warning => MSBuildVerbosity.Minimal,
+            LogEventLevel.Error or LogEventLevel.Fatal => MSBuildVerbosity.Quiet,
+            _ => throw new InvalidOperationException($"Unsupported logging level: {level}."),
+        };
 }
 
 /// <summary>MSBuild event-log verbosity levels.</summary>

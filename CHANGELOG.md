@@ -9,6 +9,7 @@
 - `Tools.VSTest` for running test containers with the VSTest runner discovered alongside the installed MSBuild toolset.
 
 ### Changed
+- `Logging.Level` now supplies best-effort native output-volume defaults to fresh typed tool commands, with explicit per-tool controls taking precedence.
 - `Do.Secret` now returns `Secret`, `new Secret(value)` automatically registers the value for redaction, and the required wrapper is now named `RequiredSecret`.
 - Typed tool commands now quote structured argument values automatically while preserving raw additional arguments.
 - `ToolCommand` supports integer arguments with invariant formatting.

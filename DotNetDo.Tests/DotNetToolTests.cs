@@ -17,11 +17,11 @@ public sealed class DotNetToolTests
         {
             Do.Solution = await Solution.Load(path, TestContext.Current.CancellationToken);
 
-            Assert.Equal($"dotnet build {path.QuotedArgument()}", Tools.DotNet.Build.ToString());
+            Assert.Equal($"dotnet build {path.QuotedArgument()} --verbosity normal", Tools.DotNet.Build.ToString());
             var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], Output = "test output" };
             Assert.Equal(["My App.csproj"], command.Targets);
             Assert.Equal("test output", command.Output);
-            Assert.Equal("dotnet test \"My App.csproj\" --output \"test output\"", command.ToString());
+            Assert.Equal("dotnet test \"My App.csproj\" --verbosity normal --output \"test output\"", command.ToString());
         }
         finally
         {
@@ -98,7 +98,7 @@ public sealed class DotNetToolTests
         Assert.Equal("Release Candidate", command.Properties["Configuration"]);
         Assert.Equal("Release Candidate", command.Properties["configuration"]);
         Assert.Matches("^(?:\".*MSBuild\\.exe\"|dotnet \".*MSBuild\\.dll\") ", command.ToString());
-        Assert.EndsWith("\"My App.csproj\" -target:Clean;Compile -property:\"Configuration=Release Candidate\" -verbosity:detailed -maxCpuCount:4 -restore -noLogo -nodeReuse:false", command.ToString());
+        Assert.EndsWith("\"My App.csproj\" -verbosity:detailed -target:Clean;Compile -property:\"Configuration=Release Candidate\" -maxCpuCount:4 -restore -noLogo -nodeReuse:false", command.ToString());
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public sealed class DotNetToolTests
 
         Assert.NotSame(first, second);
         Assert.Equal([Do.Solution.Path], first.Projects);
-        Assert.EndsWith(Do.Solution.Path.QuotedArgument(), first.ToString());
+        Assert.EndsWith($"{Do.Solution.Path.QuotedArgument()} -verbosity:normal", first.ToString());
     }
 
     [Fact]
