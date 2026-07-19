@@ -51,16 +51,15 @@ public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
     /// <summary>GitVersion configuration overrides; commit-date-format is reserved by the result contract.</summary>
     public IReadOnlyDictionary<string, string> OverrideConfig
     {
-        get;
+        get => GetArgumentDictionary("override-config");
         init
         {
             ArgumentNullException.ThrowIfNull(value);
             if (value.Keys.Any(key => key.Equals("commit-date-format", StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException("commit-date-format is reserved by the GitVersion result contract.", nameof(value));
-            field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
-            SetArgumentArray("override-config", "-overrideconfig ", value.Select(pair => $"{pair.Key}={pair.Value}").ToArray(), " -overrideconfig ");
+            SetArgumentDictionary("override-config", "-overrideconfig ", value, " -overrideconfig ", comparer: StringComparer.OrdinalIgnoreCase);
         }
-    } = new Dictionary<string, string>();
+    }
 
     /// <summary>The package-tool prefix plus positional target and credential arguments.</summary>
     protected override string CommandPrefix

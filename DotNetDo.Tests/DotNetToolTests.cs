@@ -34,26 +34,30 @@ public sealed class DotNetToolTests
     public void Tool_commands_quote_semantic_values_during_rendering()
     {
         var values = new List<string> { "one value", "" };
+        var entries = new Dictionary<string, string> { ["first=key"] = "first=value" };
         var command = new TestToolCommand
         {
             Value = "scalar value",
             Values = values,
+            Entries = entries,
             Raw = "--first second",
             Blank = "   ",
         };
         values[0] = "changed";
+        entries["first=key"] = "changed";
 
         Assert.Equal("scalar value", command.Value);
         Assert.Equal(["one value", ""], command.Values);
+        Assert.Equal("first=value", command.Entries["first=key"]);
         Assert.Equal("--first second", command.Raw);
         Assert.Equal("   ", command.Blank);
-        Assert.Equal("example --value \"scalar value\" --values \"one value\" --raw --first second", command.ToString());
+        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second", command.ToString());
 
         var replacement = command with { Blank = "later value" };
-        Assert.Equal("example --value \"scalar value\" --values \"one value\" --raw --first second --blank \"later value\"", replacement.ToString());
+        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second --blank \"later value\"", replacement.ToString());
 
         var preQuoted = command with { Value = "scalar value".QuotedArgument() };
-        Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --raw --first second", preQuoted.ToString());
+        Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second", preQuoted.ToString());
     }
 
     [Fact]
@@ -92,6 +96,7 @@ public sealed class DotNetToolTests
         Assert.Equal(["My App.csproj"], command.Projects);
         Assert.Equal(["Clean", "Compile"], command.Targets);
         Assert.Equal("Release Candidate", command.Properties["Configuration"]);
+        Assert.Equal("Release Candidate", command.Properties["configuration"]);
         Assert.Matches("^(?:\".*MSBuild\\.exe\"|dotnet \".*MSBuild\\.dll\") ", command.ToString());
         Assert.EndsWith("\"My App.csproj\" -target:Clean;Compile -property:\"Configuration=Release Candidate\" -verbosity:detailed -maxCpuCount:4 -restore -noLogo -nodeReuse:false", command.ToString());
     }
@@ -112,6 +117,7 @@ public sealed class DotNetToolTests
         protected override string CommandPrefix => "example";
         public string? Value { get => GetArgument("value"); init => SetArgument("value", "--value ", value); }
         public IReadOnlyList<string> Values { get => GetArgumentArray("values"); init => SetArgumentArray("values", "--values ", value); }
+        public IReadOnlyDictionary<string, string> Entries { get => GetArgumentDictionary("entries"); init => SetArgumentDictionary("entries", "--entries ", value); }
         public string? Raw { get => GetArgument("raw"); init => SetArgument("raw", "--raw ", value, quote: false); }
         public string? Blank { get => GetArgument("blank"); init => SetArgument("blank", "--blank ", value); }
     }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -13,7 +14,8 @@ public abstract record ToolCommand : ExecOptions
     protected ToolCommand() => _arguments = new ArgumentSlots();
 
     /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
-    protected ToolCommand(ToolCommand original) : base(original)
+    protected ToolCommand(ToolCommand original)
+        : base(original)
     {
         _arguments = original._arguments.Clone();
         AdditionalArguments = original.AdditionalArguments;
@@ -34,6 +36,24 @@ public abstract record ToolCommand : ExecOptions
         ArgumentNullException.ThrowIfNull(separator);
 
         _arguments.Set(key, prefix, values.ToArray(), separator, quote);
+    }
+
+    /// <summary>Stores semantic dictionary entries as key-value argument values.</summary>
+    protected void SetArgumentDictionary(string key, string prefix, IReadOnlyDictionary<string, string> values, string separator = " ", bool quote = true, IEqualityComparer<string>? comparer = null)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(prefix);
+        ArgumentNullException.ThrowIfNull(separator);
+
+        _arguments.SetDictionary(key, prefix, values, separator, quote, comparer);
+    }
+
+    /// <summary>Returns the semantic entries stored for a dictionary argument slot.</summary>
+    protected IReadOnlyDictionary<string, string> GetArgumentDictionary(string key)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        return _arguments.GetDictionary(key) ?? new Dictionary<string, string>();
     }
 
     /// <summary>Returns a snapshot of the semantic values stored for an argument slot.</summary>
@@ -76,7 +96,7 @@ public abstract record ToolCommand : ExecOptions
     /// <summary>Set prefixed enum.</summary>
     protected void SetEnum<T>(string key, string prefix, T? value) where T : struct, Enum =>
         SetArgument(key, prefix, value?.ToString().ToLowerInvariant(), quote: false);
-    
+
     /// <summary>Get enum.</summary>
     protected T? GetEnum<T>(string key) where T : struct, Enum => Enum.TryParse<T>(GetArgument(key), true, out var value) ? value : null;
 
@@ -140,11 +160,41 @@ public abstract record ToolCommand : ExecOptions
 
         public IReadOnlyList<string>? GetValues(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Values;
 
+        public IReadOnlyDictionary<string, string>? GetDictionary(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Entries;
+
         public void Set(string key, string prefix, string[]? values, string separator, bool quote)
         {
             var index = _arguments.FindIndex(argument => argument.Key == key);
-            var argument = new Argument(key, prefix, values, separator, quote);
+            var argument = new Argument
+                {
+                    Key = key,
+                    Prefix = prefix,
+                    Values = values,
+                    Separator = separator,
+                    Quote = quote,
+                };
 
+            Set(index, argument);
+        }
+
+        public void SetDictionary(string key, string prefix, IReadOnlyDictionary<string, string> values, string separator, bool quote, IEqualityComparer<string>? comparer)
+        {
+            var index = _arguments.FindIndex(argument => argument.Key == key);
+            var entries = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(values, comparer));
+            var argument = new Argument
+                {
+                    Key = key,
+                    Prefix = prefix,
+                    Entries = entries,
+                    Separator = separator,
+                    Quote = quote,
+                };
+
+            Set(index, argument);
+        }
+
+        void Set(int index, Argument argument)
+        {
             if (index >= 0)
                 _arguments[index] = argument;
             else
@@ -160,17 +210,26 @@ public abstract record ToolCommand : ExecOptions
 
         static string Render(Argument argument)
         {
-            var values = argument.Values?
+            var semanticValues = argument.Entries?.Select(pair => $"{pair.Key}={pair.Value}") ?? argument.Values ?? [];
+            var values = semanticValues
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Select(value => argument.Quote ? value.QuotedArgument() : value)
-                .ToArray() ?? [];
+                .ToArray();
 
             return values.Length == 0
                 ? ""
                 : argument.Prefix + string.Join(argument.Separator, values);
         }
 
-        sealed record Argument(string Key, string Prefix, string[]? Values, string Separator, bool Quote);
+        sealed record Argument
+        {
+            public required string Key { get; init; }
+            public required string Prefix { get; init; }
+            public string[]? Values { get; init; }
+            public IReadOnlyDictionary<string, string>? Entries { get; init; }
+            public required string Separator { get; init; }
+            public required bool Quote { get; init; }
+        }
     }
 }
 
@@ -218,6 +277,7 @@ public sealed class ToolOutputException(ExecResult result, Type expectedType, Ex
 {
     /// <summary>The raw successful process result, retained for inspection.</summary>
     public ExecResult Result { get; } = result;
+
     /// <summary>The semantic result type expected by the tool command.</summary>
     public Type ExpectedType { get; } = expectedType;
 }

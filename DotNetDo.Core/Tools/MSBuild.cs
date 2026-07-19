@@ -19,16 +19,7 @@ public sealed record MSBuildCommand : ExecToolCommand
     /// <summary>Targets to build, emitted as one semicolon-delimited target switch.</summary>
     public IReadOnlyList<string> Targets { get => GetArgumentArray("targets"); init => SetArgumentArray("targets", "-target:", value, ";"); }
     /// <summary>Project-level properties to set or override.</summary>
-    public IReadOnlyDictionary<string, string> Properties
-    {
-        get;
-        init
-        {
-            ArgumentNullException.ThrowIfNull(value);
-            field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
-            SetArgumentArray("properties", "-property:", value.Select(pair => $"{pair.Key}={pair.Value}").ToArray(), ";");
-        }
-    } = new Dictionary<string, string>();
+    public IReadOnlyDictionary<string, string> Properties { get => GetArgumentDictionary("properties"); init => SetArgumentDictionary("properties", "-property:", value, ";", comparer: StringComparer.OrdinalIgnoreCase); }
     /// <summary>Amount of information written to the build log.</summary>
     public MSBuildVerbosity? Verbosity { get => GetEnum<MSBuildVerbosity>("verbosity"); init => SetEnum("verbosity", "-verbosity:", value); }
     /// <summary>Maximum number of concurrent MSBuild processes; an omitted value uses one process.</summary>
