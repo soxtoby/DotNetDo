@@ -1,5 +1,3 @@
-using Microsoft.Build.Locator;
-
 namespace DotNetDo;
 
 public static partial class Tools
@@ -44,7 +42,7 @@ public sealed record MSBuildCommand : ExecToolCommand
     public bool? GraphBuild { get => GetFlag("graph-build", "-graphBuild:true", "-graphBuild:false"); init => SetFlag("graph-build", "-graphBuild:true", "-graphBuild:false", value); }
 
     /// <summary>The located MSBuild executable, or the .NET host plus the located SDK MSBuild assembly.</summary>
-    protected override string CommandPrefix => MSBuildExecutable.Resolve();
+    protected override string CommandPrefix => MSBuildToolset.MSBuild;
 
 }
 
@@ -61,28 +59,4 @@ public enum MSBuildVerbosity
     Detailed,
     /// <summary>Diagnostic build output.</summary>
     Diagnostic,
-}
-
-static class MSBuildExecutable
-{
-    static readonly Lazy<string> Command = new(Locate);
-
-    public static string Resolve() => Command.Value;
-
-    static string Locate()
-    {
-        var instance = MSBuildLocator.QueryVisualStudioInstances()
-            .OrderByDescending(candidate => candidate.Version)
-            .FirstOrDefault() ?? throw new InvalidOperationException("No MSBuild installation was found.");
-        var directory = AbsolutePath.Parse(instance.MSBuildPath);
-        var executable = directory / "MSBuild.exe";
-        if (executable.IsExistingFile)
-            return executable.QuotedArgument();
-
-        var assembly = directory / "MSBuild.dll";
-        if (assembly.IsExistingFile)
-            return $"dotnet {assembly.QuotedArgument()}";
-
-        throw new FileNotFoundException($"MSBuild was not found under '{directory}'.");
-    }
 }

@@ -36,13 +36,13 @@ public sealed class DotNetToolTests
         var values = new List<string> { "one value", "" };
         var entries = new Dictionary<string, string> { ["first=key"] = "first=value" };
         var command = new TestToolCommand
-        {
-            Value = "scalar value",
-            Values = values,
-            Entries = entries,
-            Raw = "--first second",
-            Blank = "   ",
-        };
+            {
+                Value = "scalar value",
+                Values = values,
+                Entries = entries,
+                Raw = "--first second",
+                Blank = "   ",
+            };
         values[0] = "changed";
         entries["first=key"] = "changed";
 
@@ -51,26 +51,26 @@ public sealed class DotNetToolTests
         Assert.Equal("first=value", command.Entries["first=key"]);
         Assert.Equal("--first second", command.Raw);
         Assert.Equal("   ", command.Blank);
-        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second", command.ToString());
+        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries first=key=first=value --raw --first second", command.ToString());
 
         var replacement = command with { Blank = "later value" };
-        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second --blank \"later value\"", replacement.ToString());
+        Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries first=key=first=value --raw --first second --blank \"later value\"", replacement.ToString());
 
         var preQuoted = command with { Value = "scalar value".QuotedArgument() };
-        Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --entries \"first=key=first=value\" --raw --first second", preQuoted.ToString());
+        Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --entries first=key=first=value --raw --first second", preQuoted.ToString());
     }
 
     [Fact]
     public void Renders_dotnet_nuget_push()
     {
         var command = Tools.DotNet.NuGetPush with
-        {
-            Package = "artifacts/My Package.nupkg",
-            Source = "https://api.nuget.org/v3/index.json",
-            ApiKey = "secret key",
-            SkipDuplicate = true,
-            Timeout = TimeSpan.FromMinutes(6),
-        };
+            {
+                Package = "artifacts/My Package.nupkg",
+                Source = "https://api.nuget.org/v3/index.json",
+                ApiKey = "secret key",
+                SkipDuplicate = true,
+                Timeout = TimeSpan.FromMinutes(6),
+            };
 
         Assert.Equal(TimeSpan.FromMinutes(6), command.Timeout);
         Assert.Equal("dotnet nuget push \"artifacts/My Package.nupkg\" --source https://api.nuget.org/v3/index.json --api-key \"secret key\" --skip-duplicate --timeout 360", command.ToString());
@@ -82,16 +82,16 @@ public sealed class DotNetToolTests
     public void Renders_msbuild_with_located_toolset_and_typed_options()
     {
         var command = Tools.MSBuild with
-        {
-            Projects = ["My App.csproj"],
-            Targets = ["Clean", "Compile"],
-            Properties = new Dictionary<string, string> { ["Configuration"] = "Release Candidate" },
-            Verbosity = MSBuildVerbosity.Detailed,
-            MaxCpuCount = 4,
-            Restore = true,
-            NoLogo = true,
-            NodeReuse = false,
-        };
+            {
+                Projects = ["My App.csproj"],
+                Targets = ["Clean", "Compile"],
+                Properties = new Dictionary<string, string> { ["Configuration"] = "Release Candidate" },
+                Verbosity = MSBuildVerbosity.Detailed,
+                MaxCpuCount = 4,
+                Restore = true,
+                NoLogo = true,
+                NodeReuse = false,
+            };
 
         Assert.Equal(["My App.csproj"], command.Projects);
         Assert.Equal(["Clean", "Compile"], command.Targets);
@@ -110,6 +110,62 @@ public sealed class DotNetToolTests
         Assert.NotSame(first, second);
         Assert.Equal([Do.Solution.Path], first.Projects);
         Assert.EndsWith(Do.Solution.Path.QuotedArgument(), first.ToString());
+    }
+
+    [Fact]
+    public void Renders_vstest_with_located_runner_and_typed_options()
+    {
+        var command = Tools.VSTest with
+            {
+                TestFiles = ["tests/My Tests.dll", "tests/Other.Tests.dll"],
+                Tests = ["Product.Tests.Can ship", "Product.Tests.CanRetry"],
+                Framework = ".NETCoreApp,Version=v10.0",
+                Platform = VSTestPlatform.X64,
+                Environment = new Dictionary<string, string> { ["DEPLOYMENT_SLOT"] = "Release Candidate" },
+                Settings = "config/CI Tests.runsettings",
+                Parallel = true,
+                TestAdapterPath = "test adapters",
+                Blame = true,
+                Diag = "logs/vstest log.txt;tracelevel=info",
+                Loggers = ["trx;LogFileName=CI Results.trx", "console;verbosity=detailed"],
+                ResultsDirectory = "test results",
+                Collect = ["Code Coverage", "XPlat Code Coverage"],
+                InIsolation = true,
+            };
+
+        Assert.Equal(["tests/My Tests.dll", "tests/Other.Tests.dll"], command.TestFiles);
+        Assert.Equal(["Product.Tests.Can ship", "Product.Tests.CanRetry"], command.Tests);
+        Assert.Equal("Release Candidate", command.Environment["deployment_slot"]);
+        Assert.Matches("^(?:\".*vstest\\.console\\.exe\"|dotnet \".*vstest\\.console\\.dll\") ", command.ToString());
+        Assert.EndsWith(
+            "\"tests/My Tests.dll\" tests/Other.Tests.dll --Tests:\"Product.Tests.Can ship\",Product.Tests.CanRetry --Framework:.NETCoreApp,Version=v10.0 --Platform:x64 -e:\"DEPLOYMENT_SLOT=Release Candidate\" --Settings:\"config/CI Tests.runsettings\" --Parallel --TestAdapterPath:\"test adapters\" --Blame --Diag:\"logs/vstest log.txt;tracelevel=info\" --Logger:\"trx;LogFileName=CI Results.trx\" --Logger:console;verbosity=detailed --ResultsDirectory:\"test results\" --Collect:\"Code Coverage\" --Collect:\"XPlat Code Coverage\" --InIsolation",
+            command.ToString());
+    }
+
+    [Fact]
+    public void VSTest_defaults_are_fresh_and_filters_are_mutually_exclusive()
+    {
+        var first = Tools.VSTest;
+        var second = Tools.VSTest;
+
+        Assert.NotSame(first, second);
+        Assert.Empty(first.TestFiles);
+        var command = first with { Tests = ["CanShip"], TestCaseFilter = "Priority=1" };
+        Assert.Throws<InvalidOperationException>(() => command.ToString());
+
+        var alternate = second with
+            {
+                TestFiles = ["tests.dll"],
+                TestCaseFilter = "Category=Continuous Integration",
+                ListTests = true,
+                TestAdapterLoadingStrategy = "Explicit",
+                ParentProcessId = 123,
+                Port = 456,
+                AdditionalArguments = "-- custom.runSetting=true",
+            };
+        Assert.EndsWith(
+            "tests.dll --TestCaseFilter:\"Category=Continuous Integration\" --ListTests --TestAdapterLoadingStrategy:Explicit --ParentProcessId:123 --Port:456 -- custom.runSetting=true",
+            alternate.ToString());
     }
 
     sealed record TestToolCommand : ExecToolCommand
