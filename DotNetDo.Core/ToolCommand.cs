@@ -1,242 +1,99 @@
 using System.Globalization;
-using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace DotNetDo;
 
 /// <summary>Base value object for rendering and awaiting a command-line tool invocation.</summary>
 public abstract record ToolCommand : ExecOptions
 {
-    readonly ArgumentSlots _arguments;
-
-    /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
-    protected ToolCommand() => _arguments = new ArgumentSlots();
-
-    /// <summary>Initializes command rendering state, cloning it when copied as a record.</summary>
-    protected ToolCommand(ToolCommand original)
-        : base(original)
-    {
-        _arguments = original._arguments.Clone();
-        AdditionalArguments = original.AdditionalArguments;
-    }
-
     /// <summary>Unstructured arguments appended after typed options.</summary>
     public string? AdditionalArguments { get; init; }
 
-    /// <summary>Gets or sets command prefix.</summary>
-    protected abstract string CommandPrefix { get; }
+    /// <summary>Gets every canonically ordered rendered command fragment.</summary>
+    protected abstract IReadOnlyList<string?> CommandParts { get; }
 
-    /// <summary>Stores semantic argument values, quoting each during rendering unless disabled.</summary>
-    protected void SetArgumentArray(string key, string prefix, IReadOnlyCollection<string> values, string separator = " ", bool quote = true)
-    {
-        ArgumentNullException.ThrowIfNull(values);
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        ArgumentNullException.ThrowIfNull(prefix);
-        ArgumentNullException.ThrowIfNull(separator);
+    /// <summary>Renders an argument when enabled.</summary>
+    protected static string? Arg(string argument, bool value) => value ? argument : null;
 
-        _arguments.Set(key, prefix, values.ToArray(), separator, quote);
-    }
-
-    /// <summary>Stores semantic dictionary entries as key-value argument values.</summary>
-    protected void SetArgumentDictionary(string key, string prefix, IReadOnlyDictionary<string, string> values, string separator = " ", bool quote = true, IEqualityComparer<string>? comparer = null)
-    {
-        ArgumentNullException.ThrowIfNull(values);
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        ArgumentNullException.ThrowIfNull(prefix);
-        ArgumentNullException.ThrowIfNull(separator);
-
-        _arguments.SetDictionary(key, prefix, values, separator, quote, comparer);
-    }
-
-    /// <summary>Returns the semantic entries stored for a dictionary argument slot.</summary>
-    protected IReadOnlyDictionary<string, string> GetArgumentDictionary(string key)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        return _arguments.GetDictionary(key) ?? new Dictionary<string, string>();
-    }
-
-    /// <summary>Returns a snapshot of the semantic values stored for an argument slot.</summary>
-    protected IReadOnlyList<string> GetArgumentArray(string key)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        return _arguments.GetValues(key) ?? [];
-    }
-
-    /// <summary>Set flag.</summary>
-    protected void SetFlag(string key, string flag, bool value) => SetArgument(key, value ? flag : null, quote: false);
-
-    /// <summary>Get flag.</summary>
-    protected bool GetFlag(string key) => GetArgument(key) is not null;
-
-    /// <summary>Set flag.</summary>
-    protected void SetFlag(string key, string trueValue, string falseValue, bool? value) =>
-        SetArgument(
-            key,
-            value switch
-                {
-                    true => trueValue,
-                    false => falseValue,
-                    null => null
-                },
-            quote: false);
-
-    /// <summary>Get flag.</summary>
-    protected bool? GetFlag(string key, string trueValue, string falseValue) =>
-        GetArgument(key) switch
+    /// <summary>Renders one of two arguments for a nullable choice.</summary>
+    protected static string? Arg(string trueValue, string falseValue, bool? value) =>
+        value switch
             {
-                var value when value == trueValue => true,
-                var value when value == falseValue => false,
-                _ => null
+                true => trueValue,
+                false => falseValue,
+                null => null,
             };
 
-    /// <summary>Set enum.</summary>
-    protected void SetEnum<T>(string key, T? value) where T : struct, Enum => SetEnum(key, "", value);
+    /// <summary>Renders one typed positional semantic value.</summary>
+    protected static string? Arg<T>(T? value, bool quote = true) => Arg("", value, quote);
 
-    /// <summary>Set prefixed enum.</summary>
-    protected void SetEnum<T>(string key, string prefix, T? value) where T : struct, Enum =>
-        SetArgument(key, prefix, value?.ToString().ToLowerInvariant(), quote: false);
-
-    /// <summary>Get enum.</summary>
-    protected T? GetEnum<T>(string key) where T : struct, Enum => Enum.TryParse<T>(GetArgument(key), true, out var value) ? value : null;
-
-    /// <summary>Stores a semantic argument value, quoting it during rendering unless disabled.</summary>
-    protected void SetArgument(string key, string? value, bool quote = true) => SetArgument(key, "", value, quote);
-
-    /// <summary>Stores a prefixed semantic argument value, quoting it during rendering unless disabled.</summary>
-    protected void SetArgument(string key, string prefix, string? value, bool quote = true)
+    /// <summary>Renders one typed semantic value.</summary>
+    protected static string? Arg<T>(string prefix, T? value, bool quote = true)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(prefix);
-        _arguments.Set(key, prefix, value is null ? null : [value], " ", quote);
+        var rendered = Convert(value);
+        return string.IsNullOrWhiteSpace(rendered)
+            ? null
+            : RenderPrefix(prefix) + (quote ? rendered.QuotedArgument() : rendered);
     }
 
-    /// <summary>Returns the exact semantic value stored for an argument slot.</summary>
-    protected string? GetArgument(string key)
+    /// <summary>Renders typed semantic values independently, then joins them.</summary>
+    protected static string? Args<T>(string prefix, IEnumerable<T> values, string separator = " ", bool quote = true)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        return _arguments.Get(key);
+        ArgumentNullException.ThrowIfNull(prefix);
+        ArgumentNullException.ThrowIfNull(values);
+        ArgumentNullException.ThrowIfNull(separator);
+
+        var rendered = values
+            .Select(Convert)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => quote ? value!.QuotedArgument() : value!)
+            .ToArray();
+
+        return rendered.Length == 0
+            ? null
+            : RenderPrefix(prefix) + string.Join(separator, rendered);
     }
 
-    /// <summary>Stores an integer argument using invariant formatting.</summary>
-    protected void SetInt(string key, string prefix, int? value) =>
-        SetArgument(key, prefix, value?.ToString(CultureInfo.InvariantCulture), quote: false);
-
-    /// <summary>Returns an integer argument parsed using invariant formatting.</summary>
-    protected int? GetInt(string key) =>
-        int.TryParse(GetArgument(key), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
-
-    /// <summary>Raw positional arguments emitted after structured argument slots.</summary>
-    private protected virtual string? TrailingArguments => null;
+    /// <summary>Renders typed positional semantic values independently, then joins them.</summary>
+    protected static string? Args<T>(IEnumerable<T> values, string separator = " ", bool quote = true) =>
+        Args("", values, separator, quote);
 
     /// <inheritdoc />
     public sealed override string ToString()
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(CommandPrefix);
+        var commandParts = CommandParts;
+        ArgumentNullException.ThrowIfNull(commandParts);
+        var parts = commandParts
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .Select(part => part!.Trim())
+            .ToArray();
 
-        var command = new StringBuilder(CommandPrefix.Trim());
+        if (parts.Length == 0)
+            throw new InvalidOperationException("A tool command must contain at least one command part.");
 
-        foreach (var argument in _arguments.All)
-            Append(command, argument);
-
-        var trailingArguments = TrailingArguments;
-        if (!string.IsNullOrWhiteSpace(trailingArguments))
-            Append(command, trailingArguments.Trim());
-
-        if (!string.IsNullOrWhiteSpace(AdditionalArguments))
-            Append(command, AdditionalArguments.Trim());
-
-        return command.ToString();
+        return string.Join(
+            " ",
+            parts
+                .Append(AdditionalArguments)
+                .Where(part => !string.IsNullOrWhiteSpace(part))
+                .Select(part => part!.Trim()));
     }
 
-    static void Append(StringBuilder command, string argument)
+    static string? Convert<T>(T? value) =>
+        value switch
+            {
+                null => null,
+                Enum enumValue => enumValue.ToString().ToLowerInvariant(),
+                IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                _ => value.ToString()
+            };
+
+    static string RenderPrefix(string prefix)
     {
-        command.Append(' ');
-        command.Append(argument);
-    }
-
-    sealed class ArgumentSlots
-    {
-        readonly List<Argument> _arguments = [];
-
-        public IEnumerable<string> All => _arguments
-            .Select(Render)
-            .Where(argument => !string.IsNullOrWhiteSpace(argument));
-
-        public string? Get(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Values?.FirstOrDefault();
-
-        public IReadOnlyList<string>? GetValues(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Values;
-
-        public IReadOnlyDictionary<string, string>? GetDictionary(string key) => _arguments.FirstOrDefault(argument => argument.Key == key)?.Entries;
-
-        public void Set(string key, string prefix, string[]? values, string separator, bool quote)
-        {
-            var index = _arguments.FindIndex(argument => argument.Key == key);
-            var argument = new Argument
-                {
-                    Key = key,
-                    Prefix = prefix,
-                    Values = values,
-                    Separator = separator,
-                    Quote = quote,
-                };
-
-            Set(index, argument);
-        }
-
-        public void SetDictionary(string key, string prefix, IReadOnlyDictionary<string, string> values, string separator, bool quote, IEqualityComparer<string>? comparer)
-        {
-            var index = _arguments.FindIndex(argument => argument.Key == key);
-            var entries = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(values, comparer));
-            var argument = new Argument
-                {
-                    Key = key,
-                    Prefix = prefix,
-                    Entries = entries,
-                    Separator = separator,
-                    Quote = quote,
-                };
-
-            Set(index, argument);
-        }
-
-        void Set(int index, Argument argument)
-        {
-            if (index >= 0)
-                _arguments[index] = argument;
-            else
-                _arguments.Add(argument);
-        }
-
-        public ArgumentSlots Clone()
-        {
-            var clone = new ArgumentSlots();
-            clone._arguments.AddRange(_arguments);
-            return clone;
-        }
-
-        static string Render(Argument argument)
-        {
-            var semanticValues = argument.Entries?.Select(pair => $"{pair.Key}={pair.Value}") ?? argument.Values ?? [];
-            var values = semanticValues
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => argument.Quote ? value.QuotedArgument() : value)
-                .ToArray();
-
-            return values.Length == 0
-                ? ""
-                : argument.Prefix + string.Join(argument.Separator, values);
-        }
-
-        sealed record Argument
-        {
-            public required string Key { get; init; }
-            public required string Prefix { get; init; }
-            public string[]? Values { get; init; }
-            public IReadOnlyDictionary<string, string>? Entries { get; init; }
-            public required string Separator { get; init; }
-            public required bool Quote { get; init; }
-        }
+        if (prefix.Length != prefix.Trim().Length)
+            throw new ArgumentException("Argument prefixes cannot contain leading or trailing whitespace.", nameof(prefix));
+        return prefix.Length == 0 || prefix[^1] is ':' or '=' or ',' ? prefix : prefix + " ";
     }
 }
 

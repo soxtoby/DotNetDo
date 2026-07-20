@@ -122,7 +122,7 @@ public sealed class PackageToolTests
 
     sealed record FailingCommand(ExecResult Result) : ToolCommand<string>
     {
-        protected override string CommandPrefix => "example";
+        protected override IReadOnlyList<string?> CommandParts => ["example"];
         protected override Task<ExecResult> ExecuteCommandAsync() => Task.FromResult(Result);
         protected override string ReadResult(ExecResult result) =>
             result.ReadJson<string>() ?? throw new JsonException("No value.");

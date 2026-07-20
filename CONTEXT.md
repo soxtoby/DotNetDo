@@ -176,13 +176,19 @@ _Avoid_: Universal CI API, provider-neutral command
 
 ## Additional arguments
 
-Raw argument text appended after a configured tool command's structured argument slots.
+Raw argument text appended after a configured tool command's structured argument parts.
 
 ## Structured tool argument
 
 A semantic value exposed by a tool command's typed properties. Property getters preserve that authored value; the owning tool command renders it as one or more command-line-safe arguments. Callers do not pre-format or quote it.
 
+Each concrete tool command defines one canonical order for its structured arguments. Rendering is independent of property assignment order.
+
 Each element of a structured argument list represents exactly one command-line argument and is rendered independently. Intentional multi-argument syntax belongs in additional arguments.
+
+Canonical command ordering determines where a structured argument collection is rendered, but preserves that collection's authored iteration order.
+
+Concrete commands snapshot caller-owned structured argument collections so later external mutation cannot change the command value.
 
 When a tool command combines values into one structured argument, it constructs the complete semantic argument before rendering and quoting it once.
 
@@ -198,7 +204,11 @@ _Avoid_: Installed-tool wrapper, dotnet tool wrapper
 
 A typed immutable record that describes an executable external tool command.
 
-Each concrete tool command owns the command-line rendering of its structured tool arguments. Generic argument setters quote semantic values by default; a concrete command explicitly disables quoting for raw syntax. Additional arguments remain raw.
+Each concrete tool command owns the command-line rendering and canonical order of its structured tool arguments. Shared rendering helpers quote semantic values by default; a concrete command explicitly renders raw syntax. Additional arguments remain raw.
+
+Structured argument values live in the concrete command's ordinary properties. The shared tool-command base stores no structured argument state.
+
+Command parts include the executable, subcommand, execution context, and property-derived arguments in their complete canonical order.
 
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
 
@@ -212,12 +222,8 @@ Awaiting a tool command executes it through the Exec helper and requires a succe
 
 Shared tool command option groups may be modeled as public non-generic base records when the underlying tool itself shares those options across commands.
 
-## Argument slot
-
-A tool command text fragment keyed by the concrete helper. The first use of a slot key fixes its command order, later uses of the same key replace the emitted text, and clearing an existing slot suppresses its text without changing surrounding slot order.
-
-When multiple config properties write the same argument slot, the later write wins.
-
 ## Custom command
 
 Raw positional command text used when a configured tool command has a known closed set of subcommands but must allow future or unsupported subcommands.
+
+When supplied alongside the typed command selection, the custom command deterministically controls rendering regardless of property assignment order.

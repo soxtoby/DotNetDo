@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -13,73 +14,73 @@ public static partial class Tools
 public sealed record GitVersionCommand : PackageToolCommand<GitVersionResult>
 {
     /// <summary>Creates the default GitVersion invocation with JSON output and round-trip commit dates.</summary>
-    public GitVersionCommand() : base("GitVersion.Tool", "dotnet-gitversion")
-    {
-        SetArgument("output", "-output ", "json");
-        SetArgument("commit-date-format", "-overrideconfig ", "commit-date-format=O");
-    }
+    public GitVersionCommand() : base("GitVersion.Tool", "dotnet-gitversion") { }
 
     /// <summary>The repository to inspect; the execution directory is used when omitted.</summary>
     public AbsolutePath? TargetPath { get; init; }
     /// <summary>The GitVersion configuration file.</summary>
-    public AbsolutePath? Config { get => ParsePath(GetArgument("config")); init => SetPath("config", "-config ", value); }
+    public AbsolutePath? Config { get; init; }
     /// <summary>Whether remote fetching is disabled.</summary>
-    public bool NoFetch { get => GetFlag("nofetch"); init => SetFlag("nofetch", "-nofetch", value); }
+    public bool NoFetch { get; init; }
     /// <summary>Whether GitVersion's cache is disabled.</summary>
-    public bool NoCache { get => GetFlag("nocache"); init => SetFlag("nocache", "-nocache", value); }
+    public bool NoCache { get; init; }
     /// <summary>Whether shallow repositories are accepted.</summary>
-    public bool AllowShallow { get => GetFlag("allowshallow"); init => SetFlag("allowshallow", "-allowshallow", value); }
+    public bool AllowShallow { get; init; }
     /// <summary>Whether build-server repository normalization is disabled.</summary>
-    public bool NoNormalize { get => GetFlag("nonormalize"); init => SetFlag("nonormalize", "-nonormalize", value); }
+    public bool NoNormalize { get; init; }
     /// <summary>Whether diagnostic processing is enabled.</summary>
-    public bool Diagnostic { get => GetFlag("diag"); init => SetFlag("diag", "-diag", value); }
+    public bool Diagnostic { get; init; }
     /// <summary>The diagnostic log output file.</summary>
-    public AbsolutePath? LogFile { get => ParsePath(GetArgument("logfile")); init => SetPath("logfile", "-l ", value); }
+    public AbsolutePath? LogFile { get; init; }
     /// <summary>The remote repository URL.</summary>
-    public string? Url { get => GetArgument("url"); init => SetArgument("url", "-url ", value); }
+    public string? Url { get; init; }
     /// <summary>The remote branch name.</summary>
-    public string? Branch { get => GetArgument("branch"); init => SetArgument("branch", "-b ", value); }
+    public string? Branch { get; init; }
     /// <summary>The remote repository username.</summary>
-    public string? Username { get => GetArgument("username"); init => SetArgument("username", "-u ", value); }
+    public string? Username { get; init; }
     /// <summary>The redacted remote repository password.</summary>
     public RequiredSecret? Password { get; init; }
     /// <summary>The remote commit to inspect.</summary>
-    public string? Commit { get => GetArgument("commit"); init => SetArgument("commit", "-c ", value); }
+    public string? Commit { get; init; }
     /// <summary>The directory used for a dynamically cloned remote repository.</summary>
-    public AbsolutePath? DynamicRepositoryLocation { get => ParsePath(GetArgument("dynamic-repository-location")); init => SetPath("dynamic-repository-location", "-dynamicRepoLocation ", value); }
+    public AbsolutePath? DynamicRepositoryLocation { get; init; }
 
     /// <summary>GitVersion configuration overrides; commit-date-format is reserved by the result contract.</summary>
-    public IReadOnlyDictionary<string, string> OverrideConfig
-    {
-        get => GetArgumentDictionary("override-config");
-        init
-        {
-            ArgumentNullException.ThrowIfNull(value);
-            if (value.Keys.Any(key => key.Equals("commit-date-format", StringComparison.OrdinalIgnoreCase)))
-                throw new ArgumentException("commit-date-format is reserved by the GitVersion result contract.", nameof(value));
-            SetArgumentDictionary("override-config", "-overrideconfig ", value, " -overrideconfig ", comparer: StringComparer.OrdinalIgnoreCase);
-        }
-    }
+    public IReadOnlyDictionary<string, string> OverrideConfig { get; init => field = SnapshotOverrideConfig(value); } = ReadOnlyDictionary<string, string>.Empty;
 
     /// <summary>The package-tool prefix plus positional target and credential arguments.</summary>
-    protected override string CommandPrefix
-    {
-        get
-        {
-            var command = base.CommandPrefix;
-            if (TargetPath is not null)
-                command += " " + TargetPath.QuotedArgument();
-            if (Password is { } password)
-                command += " -p " + password.Unwrap().QuotedArgument();
-            return command;
-        }
-    }
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            ..base.CommandParts,
+            Arg(TargetPath),
+            Arg("-p", Password?.Unwrap()),
+            Arg("-output", "json"),
+            Arg("-overrideconfig", "commit-date-format=O"),
+            Arg("-config", Config),
+            Arg("-nofetch", NoFetch),
+            Arg("-nocache", NoCache),
+            Arg("-allowshallow", AllowShallow),
+            Arg("-nonormalize", NoNormalize),
+            Arg("-diag", Diagnostic),
+            Arg("-l", LogFile),
+            Arg("-url", Url),
+            Arg("-b", Branch),
+            Arg("-u", Username),
+            Arg("-c", Commit),
+            Arg("-dynamicRepoLocation", DynamicRepositoryLocation),
+            Args("-overrideconfig", OverrideConfig.Select(pair => $"{pair.Key}={pair.Value}"), " -overrideconfig "),
+        ];
 
     /// <inheritdoc />
     protected override GitVersionResult ReadResult(ExecResult result) => GitVersionResult.Parse(result);
 
-    void SetPath(string key, string prefix, AbsolutePath? value) => SetArgument(key, prefix, value?.ToString());
-    static AbsolutePath? ParsePath(string? value) => value is null ? null : AbsolutePath.Parse(value);
+    static IReadOnlyDictionary<string, string> SnapshotOverrideConfig(IReadOnlyDictionary<string, string> value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return !value.Keys.Any(key => key.Equals("commit-date-format", StringComparison.OrdinalIgnoreCase))
+            ? new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase).AsReadOnly()
+            : throw new ArgumentException("commit-date-format is reserved by the GitVersion result contract.", nameof(value));
+    }
 }
 
 /// <summary>The semantic version variables emitted by GitVersion.</summary>

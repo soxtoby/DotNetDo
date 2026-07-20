@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Serilog.Events;
 
 namespace DotNetDo;
@@ -19,37 +20,53 @@ public sealed record MSBuildCommand : ExecToolCommand
     }
 
     /// <summary>Projects or solutions to build.</summary>
-    public IReadOnlyList<string> Projects { get => GetArgumentArray("projects"); init => SetArgumentArray("projects", "", value); }
+    public IReadOnlyList<string> Projects { get; init => field = value.ToArray(); } = [];
     /// <summary>Targets to build, emitted as one semicolon-delimited target switch.</summary>
-    public IReadOnlyList<string> Targets { get => GetArgumentArray("targets"); init => SetArgumentArray("targets", "-target:", value, ";"); }
+    public IReadOnlyList<string> Targets { get; init => field = value.ToArray(); } = [];
     /// <summary>Project-level properties to set or override.</summary>
-    public IReadOnlyDictionary<string, string> Properties { get => GetArgumentDictionary("properties"); init => SetArgumentDictionary("properties", "-property:", value, ";", comparer: StringComparer.OrdinalIgnoreCase); }
+    public IReadOnlyDictionary<string, string> Properties { get; init => field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase).AsReadOnly(); } = ReadOnlyDictionary<string, string>.Empty;
     /// <summary>Amount of information written to the build log.</summary>
-    public MSBuildVerbosity? Verbosity { get => GetEnum<MSBuildVerbosity>("verbosity"); init => SetEnum("verbosity", "-verbosity:", value); }
+    public MSBuildVerbosity? Verbosity { get; init; }
     /// <summary>Maximum number of concurrent MSBuild processes; an omitted value uses one process.</summary>
-    public int? MaxCpuCount { get => GetInt("max-cpu-count"); init => SetInt("max-cpu-count", "-maxCpuCount:", value); }
+    public int? MaxCpuCount { get; init; }
     /// <summary>Whether project references are restored before building.</summary>
-    public bool Restore { get => GetFlag("restore"); init => SetFlag("restore", "-restore", value); }
+    public bool Restore { get; init; }
     /// <summary>Whether the startup banner is hidden.</summary>
-    public bool NoLogo { get => GetFlag("no-logo"); init => SetFlag("no-logo", "-noLogo", value); }
+    public bool NoLogo { get; init; }
     /// <summary>Whether the default console logger is disabled.</summary>
-    public bool NoConsoleLogger { get => GetFlag("no-console-logger"); init => SetFlag("no-console-logger", "-noConsoleLogger", value); }
+    public bool NoConsoleLogger { get; init; }
     /// <summary>Optional binary log path; use an empty string to request the default <c>msbuild.binlog</c>.</summary>
-    public string? BinaryLogger { get => GetArgument("binary-logger"); init => SetArgument("binary-logger", "-binaryLogger:", value); }
+    public string? BinaryLogger { get; init; }
     /// <summary>Optional preprocessed project output path.</summary>
-    public string? Preprocess { get => GetArgument("preprocess"); init => SetArgument("preprocess", "-preprocess:", value); }
+    public string? Preprocess { get; init; }
     /// <summary>Whether node reuse remains enabled after the build.</summary>
-    public bool? NodeReuse { get => GetFlag("node-reuse", "-nodeReuse:true", "-nodeReuse:false"); init => SetFlag("node-reuse", "-nodeReuse:true", "-nodeReuse:false", value); }
+    public bool? NodeReuse { get; init; }
     /// <summary>Whether interactive actions are allowed during the build.</summary>
-    public bool? Interactive { get => GetFlag("interactive", "-interactive:true", "-interactive:false"); init => SetFlag("interactive", "-interactive:true", "-interactive:false", value); }
+    public bool? Interactive { get; init; }
     /// <summary>Whether project-isolation constraints are enforced.</summary>
-    public bool? IsolateProjects { get => GetFlag("isolate-projects", "-isolateProjects:true", "-isolateProjects:false"); init => SetFlag("isolate-projects", "-isolateProjects:true", "-isolateProjects:false", value); }
+    public bool? IsolateProjects { get; init; }
     /// <summary>Whether project-reference graphs are built concurrently.</summary>
-    public bool? GraphBuild { get => GetFlag("graph-build", "-graphBuild:true", "-graphBuild:false"); init => SetFlag("graph-build", "-graphBuild:true", "-graphBuild:false", value); }
+    public bool? GraphBuild { get; init; }
 
-    /// <summary>The located MSBuild executable, or the .NET host plus the located SDK MSBuild assembly.</summary>
-    protected override string CommandPrefix => MSBuildToolset.MSBuild;
-
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            MSBuildToolset.MSBuild,
+            Args(Projects),
+            Arg("-verbosity:", Verbosity),
+            Args("-target:", Targets, ";"),
+            Args("-property:", Properties.Select(pair => $"{pair.Key}={pair.Value}"), ";"),
+            Arg("-maxCpuCount:", MaxCpuCount),
+            Arg("-restore", Restore),
+            Arg("-noLogo", NoLogo),
+            Arg("-noConsoleLogger", NoConsoleLogger),
+            Arg("-binaryLogger:", BinaryLogger),
+            Arg("-preprocess:", Preprocess),
+            Arg("-nodeReuse:true", "-nodeReuse:false", NodeReuse),
+            Arg("-interactive:true", "-interactive:false", Interactive),
+            Arg("-isolateProjects:true", "-isolateProjects:false", IsolateProjects),
+            Arg("-graphBuild:true", "-graphBuild:false", GraphBuild),
+        ];
 }
 
 static class MSBuildOutputVolume

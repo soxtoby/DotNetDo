@@ -42,78 +42,122 @@ public abstract record DotNetTargetCommand : ExecToolCommand
     }
 
     /// <summary>Supplies the values emitted by the <c>--target</c> option.</summary>
-    public IReadOnlyList<string> Targets { get => GetArgumentArray("target"); init => SetArgumentArray("target", "", value); }
+    public IReadOnlyList<string> Targets { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
+    public string? Verbosity { get; init; }
+
+    /// <summary>Gets the canonically ordered target arguments shared by derived commands.</summary>
+    protected IReadOnlyList<string?> TargetParts => [Args(Targets), Arg("--verbosity", Verbosity)];
 }
 
 /// <summary>Base command definition for .NET CLI commands sharing build options.</summary>
 public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
 {
     /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
-    public bool CurrentRuntime { get => GetFlag("use-current-runtime"); init => SetFlag("use-current-runtime", "--use-current-runtime", value); }
+    public bool CurrentRuntime { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
-    public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
+    public string? Configuration { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
-    public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
+    public string? Runtime { get; init; }
     /// <summary>Supplies the value emitted by the <c>--version-suffix</c> option.</summary>
-    public string? VersionSuffix { get => GetArgument("version-suffix"); init => SetArgument("version-suffix", "--version-suffix ", value); }
+    public string? VersionSuffix { get; init; }
     /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
-    public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
+    public bool NoRestore { get; init; }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
-    public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
+    public string? Output { get; init; }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
-    public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
+    public string? ArtifactsPath { get; init; }
     /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
-    public bool NoLogo { get => GetFlag("nologo"); init => SetFlag("nologo", "--nologo", value); }
+    public bool NoLogo { get; init; }
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
-    public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
+    public bool DisableBuildServers { get; init; }
+
+    /// <summary>Gets the canonically ordered build arguments shared by derived commands.</summary>
+    protected IReadOnlyList<string?> BuildParts =>
+        [
+            ..TargetParts,
+            Arg("--use-current-runtime", CurrentRuntime),
+            Arg("--configuration", Configuration),
+            Arg("--runtime", Runtime),
+            Arg("--version-suffix", VersionSuffix),
+            Arg("--no-restore", NoRestore),
+            Arg("--interactive", Interactive),
+            Arg("--output", Output),
+            Arg("--artifacts-path", ArtifactsPath),
+            Arg("--nologo", NoLogo),
+            Arg("--disable-build-servers", DisableBuildServers),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet build</c> command.</summary>
 public sealed record DotNetBuild : DotNetBuildOptionsCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet build";
     /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
-    public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
+    public string? Framework { get; init; }
     /// <summary>Controls emission of the <c>--debug</c> switch.</summary>
-    public bool Debug { get => GetFlag("debug"); init => SetFlag("debug", "--debug", value); }
+    public bool Debug { get; init; }
     /// <summary>Controls emission of the <c>--no-incremental</c> switch.</summary>
-    public bool NoIncremental { get => GetFlag("no-incremental"); init => SetFlag("no-incremental", "--no-incremental", value); }
+    public bool NoIncremental { get; init; }
     /// <summary>Controls emission of the <c>--no-dependencies</c> switch.</summary>
-    public bool NoDependencies { get => GetFlag("no-dependencies"); init => SetFlag("no-dependencies", "--no-dependencies", value); }
+    public bool NoDependencies { get; init; }
     /// <summary>Controls emission of the <c>--self-contained</c> switch.</summary>
-    public bool? SelfContained { get => GetFlag("self-contained", "--self-contained", "--no-self-contained"); init => SetFlag("self-contained", "--self-contained", "--no-self-contained", value); }
+    public bool? SelfContained { get; init; }
     /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
-    public string? Architecture { get => GetArgument("arch"); init => SetArgument("arch", "--arch ", value); }
+    public string? Architecture { get; init; }
     /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
-    public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
+    public string? OperatingSystem { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet build",
+            ..BuildParts,
+            Arg("--framework", Framework),
+            Arg("--debug", Debug),
+            Arg("--no-incremental", NoIncremental),
+            Arg("--no-dependencies", NoDependencies),
+            Arg("--self-contained", "--no-self-contained", SelfContained),
+            Arg("--arch", Architecture),
+            Arg("--os", OperatingSystem),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet clean</c> command.</summary>
 public sealed record DotNetClean : DotNetTargetCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet clean";
     /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
-    public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
+    public string? Framework { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
-    public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
+    public string? Runtime { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
-    public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
+    public string? Configuration { get; init; }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
-    public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
+    public string? Output { get; init; }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
-    public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
+    public string? ArtifactsPath { get; init; }
     /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
-    public bool NoLogo { get => GetFlag("nologo"); init => SetFlag("nologo", "--nologo", value); }
+    public bool NoLogo { get; init; }
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
-    public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
+    public bool DisableBuildServers { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet clean",
+            ..TargetParts,
+            Arg("--framework", Framework),
+            Arg("--runtime", Runtime),
+            Arg("--configuration", Configuration),
+            Arg("--interactive", Interactive),
+            Arg("--output", Output),
+            Arg("--artifacts-path", ArtifactsPath),
+            Arg("--nologo", NoLogo),
+            Arg("--disable-build-servers", DisableBuildServers),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet dev-certs</c> command.</summary>
@@ -125,195 +169,291 @@ public sealed record DotNetDevCerts : ExecToolCommand
         (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
     }
 
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet dev-certs https";
     /// <summary>Supplies the value emitted by the <c>--export-path</c> option.</summary>
-    public string? ExportPath { get => GetArgument("export-path"); init => SetArgument("export-path", "--export-path ", value); }
+    public string? ExportPath { get; init; }
     /// <summary>Supplies the value emitted by the <c>--password</c> option.</summary>
-    public string? Password { get => GetArgument("password"); init => SetArgument("password", "--password ", value); }
+    public string? Password { get; init; }
     /// <summary>Controls emission of the <c>--no-password</c> switch.</summary>
-    public bool NoPassword { get => GetFlag("no-password"); init => SetFlag("no-password", "--no-password", value); }
+    public bool NoPassword { get; init; }
     /// <summary>Controls emission of the <c>--check</c> switch.</summary>
-    public bool Check { get => GetFlag("check"); init => SetFlag("check", "--check", value); }
+    public bool Check { get; init; }
     /// <summary>Controls emission of the <c>--clean</c> switch.</summary>
-    public bool Clean { get => GetFlag("clean"); init => SetFlag("clean", "--clean", value); }
+    public bool Clean { get; init; }
     /// <summary>Supplies the value emitted by the <c>--import</c> option.</summary>
-    public string? Import { get => GetArgument("import"); init => SetArgument("import", "--import ", value); }
+    public string? Import { get; init; }
     /// <summary>Supplies the value emitted by the <c>--format</c> option.</summary>
-    public string? Format { get => GetArgument("format"); init => SetArgument("format", "--format ", value); }
+    public string? Format { get; init; }
     /// <summary>Controls emission of the <c>--trust</c> switch.</summary>
-    public bool Trust { get => GetFlag("trust"); init => SetFlag("trust", "--trust", value); }
+    public bool Trust { get; init; }
     /// <summary>Controls emission of the <c>--verbose</c> switch.</summary>
-    public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
+    public bool Verbose { get; init; }
     /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
+    public bool Quiet { get; init; }
     /// <summary>Controls emission of the <c>--check-trust-machine-readable</c> switch.</summary>
-    public bool CheckTrustMachineReadable { get => GetFlag("check-trust-machine-readable"); init => SetFlag("check-trust-machine-readable", "--check-trust-machine-readable", value); }
+    public bool CheckTrustMachineReadable { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet dev-certs https",
+            Arg("--quiet", Quiet),
+            Arg("--verbose", Verbose),
+            Arg("--export-path", ExportPath),
+            Arg("--password", Password),
+            Arg("--no-password", NoPassword),
+            Arg("--check", Check),
+            Arg("--clean", Clean),
+            Arg("--import", Import),
+            Arg("--format", Format),
+            Arg("--trust", Trust),
+            Arg("--check-trust-machine-readable", CheckTrustMachineReadable),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet pack</c> command.</summary>
 public sealed record DotNetPack : DotNetBuildOptionsCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet pack";
     /// <summary>Controls emission of the <c>--no-build</c> switch.</summary>
-    public bool NoBuild { get => GetFlag("no-build"); init => SetFlag("no-build", "--no-build", value); }
+    public bool NoBuild { get; init; }
     /// <summary>Controls emission of the <c>--include-symbols</c> switch.</summary>
-    public bool IncludeSymbols { get => GetFlag("include-symbols"); init => SetFlag("include-symbols", "--include-symbols", value); }
+    public bool IncludeSymbols { get; init; }
     /// <summary>Controls emission of the <c>--include-source</c> switch.</summary>
-    public bool IncludeSource { get => GetFlag("include-source"); init => SetFlag("include-source", "--include-source", value); }
+    public bool IncludeSource { get; init; }
     /// <summary>Controls emission of the <c>--serviceable</c> switch.</summary>
-    public bool Serviceable { get => GetFlag("serviceable"); init => SetFlag("serviceable", "--serviceable", value); }
+    public bool Serviceable { get; init; }
     /// <summary>Supplies the value emitted by the <c>--version</c> option.</summary>
-    public string? Version { get => GetArgument("version"); init => SetArgument("version", "--version ", value); }
+    public string? Version { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet pack",
+            ..BuildParts,
+            Arg("--no-build", NoBuild),
+            Arg("--include-symbols", IncludeSymbols),
+            Arg("--include-source", IncludeSource),
+            Arg("--serviceable", Serviceable),
+            Arg("--version", Version),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet nuget push</c> command.</summary>
 public sealed record DotNetNuGetPush : ExecToolCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet nuget push";
     /// <summary>Supplies the package path to push.</summary>
-    public string? Package { get => GetArgument("package"); init => SetArgument("package", value); }
+    public string? Package { get; init; }
     /// <summary>Allows connections to package sources using HTTP.</summary>
-    public bool AllowInsecureConnections { get => GetFlag("allow-insecure-connections"); init => SetFlag("allow-insecure-connections", "--allow-insecure-connections", value); }
+    public bool AllowInsecureConnections { get; init; }
     /// <summary>Disables buffering when pushing to an HTTP(S) server.</summary>
-    public bool DisableBuffering { get => GetFlag("disable-buffering"); init => SetFlag("disable-buffering", "--disable-buffering", value); }
+    public bool DisableBuffering { get; init; }
     /// <summary>Forces invariant English output.</summary>
-    public bool ForceEnglishOutput { get => GetFlag("force-english-output"); init => SetFlag("force-english-output", "--force-english-output", value); }
+    public bool ForceEnglishOutput { get; init; }
     /// <summary>Allows the command to wait for interactive authentication or input.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Supplies the API key for the package source.</summary>
-    public string? ApiKey { get => GetArgument("api-key"); init => SetArgument("api-key", "--api-key ", value); }
+    public string? ApiKey { get; init; }
     /// <summary>Prevents symbol packages from being pushed.</summary>
-    public bool NoSymbols { get => GetFlag("no-symbols"); init => SetFlag("no-symbols", "--no-symbols", value); }
+    public bool NoSymbols { get; init; }
     /// <summary>Prevents <c>api/v2/package</c> from being appended to the source URL.</summary>
-    public bool NoServiceEndpoint { get => GetFlag("no-service-endpoint"); init => SetFlag("no-service-endpoint", "--no-service-endpoint", value); }
+    public bool NoServiceEndpoint { get; init; }
     /// <summary>Supplies the package source URL.</summary>
-    public string? Source { get => GetArgument("source"); init => SetArgument("source", "--source ", value); }
+    public string? Source { get; init; }
     /// <summary>Skips packages whose version already exists at the source.</summary>
-    public bool SkipDuplicate { get => GetFlag("skip-duplicate"); init => SetFlag("skip-duplicate", "--skip-duplicate", value); }
+    public bool SkipDuplicate { get; init; }
     /// <summary>Supplies the API key for the symbol source.</summary>
-    public string? SymbolApiKey { get => GetArgument("symbol-api-key"); init => SetArgument("symbol-api-key", "--symbol-api-key ", value); }
+    public string? SymbolApiKey { get; init; }
     /// <summary>Supplies the symbol server URL.</summary>
-    public string? SymbolSource { get => GetArgument("symbol-source"); init => SetArgument("symbol-source", "--symbol-source ", value); }
+    public string? SymbolSource { get; init; }
 
     /// <summary>Supplies the push timeout in seconds.</summary>
-    public TimeSpan? Timeout
-    {
-        get => GetInt("timeout") is { } seconds ? TimeSpan.FromSeconds(seconds) : null;
-        init => SetInt("timeout", "--timeout ", value is { } timeout ? (int)timeout.TotalSeconds : null);
-    }
+    public TimeSpan? Timeout { get; init; }
     /// <summary>Supplies the NuGet configuration file.</summary>
-    public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
+    public string? ConfigFile { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet nuget push",
+            Arg(Package),
+            Arg("--allow-insecure-connections", AllowInsecureConnections),
+            Arg("--disable-buffering", DisableBuffering),
+            Arg("--force-english-output", ForceEnglishOutput),
+            Arg("--interactive", Interactive),
+            Arg("--source", Source),
+            Arg("--api-key", ApiKey),
+            Arg("--no-symbols", NoSymbols),
+            Arg("--no-service-endpoint", NoServiceEndpoint),
+            Arg("--skip-duplicate", SkipDuplicate),
+            Arg("--symbol-api-key", SymbolApiKey),
+            Arg("--symbol-source", SymbolSource),
+            Arg("--timeout", (int?)Timeout?.TotalSeconds),
+            Arg("--configfile", ConfigFile),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet restore</c> command.</summary>
 public sealed record DotNetRestore : DotNetTargetCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet restore";
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
-    public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
+    public bool DisableBuildServers { get; init; }
     /// <summary>Supplies the values emitted by the <c>--source</c> option.</summary>
-    public IReadOnlyList<string> Sources { get => GetArgumentArray("source"); init => SetArgumentArray("source", "--source ", value, " --source "); }
+    public IReadOnlyList<string> Sources { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the value emitted by the <c>--packages</c> option.</summary>
-    public string? Packages { get => GetArgument("packages"); init => SetArgument("packages", "--packages ", value); }
+    public string? Packages { get; init; }
     /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
-    public bool CurrentRuntime { get => GetFlag("use-current-runtime"); init => SetFlag("use-current-runtime", "--use-current-runtime", value); }
+    public bool CurrentRuntime { get; init; }
     /// <summary>Controls emission of the <c>--disable-parallel</c> switch.</summary>
-    public bool DisableParallel { get => GetFlag("disable-parallel"); init => SetFlag("disable-parallel", "--disable-parallel", value); }
+    public bool DisableParallel { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configfile</c> option.</summary>
-    public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
+    public string? ConfigFile { get; init; }
     /// <summary>Controls emission of the <c>--no-http-cache</c> switch.</summary>
-    public bool NoHttpCache { get => GetFlag("no-http-cache"); init => SetFlag("no-http-cache", "--no-http-cache", value); }
+    public bool NoHttpCache { get; init; }
     /// <summary>Controls emission of the <c>--ignore-failed-sources</c> switch.</summary>
-    public bool IgnoreFailedSources { get => GetFlag("ignore-failed-sources"); init => SetFlag("ignore-failed-sources", "--ignore-failed-sources", value); }
+    public bool IgnoreFailedSources { get; init; }
     /// <summary>Controls emission of the <c>--force</c> switch.</summary>
-    public bool Force { get => GetFlag("force"); init => SetFlag("force", "--force", value); }
+    public bool Force { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
-    public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
+    public string? Runtime { get; init; }
     /// <summary>Controls emission of the <c>--no-dependencies</c> switch.</summary>
-    public bool NoDependencies { get => GetFlag("no-dependencies"); init => SetFlag("no-dependencies", "--no-dependencies", value); }
+    public bool NoDependencies { get; init; }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
-    public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
+    public string? ArtifactsPath { get; init; }
     /// <summary>Controls emission of the <c>--use-lock-file</c> switch.</summary>
-    public bool UseLockFile { get => GetFlag("use-lock-file"); init => SetFlag("use-lock-file", "--use-lock-file", value); }
+    public bool UseLockFile { get; init; }
     /// <summary>Controls emission of the <c>--locked-mode</c> switch.</summary>
-    public bool LockedMode { get => GetFlag("locked-mode"); init => SetFlag("locked-mode", "--locked-mode", value); }
+    public bool LockedMode { get; init; }
     /// <summary>Supplies the value emitted by the <c>--lock-file-path</c> option.</summary>
-    public string? LockFilePath { get => GetArgument("lock-file-path"); init => SetArgument("lock-file-path", "--lock-file-path ", value); }
+    public string? LockFilePath { get; init; }
     /// <summary>Controls emission of the <c>--force-evaluate</c> switch.</summary>
-    public bool ForceEvaluate { get => GetFlag("force-evaluate"); init => SetFlag("force-evaluate", "--force-evaluate", value); }
+    public bool ForceEvaluate { get; init; }
     /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
-    public string? Architecture { get => GetArgument("arch"); init => SetArgument("arch", "--arch ", value); }
+    public string? Architecture { get; init; }
     /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
-    public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
+    public string? OperatingSystem { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet restore",
+            ..TargetParts,
+            Arg("--disable-build-servers", DisableBuildServers),
+            Args("--source", Sources, " --source "),
+            Arg("--packages", Packages),
+            Arg("--use-current-runtime", CurrentRuntime),
+            Arg("--disable-parallel", DisableParallel),
+            Arg("--configfile", ConfigFile),
+            Arg("--no-http-cache", NoHttpCache),
+            Arg("--ignore-failed-sources", IgnoreFailedSources),
+            Arg("--force", Force),
+            Arg("--runtime", Runtime),
+            Arg("--no-dependencies", NoDependencies),
+            Arg("--interactive", Interactive),
+            Arg("--artifacts-path", ArtifactsPath),
+            Arg("--use-lock-file", UseLockFile),
+            Arg("--locked-mode", LockedMode),
+            Arg("--lock-file-path", LockFilePath),
+            Arg("--force-evaluate", ForceEvaluate),
+            Arg("--arch", Architecture),
+            Arg("--os", OperatingSystem),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet test</c> command.</summary>
 public sealed record DotNetTest : DotNetTargetCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet test";
     /// <summary>Supplies the value emitted by the <c>--settings</c> option.</summary>
-    public string? Settings { get => GetArgument("settings"); init => SetArgument("settings", "--settings ", value); }
+    public string? Settings { get; init; }
     /// <summary>Controls emission of the <c>--list-tests</c> switch.</summary>
-    public bool ListTests { get => GetFlag("list-tests"); init => SetFlag("list-tests", "--list-tests", value); }
+    public bool ListTests { get; init; }
     /// <summary>Supplies the values emitted by the <c>--environment</c> option.</summary>
-    public IReadOnlyList<string> Environment { get => GetArgumentArray("environment"); init => SetArgumentArray("environment", "--environment ", value, " --environment "); }
+    public IReadOnlyList<string> Environment { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the value emitted by the <c>--filter</c> option.</summary>
-    public string? Filter { get => GetArgument("filter"); init => SetArgument("filter", "--filter ", value); }
+    public string? Filter { get; init; }
     /// <summary>Supplies the value emitted by the <c>--test-adapter-path</c> option.</summary>
-    public string? TestAdapterPath { get => GetArgument("test-adapter-path"); init => SetArgument("test-adapter-path", "--test-adapter-path ", value); }
+    public string? TestAdapterPath { get; init; }
     /// <summary>Supplies the values emitted by the <c>--logger</c> option.</summary>
-    public IReadOnlyList<string> Loggers { get => GetArgumentArray("logger"); init => SetArgumentArray("logger", "--logger ", value, " --logger "); }
+    public IReadOnlyList<string> Loggers { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
-    public string? Output { get => GetArgument("output"); init => SetArgument("output", "--output ", value); }
+    public string? Output { get; init; }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
-    public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
+    public string? ArtifactsPath { get; init; }
     /// <summary>Supplies the value emitted by the <c>--diag</c> option.</summary>
-    public string? Diag { get => GetArgument("diag"); init => SetArgument("diag", "--diag ", value); }
+    public string? Diag { get; init; }
     /// <summary>Controls emission of the <c>--no-build</c> switch.</summary>
-    public bool NoBuild { get => GetFlag("no-build"); init => SetFlag("no-build", "--no-build", value); }
+    public bool NoBuild { get; init; }
     /// <summary>Supplies the value emitted by the <c>--results-directory</c> option.</summary>
-    public string? ResultsDirectory { get => GetArgument("results-directory"); init => SetArgument("results-directory", "--results-directory ", value); }
+    public string? ResultsDirectory { get; init; }
     /// <summary>Supplies the value emitted by the <c>--collect</c> option.</summary>
-    public string? Collect { get => GetArgument("collect"); init => SetArgument("collect", "--collect ", value); }
+    public string? Collect { get; init; }
     /// <summary>Controls emission of the <c>--blame</c> switch.</summary>
-    public bool Blame { get => GetFlag("blame"); init => SetFlag("blame", "--blame", value); }
+    public bool Blame { get; init; }
     /// <summary>Controls emission of the <c>--blame-crash</c> switch.</summary>
-    public bool BlameCrash { get => GetFlag("blame-crash"); init => SetFlag("blame-crash", "--blame-crash", value); }
+    public bool BlameCrash { get; init; }
     /// <summary>Supplies the value emitted by the <c>--blame-crash-dump-type</c> option.</summary>
-    public string? BlameCrashDumpType { get => GetArgument("blame-crash-dump-type"); init => SetArgument("blame-crash-dump-type", "--blame-crash-dump-type ", value); }
+    public string? BlameCrashDumpType { get; init; }
     /// <summary>Controls emission of the <c>--blame-crash-collect-always</c> switch.</summary>
-    public bool BlameCrashCollectAlways { get => GetFlag("blame-crash-collect-always"); init => SetFlag("blame-crash-collect-always", "--blame-crash-collect-always", value); }
+    public bool BlameCrashCollectAlways { get; init; }
     /// <summary>Controls emission of the <c>--blame-hang</c> switch.</summary>
-    public bool BlameHang { get => GetFlag("blame-hang"); init => SetFlag("blame-hang", "--blame-hang", value); }
+    public bool BlameHang { get; init; }
     /// <summary>Supplies the value emitted by the <c>--blame-hang-dump-type</c> option.</summary>
-    public string? BlameHangDumpType { get => GetArgument("blame-hang-dump-type"); init => SetArgument("blame-hang-dump-type", "--blame-hang-dump-type ", value); }
+    public string? BlameHangDumpType { get; init; }
     /// <summary>Supplies the value emitted by the <c>--blame-hang-timeout</c> option.</summary>
-    public string? BlameHangTimeout { get => GetArgument("blame-hang-timeout"); init => SetArgument("blame-hang-timeout", "--blame-hang-timeout ", value); }
+    public string? BlameHangTimeout { get; init; }
     /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
-    public bool NoLogo { get => GetFlag("nologo"); init => SetFlag("nologo", "--nologo", value); }
+    public bool NoLogo { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
-    public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
+    public string? Configuration { get; init; }
     /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
-    public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
+    public string? Framework { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
-    public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
+    public string? Runtime { get; init; }
     /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
-    public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
+    public bool NoRestore { get; init; }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
-    public string? Architecture { get => GetArgument("arch"); init => SetArgument("arch", "--arch ", value); }
+    public string? Architecture { get; init; }
     /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
-    public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
+    public string? OperatingSystem { get; init; }
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
-    public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
+    public bool DisableBuildServers { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet test",
+            ..TargetParts,
+            Arg("--settings", Settings),
+            Arg("--list-tests", ListTests),
+            Args("--environment", Environment, " --environment "),
+            Arg("--filter", Filter),
+            Arg("--test-adapter-path", TestAdapterPath),
+            Args("--logger", Loggers, " --logger "),
+            Arg("--output", Output),
+            Arg("--artifacts-path", ArtifactsPath),
+            Arg("--diag", Diag),
+            Arg("--no-build", NoBuild),
+            Arg("--results-directory", ResultsDirectory),
+            Arg("--collect", Collect),
+            Arg("--blame", Blame),
+            Arg("--blame-crash", BlameCrash),
+            Arg("--blame-crash-dump-type", BlameCrashDumpType),
+            Arg("--blame-crash-collect-always", BlameCrashCollectAlways),
+            Arg("--blame-hang", BlameHang),
+            Arg("--blame-hang-dump-type", BlameHangDumpType),
+            Arg("--blame-hang-timeout", BlameHangTimeout),
+            Arg("--nologo", NoLogo),
+            Arg("--configuration", Configuration),
+            Arg("--framework", Framework),
+            Arg("--runtime", Runtime),
+            Arg("--no-restore", NoRestore),
+            Arg("--interactive", Interactive),
+            Arg("--arch", Architecture),
+            Arg("--os", OperatingSystem),
+            Arg("--disable-build-servers", DisableBuildServers),
+        ];
 }
 
 /// <summary>Restores the .NET local tools in scope for the execution directory.</summary>
@@ -321,24 +461,36 @@ public sealed record DotNetToolRestore : ExecToolCommand
 {
     /// <summary>Creates a command with output volume derived from the current logging level.</summary>
     public DotNetToolRestore() => Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
-    /// <summary>The executable and subcommand prefix.</summary>
-    protected override string CommandPrefix => "dotnet tool restore";
     /// <summary>The NuGet configuration file used exclusively for restore.</summary>
-    public string? ConfigFile { get => GetArgument("configfile"); init => SetArgument("configfile", "--configfile ", value); }
+    public string? ConfigFile { get; init; }
     /// <summary>Additional NuGet package sources.</summary>
-    public IReadOnlyList<string> AddSources { get => GetArgumentArray("add-source"); init => SetArgumentArray("add-source", "--add-source ", value, " --add-source "); }
+    public IReadOnlyList<string> AddSources { get; init => field = value.ToArray(); } = [];
     /// <summary>An explicit local tool manifest path.</summary>
-    public string? ToolManifest { get => GetArgument("tool-manifest"); init => SetArgument("tool-manifest", "--tool-manifest ", value); }
+    public string? ToolManifest { get; init; }
     /// <summary>Whether parallel project restore is disabled.</summary>
-    public bool DisableParallel { get => GetFlag("disable-parallel"); init => SetFlag("disable-parallel", "--disable-parallel", value); }
+    public bool DisableParallel { get; init; }
     /// <summary>Whether unavailable package sources are treated as warnings.</summary>
-    public bool IgnoreFailedSources { get => GetFlag("ignore-failed-sources"); init => SetFlag("ignore-failed-sources", "--ignore-failed-sources", value); }
+    public bool IgnoreFailedSources { get; init; }
     /// <summary>Whether NuGet caches are bypassed.</summary>
-    public bool NoCache { get => GetFlag("no-cache"); init => SetFlag("no-cache", "--no-cache", value); }
+    public bool NoCache { get; init; }
     /// <summary>Whether restore may wait for interactive authentication or input.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>The restore logging verbosity.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
+    public string? Verbosity { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet tool restore",
+            Arg("--verbosity", Verbosity),
+            Arg("--configfile", ConfigFile),
+            Args("--add-source", AddSources, " --add-source "),
+            Arg("--tool-manifest", ToolManifest),
+            Arg("--disable-parallel", DisableParallel),
+            Arg("--ignore-failed-sources", IgnoreFailedSources),
+            Arg("--no-cache", NoCache),
+            Arg("--interactive", Interactive),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet watch</c> command.</summary>
@@ -350,72 +502,107 @@ public sealed record DotNetWatch : ExecToolCommand
         (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
         Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
     }
-
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet watch";
     /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
+    public bool Quiet { get; init; }
     /// <summary>Controls emission of the <c>--verbose</c> switch.</summary>
-    public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
+    public bool Verbose { get; init; }
     /// <summary>Controls emission of the <c>--list</c> switch.</summary>
-    public bool List { get => GetFlag("list"); init => SetFlag("list", "--list", value); }
+    public bool List { get; init; }
     /// <summary>Controls emission of the <c>--no-hot-reload</c> switch.</summary>
-    public bool NoHotReload { get => GetFlag("no-hot-reload"); init => SetFlag("no-hot-reload", "--no-hot-reload", value); }
+    public bool NoHotReload { get; init; }
     /// <summary>Controls emission of the <c>--non-interactive</c> switch.</summary>
-    public bool NonInteractive { get => GetFlag("non-interactive"); init => SetFlag("non-interactive", "--non-interactive", value); }
+    public bool NonInteractive { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
-    public string? Configuration { get => GetArgument("configuration"); init => SetArgument("configuration", "--configuration ", value); }
+    public string? Configuration { get; init; }
     /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
-    public string? Framework { get => GetArgument("framework"); init => SetArgument("framework", "--framework ", value); }
+    public string? Framework { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
-    public string? Runtime { get => GetArgument("runtime"); init => SetArgument("runtime", "--runtime ", value); }
+    public string? Runtime { get; init; }
     /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
-    public bool Interactive { get => GetFlag("interactive"); init => SetFlag("interactive", "--interactive", value); }
+    public bool Interactive { get; init; }
     /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
-    public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
+    public bool NoRestore { get; init; }
     /// <summary>Controls emission of the <c>--self-contained</c> switch.</summary>
-    public bool? SelfContained { get => GetFlag("self-contained", "--self-contained", "--no-self-contained"); init => SetFlag("self-contained", "--self-contained", "--no-self-contained", value); }
+    public bool? SelfContained { get; init; }
     /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
-    public string? Verbosity { get => GetArgument("verbosity"); init => SetArgument("verbosity", "--verbosity ", value); }
+    public string? Verbosity { get; init; }
     /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
-    public string? Architecture { get => GetArgument("arch"); init => SetArgument("arch", "--arch ", value); }
+    public string? Architecture { get; init; }
     /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
-    public string? OperatingSystem { get => GetArgument("os"); init => SetArgument("os", "--os ", value); }
+    public string? OperatingSystem { get; init; }
     /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
-    public bool DisableBuildServers { get => GetFlag("disable-build-servers"); init => SetFlag("disable-build-servers", "--disable-build-servers", value); }
+    public bool DisableBuildServers { get; init; }
     /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
-    public string? ArtifactsPath { get => GetArgument("artifacts-path"); init => SetArgument("artifacts-path", "--artifacts-path ", value); }
+    public string? ArtifactsPath { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet watch",
+            Arg("--quiet", Quiet),
+            Arg("--verbose", Verbose),
+            Arg("--verbosity", Verbosity),
+            Arg("--list", List),
+            Arg("--no-hot-reload", NoHotReload),
+            Arg("--non-interactive", NonInteractive),
+            Arg("--configuration", Configuration),
+            Arg("--framework", Framework),
+            Arg("--runtime", Runtime),
+            Arg("--interactive", Interactive),
+            Arg("--no-restore", NoRestore),
+            Arg("--self-contained", "--no-self-contained", SelfContained),
+            Arg("--arch", Architecture),
+            Arg("--os", OperatingSystem),
+            Arg("--disable-build-servers", DisableBuildServers),
+            Arg("--artifacts-path", ArtifactsPath),
+        ];
 }
 
 /// <summary>Builds a <c>dotnet format</c> command.</summary>
 public sealed record DotNetFormat : DotNetTargetCommand
 {
-    /// <summary>Gets the executable and subcommand prefix rendered before configured options.</summary>
-    protected override string CommandPrefix => "dotnet format";
     /// <summary>Selects which formatting category the command processes.</summary>
-    public FormatCommand? Command { get => GetEnum<FormatCommand>("command"); init => SetEnum("command", value); }
+    public FormatCommand? Command { get; init; }
     /// <summary>Supplies the value emitted by the <c>--command</c> option.</summary>
-    public string? CustomCommand { get => GetArgument("command"); init => SetArgument("command", value); }
+    public string? CustomCommand { get; init; }
     /// <summary>Supplies the values emitted by the <c>--diagnostics</c> option.</summary>
-    public IReadOnlyList<string> Diagnostics { get => GetArgumentArray("diagnostics"); init => SetArgumentArray("diagnostics", "--diagnostics ", value); }
+    public IReadOnlyList<string> Diagnostics { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the values emitted by the <c>--exclude-diagnostics</c> option.</summary>
-    public IReadOnlyList<string> ExcludeDiagnostics { get => GetArgumentArray("exclude-diagnostics"); init => SetArgumentArray("exclude-diagnostics", "--exclude-diagnostics ", value); }
+    public IReadOnlyList<string> ExcludeDiagnostics { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the value emitted by the <c>--severity</c> option.</summary>
-    public string? Severity { get => GetArgument("severity"); init => SetArgument("severity", "--severity ", value); }
+    public string? Severity { get; init; }
     /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
-    public bool NoRestore { get => GetFlag("no-restore"); init => SetFlag("no-restore", "--no-restore", value); }
+    public bool NoRestore { get; init; }
     /// <summary>Controls emission of the <c>--verify-no-changes</c> switch.</summary>
-    public bool VerifyNoChanges { get => GetFlag("verify-no-changes"); init => SetFlag("verify-no-changes", "--verify-no-changes", value); }
+    public bool VerifyNoChanges { get; init; }
     /// <summary>Supplies the values emitted by the <c>--include</c> option.</summary>
-    public IReadOnlyList<string> Include { get => GetArgumentArray("include"); init => SetArgumentArray("include", "--include ", value); }
+    public IReadOnlyList<string> Include { get; init => field = value.ToArray(); } = [];
     /// <summary>Supplies the values emitted by the <c>--exclude</c> option.</summary>
-    public IReadOnlyList<string> Exclude { get => GetArgumentArray("exclude"); init => SetArgumentArray("exclude", "--exclude ", value); }
+    public IReadOnlyList<string> Exclude { get; init => field = value.ToArray(); } = [];
     /// <summary>Controls emission of the <c>--include-generated</c> switch.</summary>
-    public bool IncludeGenerated { get => GetFlag("include-generated"); init => SetFlag("include-generated", "--include-generated", value); }
+    public bool IncludeGenerated { get; init; }
     /// <summary>Supplies the value emitted by the <c>--binarylog</c> option.</summary>
-    public string? BinaryLog { get => GetArgument("binarylog"); init => SetArgument("binarylog", "--binarylog ", value); }
+    public string? BinaryLog { get; init; }
     /// <summary>Supplies the value emitted by the <c>--report</c> option.</summary>
-    public string? Report { get => GetArgument("report"); init => SetArgument("report", "--report ", value); }
+    public string? Report { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet format",
+            Arg(CustomCommand ?? Command?.ToString().ToLowerInvariant()),
+            ..TargetParts,
+            Args("--diagnostics", Diagnostics),
+            Args("--exclude-diagnostics", ExcludeDiagnostics),
+            Arg("--severity", Severity),
+            Arg("--no-restore", NoRestore),
+            Arg("--verify-no-changes", VerifyNoChanges),
+            Args("--include", Include),
+            Args("--exclude", Exclude),
+            Arg("--include-generated", IncludeGenerated),
+            Arg("--binarylog", BinaryLog),
+            Arg("--report", Report),
+        ];
 }
 
 /// <summary>Identifies a supported <c>dotnet format</c> subcommand.</summary>

@@ -12,8 +12,7 @@
 - `Logging.Level` now supplies best-effort native output-volume defaults to fresh typed tool commands, with explicit per-tool controls taking precedence.
 - `Do.Secret` now returns `Secret`, `new Secret(value)` automatically registers the value for redaction, and the required wrapper is now named `RequiredSecret`.
 - Typed tool commands now quote structured argument values automatically while preserving raw additional arguments.
-- `ToolCommand` supports integer arguments with invariant formatting.
-- `ToolCommand` centralizes lossless dictionary argument storage and rendering.
+- Typed tool commands now own semantic property state and canonical argument order, independent of property assignment order. `ToolCommand` replaces its protected keyed argument setter/getter API with `Arg` and `Args` rendering helpers.
 
 ## v0.2.0
 

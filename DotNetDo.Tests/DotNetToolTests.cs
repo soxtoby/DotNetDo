@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -53,11 +54,29 @@ public sealed class DotNetToolTests
         Assert.Equal("   ", command.Blank);
         Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries first=key=first=value --raw --first second", command.ToString());
 
+        var reordered = new TestToolCommand
+        {
+            Blank = "   ",
+            Raw = "--first second",
+            Entries = new Dictionary<string, string> { ["first=key"] = "first=value" },
+            Values = ["one value", ""],
+            Value = "scalar value",
+        };
+        Assert.Equal(command.ToString(), reordered.ToString());
+
         var replacement = command with { Blank = "later value" };
         Assert.Equal("example --value \"scalar value\" --values \"one value\" --entries first=key=first=value --raw --first second --blank \"later value\"", replacement.ToString());
 
         var preQuoted = command with { Value = "scalar value".QuotedArgument() };
         Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --entries first=key=first=value --raw --first second", preQuoted.ToString());
+    }
+
+    [Fact]
+    public void Argument_prefix_suffix_controls_value_spacing()
+    {
+        Assert.Equal(
+            "example --space value --colon:value --equals=value -Wl,value",
+            new PrefixToolCommand().ToString());
     }
 
     [Fact]
@@ -76,6 +95,35 @@ public sealed class DotNetToolTests
         Assert.Equal("dotnet nuget push \"artifacts/My Package.nupkg\" --source https://api.nuget.org/v3/index.json --api-key \"secret key\" --skip-duplicate --timeout 360", command.ToString());
         var fractionalTimeout = Tools.DotNet.NuGetPush with { Timeout = TimeSpan.FromMilliseconds(1500) };
         Assert.Equal("dotnet nuget push --timeout 1", fractionalTimeout.ToString());
+
+        var reordered = Tools.DotNet.NuGetPush with
+        {
+            Timeout = TimeSpan.FromMinutes(6),
+            SkipDuplicate = true,
+            ApiKey = "secret key",
+            Source = "https://api.nuget.org/v3/index.json",
+            Package = "artifacts/My Package.nupkg",
+        };
+        Assert.Equal(command.ToString(), reordered.ToString());
+    }
+
+    [Fact]
+    public void Custom_format_command_deterministically_overrides_typed_command()
+    {
+        var typedFirst = Tools.DotNet.Format with
+        {
+            Command = FormatCommand.Whitespace,
+            CustomCommand = "future-command",
+        };
+        var customFirst = Tools.DotNet.Format with
+        {
+            CustomCommand = "future-command",
+            Command = FormatCommand.Whitespace,
+        };
+
+        Assert.Equal(typedFirst.ToString(), customFirst.ToString());
+        Assert.StartsWith("dotnet format future-command ", typedFirst.ToString());
+        Assert.DoesNotContain(" whitespace ", typedFirst.ToString());
     }
 
     [Fact]
@@ -170,11 +218,31 @@ public sealed class DotNetToolTests
 
     sealed record TestToolCommand : ExecToolCommand
     {
-        protected override string CommandPrefix => "example";
-        public string? Value { get => GetArgument("value"); init => SetArgument("value", "--value ", value); }
-        public IReadOnlyList<string> Values { get => GetArgumentArray("values"); init => SetArgumentArray("values", "--values ", value); }
-        public IReadOnlyDictionary<string, string> Entries { get => GetArgumentDictionary("entries"); init => SetArgumentDictionary("entries", "--entries ", value); }
-        public string? Raw { get => GetArgument("raw"); init => SetArgument("raw", "--raw ", value, quote: false); }
-        public string? Blank { get => GetArgument("blank"); init => SetArgument("blank", "--blank ", value); }
+        protected override IReadOnlyList<string?> CommandParts =>
+            [
+                "example",
+                Arg("--value", Value),
+                Args("--values", Values),
+                Args("--entries", Entries.Select(pair => $"{pair.Key}={pair.Value}")),
+                Arg("--raw", Raw, quote: false),
+                Arg("--blank", Blank),
+            ];
+        public string? Value { get; init; }
+        public IReadOnlyList<string> Values { get; init => field = value.ToArray(); } = [];
+        public IReadOnlyDictionary<string, string> Entries { get; init => field = new Dictionary<string, string>(value).AsReadOnly(); } = ReadOnlyDictionary<string, string>.Empty;
+        public string? Raw { get; init; }
+        public string? Blank { get; init; }
+    }
+
+    sealed record PrefixToolCommand : ExecToolCommand
+    {
+        protected override IReadOnlyList<string?> CommandParts =>
+            [
+                "example",
+                Arg("--space", "value"),
+                Arg("--colon:", "value"),
+                Arg("--equals=", "value"),
+                Arg("-Wl,", "value"),
+            ];
     }
 }

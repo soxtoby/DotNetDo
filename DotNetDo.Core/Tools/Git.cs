@@ -37,14 +37,15 @@ public abstract record GitCommand : ExecToolCommand
 
     /// <summary>The underlying LibGit2Sharp repository; owned and disposed by this wrapper.</summary>
     protected GitRepository Repository => _repository ?? Do.GitRepo;
+
     /// <summary>Renders the value as one quoted command-line argument.</summary>
     protected string GitPrefix => $"git -C {Repository.Root.QuotedArgument()}";
 
     /// <summary>Render paths.</summary>
-    protected string RenderPaths(IReadOnlyList<RelativePath> paths, bool all, string allArguments)
+    protected static string RenderPaths(IReadOnlyList<RelativePath> paths, bool all, string allArguments)
     {
         ArgumentNullException.ThrowIfNull(paths);
-        
+
         if (all == (paths.Count != 0))
             throw new InvalidOperationException("Specify either Paths or All, but not both.");
 
@@ -54,10 +55,9 @@ public abstract record GitCommand : ExecToolCommand
         return "-- " + string.Join(" ", paths.Select(RenderPath));
     }
 
-    string RenderPath(RelativePath path)
+    static string RenderPath(RelativePath path)
     {
         ArgumentNullException.ThrowIfNull(path);
-        _ = Repository.Root / path;
         return path.UnixPath.QuotedArgument();
     }
 }
@@ -69,15 +69,19 @@ public sealed record GitAdd : GitCommand
     internal GitAdd(GitRepository repository) : base(repository) => Verbose = GitOutputVolume.From(Logging.Level).Verbose;
 
     /// <summary>Paths passed to the Git command.</summary>
-    public IReadOnlyList<RelativePath> Paths { get; init; } = [];
+    public IReadOnlyList<RelativePath> Paths { get; init => field = value.ToArray(); } = [];
     /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
     public bool All { get; init; }
     /// <summary>Whether Git reports each added path.</summary>
-    public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
+    public bool Verbose { get; init; }
 
-    /// <summary>The Git command rendered before configured options.</summary>
-    protected override string CommandPrefix => $"{GitPrefix} add";
-    private protected override string TrailingArguments => RenderPaths(Paths, All, "--all");
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            $"{GitPrefix} add",
+            Arg("--verbose", Verbose),
+            RenderPaths(Paths, All, "--all")
+        ];
 }
 
 /// <summary>Models the <c>GitReset</c> command and its typed options.</summary>
@@ -87,49 +91,53 @@ public sealed record GitReset : GitCommand
     internal GitReset(GitRepository repository) : base(repository) => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
 
     /// <summary>Paths passed to the Git command.</summary>
-    public IReadOnlyList<RelativePath> Paths { get; init; } = [];
+    public IReadOnlyList<RelativePath> Paths { get; init => field = value.ToArray(); } = [];
     /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
     public bool All { get; init; }
     /// <summary>Whether Git reports only errors.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
-
-    /// <summary>The Git command rendered before configured options.</summary>
-    protected override string CommandPrefix => $"{GitPrefix} reset";
-    private protected override string TrailingArguments => RenderPaths(Paths, All, "-- .");
+    public bool Quiet { get; init; }
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            $"{GitPrefix} reset",
+            Arg("--quiet", Quiet),
+            RenderPaths(Paths, All, "-- .")
+        ];
 }
 
 /// <summary>Models the <c>GitCommit</c> command and its typed options.</summary>
 public sealed record GitCommit : GitCommand
 {
     internal GitCommit() => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
-    internal GitCommit(GitRepository repository) : base(repository) => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
+
+    internal GitCommit(GitRepository repository)
+        : base(repository) => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
 
     /// <summary>The message passed to the command.</summary>
-    public string? Message { get => GetArgument("message"); init => SetArgument("message", "--message ", value); }
+    public string? Message { get; init; }
     /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
-    public bool All { get => GetFlag("all"); init => SetFlag("all", "--all", value); }
+    public bool All { get; init; }
 
     /// <summary>The author identity used for the commit.</summary>
-    public GitAuthor? Author
-    {
-        get;
-        init
-        {
-            field = value;
-            SetArgument("author", "--author ", value is null ? null : RenderAuthor(value));
-        }
-    }
+    public GitAuthor? Author { get; init; }
 
     /// <summary>Whether Git suppresses the successful commit summary.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
+    public bool Quiet { get; init; }
 
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
-    protected override string CommandPrefix
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts
     {
         get
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(Message);
-            return $"{GitPrefix} commit";
+            return
+                [
+                    $"{GitPrefix} commit",
+                    Arg("--quiet", Quiet),
+                    Arg("--message", Message),
+                    Arg("--all", All),
+                    Arg("--author", Author is null ? null : RenderAuthor(Author)),
+                ];
         }
     }
 
@@ -149,27 +157,36 @@ public sealed record GitPush : GitCommand
         (Quiet, Verbose) = GitOutputVolume.From(Logging.Level);
     }
 
-    internal GitPush(GitRepository repository) : base(repository)
+    internal GitPush(GitRepository repository)
+        : base(repository)
     {
         (Quiet, Verbose) = GitOutputVolume.From(Logging.Level);
     }
 
     /// <summary>The remote name; when omitted, Git uses its configured default.</summary>
-    public string? Remote { get => GetArgument("remote"); init => SetArgument("remote", value); }
+    public string? Remote { get; init; }
     /// <summary>Whether Git reduces reported push details.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
+    public bool Quiet { get; init; }
     /// <summary>Whether Git reports additional push details.</summary>
-    public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
+    public bool Verbose { get; init; }
 
-    /// <summary>The Git command rendered before configured options.</summary>
-    protected override string CommandPrefix => $"{GitPrefix} push";
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            $"{GitPrefix} push",
+            Arg("--quiet", Quiet),
+            Arg("--verbose", Verbose),
+            Arg(Remote)
+        ];
 }
 
 /// <summary>Models the <c>GitCreateTag</c> command and its typed options.</summary>
 public sealed record GitCreateTag : GitCommand
 {
     internal GitCreateTag() { }
-    internal GitCreateTag(GitRepository repository) : base(repository) { }
+
+    internal GitCreateTag(GitRepository repository)
+        : base(repository) { }
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string? Name { get; init; }
@@ -178,15 +195,23 @@ public sealed record GitCreateTag : GitCommand
     /// <summary>The commit tagged; when omitted, Git tags HEAD.</summary>
     public Commit? Target { get; init; }
 
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
-    protected override string CommandPrefix
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts
     {
         get
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(Name);
             ArgumentException.ThrowIfNullOrWhiteSpace(Message);
             var target = Target ?? Repository.CurrentCommit;
-            return $"{GitPrefix} tag --annotate {Name.QuotedArgument()} --message {Message.QuotedArgument()} {target.Sha.QuotedArgument()}";
+            return
+                [
+                    $"{GitPrefix} tag",
+                    "--annotate",
+                    Arg(Name),
+                    Arg("--message", Message),
+                    Arg(target.Sha),
+                ];
         }
     }
 }
@@ -199,7 +224,8 @@ public sealed record GitPushTag : GitCommand
         (Quiet, Verbose) = GitOutputVolume.From(Logging.Level);
     }
 
-    internal GitPushTag(GitRepository repository) : base(repository)
+    internal GitPushTag(GitRepository repository)
+        : base(repository)
     {
         (Quiet, Verbose) = GitOutputVolume.From(Logging.Level);
     }
@@ -209,20 +235,25 @@ public sealed record GitPushTag : GitCommand
     /// <summary>The remote name; when omitted, Git uses its configured default.</summary>
     public string? Remote { get; init; }
     /// <summary>Whether Git reduces reported push details.</summary>
-    public bool Quiet { get => GetFlag("quiet"); init => SetFlag("quiet", "--quiet", value); }
+    public bool Quiet { get; init; }
     /// <summary>Whether Git reports additional push details.</summary>
-    public bool Verbose { get => GetFlag("verbose"); init => SetFlag("verbose", "--verbose", value); }
+    public bool Verbose { get; init; }
 
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
-    protected override string CommandPrefix => $"{GitPrefix} push";
-
-    private protected override string TrailingArguments
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts
     {
         get
         {
             ArgumentNullException.ThrowIfNull(Tag);
-            var remote = string.IsNullOrWhiteSpace(Remote) ? Repository.DefaultPushRemote : Remote;
-            return $"{remote.QuotedArgument()} tag {Tag.FriendlyName.QuotedArgument()}";
+            return
+                [
+                    $"{GitPrefix} push",
+                    Arg("--quiet", Quiet),
+                    Arg("--verbose", Verbose),
+                    Arg(string.IsNullOrWhiteSpace(Remote) ? Repository.DefaultPushRemote : Remote),
+                    "tag",
+                    Arg(Tag.FriendlyName),
+                ];
         }
     }
 }

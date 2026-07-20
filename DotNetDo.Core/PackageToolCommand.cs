@@ -21,8 +21,8 @@ public abstract record PackageToolCommand<TResult> : ToolCommand<TResult>
     public string PackageId { get; }
     /// <summary>The command exposed by the package tool.</summary>
     public string CommandName { get; }
-    /// <summary>The local-tool invocation rendered before configured arguments.</summary>
-    protected override string CommandPrefix => $"dotnet tool run {CommandName}";
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts => [$"dotnet tool run {CommandName}"];
 
     /// <inheritdoc />
     protected sealed override async Task<ExecResult> ExecuteCommandAsync()
