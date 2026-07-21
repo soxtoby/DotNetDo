@@ -43,6 +43,8 @@ public sealed record RelativePath
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
     /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
     public RelativePath? Parent => Segments.Length <= 1 ? null : new(Segments[..^1]);
+    /// <summary>Renders the value as one quoted command-line argument.</summary>
+    public string QuotedArgument() => ToString().QuotedArgument();
 
     /// <summary>Exposes the configured value or operation to script authors.</summary>
     public static RelativePath operator /(RelativePath left, RelativePath right)

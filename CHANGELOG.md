@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- `RelativePath.QuotedArgument()` for interpolating relative paths into raw command strings, matching `AbsolutePath`.
+- Scripting convenience extensions for sequence joining and filtering, line splitting, nullable string checks, and receiver-style regular expressions.
 - Configured meta-tasks in `dotnetdo.toml` for composing ordered, fail-fast task sequences with argument forwarding.
 - `Tools.DotNet.NuGetPush` for publishing NuGet packages.
 - `Tools.MSBuild` for running the MSBuild toolset discovered by MSBuild Locator.

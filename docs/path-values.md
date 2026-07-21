@@ -176,6 +176,8 @@ string WindowsPath { get; }
 
 Format properties change separators only; they never map drive or share roots into another root model. `ToString()`, and the implicit conversion from a path value to `string`, use the current OS separator style.
 
+Both types expose `QuotedArgument()` for raw command composition. It renders using the current OS separator style, then applies the same conditional command-line quoting as `string.QuotedArgument()`.
+
 ## Metadata
 
 Both types expose:
