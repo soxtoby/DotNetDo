@@ -8,26 +8,25 @@ namespace DotNetDo;
 /// <summary>Provides the task-authoring entry points and workspace-scoped defaults.</summary>
 public static partial class Do
 {
-    /// <summary>Starts the rendered command directly, without a shell, in the configured working directory.</summary>
+    /// <summary>Starts the rendered command in the configured working directory, using the native batch host when required.</summary>
     public static ExecProcess Exec(ToolCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
         return Exec(command.ToString(), command);
     }
 
-    /// <summary>Starts the rendered command directly, without a shell, in the configured working directory.</summary>
+    /// <summary>Starts the command in the configured working directory, using the native batch host when required.</summary>
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
         options ??= new ExecOptions();
         var workingDirectory = options.WorkingDirectory ?? Do.WorkingDirectory;
         var parsed = ExecCommand.Parse(command);
-        var startInfo = new ProcessStartInfo(parsed.Program, parsed.Arguments)
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WorkingDirectory = workingDirectory,
-            };
+        var resolvedProgram = ExecutableResolver.Find(parsed.Program, workingDirectory);
+        var startInfo = CreateStartInfo(resolvedProgram, parsed.Program, parsed.Arguments);
+        startInfo.UseShellExecute = false;
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+        startInfo.WorkingDirectory = workingDirectory;
 
         Log.Debug("Executing {Command} in {WorkingDirectory}", command, workingDirectory);
 
@@ -43,6 +42,17 @@ public static partial class Do
             Log.Error(exception, "Failed to start command {Command}", command);
             throw;
         }
+    }
+
+    static ProcessStartInfo CreateStartInfo(AbsolutePath? resolvedProgram, string program, string arguments)
+    {
+        if (!OperatingSystem.IsWindows() || resolvedProgram is null || !ExecutableResolver.IsBatchFile(resolvedProgram))
+            return new(resolvedProgram?.ToString() ?? program, arguments);
+
+        var command = $"\"{resolvedProgram}\"";
+        if (arguments.Length != 0)
+            command += " " + arguments;
+        return new(Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe", $"/d /s /c \"{command}\"");
     }
 }
 

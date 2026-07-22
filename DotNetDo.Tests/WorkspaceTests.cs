@@ -81,6 +81,38 @@ public sealed class WorkspaceTests
         Assert.Equal(new[] { "build", "test-csharp --no-build" }, configuration.MetaTasks["test"]);
     }
 
+    [Fact]
+    public void Loads_declared_tool_requirements()
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", "tools = [\"azure\"]");
+
+        Assert.Equal([Tools.Azure.Install], WorkspaceConfiguration.Load(workspace.Path).Tools);
+    }
+
+    [Fact]
+    public void Tool_requirements_default_to_none()
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", "");
+
+        Assert.Empty(WorkspaceConfiguration.Load(workspace.Path).Tools);
+    }
+
+    [Theory]
+    [InlineData("tools = \"azure\"")]
+    [InlineData("tools = [1]")]
+    [InlineData("tools = [\"unknown\"]")]
+    [InlineData("tools = [\"Azure\"]")]
+    [InlineData("tools = [\"azure\", \"azure\"]")]
+    public void Invalid_tool_requirements_fail(string configuration)
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", configuration);
+
+        Assert.Throws<DotNetDoConfigurationException>(() => WorkspaceConfiguration.Load(workspace.Path));
+    }
+
     [Theory]
     [InlineData("script-path = \"scripts\"")]
     [InlineData("scripts-path = \"\"")]

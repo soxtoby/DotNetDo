@@ -4,7 +4,7 @@
 
 ### DotNetDo configuration
 
-A committed `dotnetdo.toml` file containing shared configuration for tasks. Its containing directory establishes the DotNetDo root directory. Top-level keys and the `tasks` table are owned by DotNetDo; other tables are parameter namespaces. Unknown top-level keys and invalid configuration fail operations that require configuration; values never silently fall back.
+A committed `dotnetdo.toml` file containing shared configuration for tasks. Its containing directory establishes the DotNetDo root directory. Top-level keys, including the closed `tools` array of logical tool requirement names, and the `tasks` table are owned by DotNetDo; other tables are parameter namespaces. Unknown top-level keys, unknown or duplicate tool names, and other invalid configuration fail operations that require configuration; values never silently fall back.
 
 ### Root directory
 
@@ -132,11 +132,15 @@ The `:init` command interactively creates a DotNetDo workspace in the current di
 
 Initialization also creates root-local `do.cmd` and executable `do` launchers which forward all arguments to `dnx DotNetDo`.
 
+## Install command
+
+The `:install` command executes the install plan for every tool requirement declared in DotNetDo configuration. It takes no arguments; installing an individual tool is the job of that tool's own tool install. An empty or absent declaration set succeeds trivially.
+
 ## Tool command
 
 A command whose name starts with `:` is owned by DotNetDo. Task names cannot start with `:`.
 
-DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, and task execution by name.
+DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, tool requirement installation with `:install`, and task execution by name.
 
 ## Exec helper
 
@@ -199,6 +203,32 @@ A typed external-tool definition associated with a package ID and command name. 
 Awaiting a value-producing package tool returns its semantic result. Passing the same value to the Exec helper bypasses result parsing and exposes the raw process result.
 
 _Avoid_: Installed-tool wrapper, dotnet tool wrapper
+
+## Tool install
+
+An explicit awaitable operation that makes an external tool available in the host environment. It may coordinate multiple external commands and environment refreshes; executing a tool command never implicitly invokes its tool install.
+
+A tool install succeeds without changing the host when its tool requirement is already satisfied. When installation infrastructure is missing, the tool install runs the required installer bootstrap itself, announcing it in log output rather than failing.
+
+_Avoid_: Install command, automatic tool installation, tool prerequisite
+
+## Installer bootstrap
+
+An explicit installation step that makes a platform installer available when no installer can own that installation. Platform installers are installation infrastructure, not workspace tool requirements; their bootstrap follows the current official installer rather than promising a reproducible version. Under an elevated process, the bootstrap opts into the installer's official elevated mode instead of failing.
+
+_Avoid_: Pinned installer, installer package tool
+
+## Tool requirement
+
+A logical external tool declared by canonical name in DotNetDo configuration. The canonical name is the lowercase name of the tool's own API namespace, never a platform package name, because package names differ across operating systems. It is satisfied when its executable command is available regardless of installation provenance, and guarantees availability rather than a version; platform installer package mappings are DotNetDo-owned.
+
+_Avoid_: Scoop package, installer dependency
+
+## Install plan
+
+The complete platform-specific resolution of missing tool requirements and required installation infrastructure. Every requirement must resolve before the plan may change the host environment; execution is sequential, stops at the first failure, does not roll back host state, and refreshes the current process environment after successful installation without changing ordinary startup behavior.
+
+_Avoid_: Partial install, best-effort setup
 
 ## Tool command
 

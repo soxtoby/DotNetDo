@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Tomlyn.Model;
 using Tomlyn.Serialization;
+using static DotNetDo.Tools;
 
 namespace DotNetDo;
 
@@ -9,11 +10,7 @@ public static partial class Do
     static readonly WorkspaceRoot WorkspaceRoot = new();
 
     /// <summary>Exposes the configured value or operation to task authors.</summary>
-    public static AbsolutePath WorkingDirectory
-    {
-        get => AbsolutePath.Parse(Environment.CurrentDirectory);
-        set => Directory.SetCurrentDirectory(value);
-    }
+    public static AbsolutePath WorkingDirectory { get => AbsolutePath.Parse(Environment.CurrentDirectory); set => Directory.SetCurrentDirectory(value); }
 
     /// <summary>Exposes the configured value or operation to task authors.</summary>
     public static AbsolutePath RootDirectory => WorkspaceRoot.Resolve(WorkingDirectory);
@@ -46,6 +43,7 @@ sealed record WorkspaceConfiguration
 
     public required RelativePath ScriptsPath { get; init; }
     public RelativePath? SolutionPath { get; init; }
+    public required IReadOnlyList<ToolInstall> Tools { get; init; }
     public required IReadOnlyDictionary<string, string[]> MetaTasks { get; init; }
 
     public static WorkspaceConfiguration Load(AbsolutePath rootDirectory)
@@ -55,6 +53,7 @@ sealed record WorkspaceConfiguration
             return new()
                 {
                     ScriptsPath = RelativePath.Parse("scripts"),
+                    Tools = [],
                     MetaTasks = new Dictionary<string, string[]>(StringComparer.Ordinal)
                 };
 
@@ -71,15 +70,47 @@ sealed record WorkspaceConfiguration
                 {
                     ScriptsPath = ReadRelativePath(document.ScriptsPath, configurationFile, "scripts-path") ?? RelativePath.Parse("scripts"),
                     SolutionPath = ReadRelativePath(document.SolutionPath, configurationFile, "solution-path"),
+                    Tools = ReadTools(document.Tools, configurationFile),
                     MetaTasks = ReadMetaTasks(document.Tasks, configurationFile)
                 };
         }
-        catch (DotNetDoConfigurationException) { throw; }
+        catch (DotNetDoConfigurationException)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             throw new DotNetDoConfigurationException($"Invalid DotNetDo configuration in '{configurationFile}'.", exception);
         }
     }
+
+    static List<ToolInstall> ReadTools(string[]? toolNames, AbsolutePath configurationFile)
+    {
+        if (toolNames is null)
+            return [];
+
+        var tools = new List<ToolInstall>(toolNames.Length);
+        var seenTools = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var toolName in toolNames)
+        {
+            var tool = FindTool(toolName)
+                ?? throw new DotNetDoConfigurationException($"Unknown tool '{toolName}' in '{configurationFile}'.");
+
+            if (!seenTools.Add(toolName))
+                throw new DotNetDoConfigurationException($"Duplicate tool '{toolName}' in '{configurationFile}'.");
+
+            tools.Add(tool);
+        }
+
+        return tools;
+    }
+
+    static ToolInstall? FindTool(string name) => name switch
+        {
+            Azure.ToolName => Azure.Install,
+            _ => null,
+        };
 
     static Dictionary<string, string[]> ReadMetaTasks(Dictionary<string, object?> tasks, AbsolutePath configurationFile)
     {
@@ -140,6 +171,9 @@ sealed record WorkspaceConfiguration
         [JsonPropertyName("solution-path")]
         public string? SolutionPath { get; init; }
 
+        [JsonPropertyName("tools")]
+        public string[]? Tools { get; init; }
+
         [JsonPropertyName("tasks")]
         public Dictionary<string, object?> Tasks { get; init; } = [];
 
@@ -150,5 +184,6 @@ sealed record WorkspaceConfiguration
 
 sealed class DotNetDoConfigurationException : Exception
 {
-    public DotNetDoConfigurationException(string message, Exception? innerException = null) : base(message, innerException) { }
+    public DotNetDoConfigurationException(string message, Exception? innerException = null)
+        : base(message, innerException) { }
 }

@@ -14,6 +14,21 @@ public sealed partial record AbsolutePath
         _segments = segments;
     }
 
+    /// <summary>Converts textual input into the normalized value, returning whether the input was valid.</summary>
+    public static bool TryParse(string? path, [NotNullWhen(true)] out AbsolutePath? result)
+    {
+        try
+        {
+            result = path is null ? null : Parse(path);
+        }
+        catch (ArgumentException)
+        {
+            result = null;
+        }
+
+        return result is not null;
+    }
+
     /// <summary>Validates and converts textual input into the normalized value.</summary>
     public static AbsolutePath Parse(string path)
     {

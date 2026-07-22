@@ -45,6 +45,16 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Try_parse_reports_validity_instead_of_throwing()
+    {
+        Assert.True(AbsolutePath.TryParse("C:/a/b", out var parsed));
+        Assert.Equal(AbsolutePath.Parse("C:/a/b"), parsed);
+        Assert.False(AbsolutePath.TryParse("relative/path", out _));
+        Assert.False(AbsolutePath.TryParse("", out _));
+        Assert.False(AbsolutePath.TryParse(null, out _));
+    }
+
+    [Fact]
     public void Globs_files_and_directories_with_ordered_patterns()
     {
         using var workspace = Workspace.Create();
