@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.0
+
 ### Added
 - `Do.IsLocalBuild` and CI-sensitive typed tool defaults, including `Release` configuration for .NET and MSBuild commands.
 - `tools` array in `dotnetdo.toml` for declaring tool requirements by canonical name, installed on demand with the `:install` command.
