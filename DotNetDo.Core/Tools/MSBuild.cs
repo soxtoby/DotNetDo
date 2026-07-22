@@ -16,6 +16,9 @@ public sealed record MSBuildCommand : ExecToolCommand
     public MSBuildCommand()
     {
         Projects = [Do.Solution.Path];
+        Properties = MSBuildDefaults.Configuration is { } configuration
+            ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Configuration"] = configuration }.AsReadOnly()
+            : ReadOnlyDictionary<string, string>.Empty;
         Verbosity = MSBuildOutputVolume.Snapshot();
     }
 
@@ -67,6 +70,11 @@ public sealed record MSBuildCommand : ExecToolCommand
             Arg("-isolateProjects:true", "-isolateProjects:false", IsolateProjects),
             Arg("-graphBuild:true", "-graphBuild:false", GraphBuild),
         ];
+}
+
+static class MSBuildDefaults
+{
+    public static string? Configuration => Do.IsLocalBuild ? null : "Release";
 }
 
 static class MSBuildOutputVolume

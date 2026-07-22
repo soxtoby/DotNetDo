@@ -178,6 +178,16 @@ A public API modeling one CI provider's runner commands and build metadata with 
 
 _Avoid_: Universal CI API, provider-neutral command
 
+## Local build
+
+A build running without an active supported CI provider and without a truthy conventional `CI` marker. `Do.IsLocalBuild` exposes this distinction to tasks; an unsupported CI host with `CI=true` is therefore not local.
+
+_Avoid_: Build environment, non-CI build
+
+## CI build default
+
+A tool setting inferred when the current build is not a local build. Build configuration defaults to `Release`; a local build infers no configuration and leaves the tool's native default authoritative. Each tool family owns its equivalent mapping.
+
 ## Additional arguments
 
 Raw argument text appended after a configured tool command's structured argument parts.

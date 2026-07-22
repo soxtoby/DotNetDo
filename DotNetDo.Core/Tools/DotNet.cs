@@ -53,6 +53,9 @@ public abstract record DotNetTargetCommand : ExecToolCommand
 /// <summary>Base command definition for .NET CLI commands sharing build options.</summary>
 public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
 {
+    /// <summary>Creates a command with defaults for the current build locality.</summary>
+    protected DotNetBuildOptionsCommand() => Configuration = MSBuildDefaults.Configuration;
+
     /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
     public bool CurrentRuntime { get; init; }
     /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
@@ -127,6 +130,9 @@ public sealed record DotNetBuild : DotNetBuildOptionsCommand
 /// <summary>Builds a <c>dotnet clean</c> command.</summary>
 public sealed record DotNetClean : DotNetTargetCommand
 {
+    /// <summary>Creates a command with defaults for the current build locality.</summary>
+    public DotNetClean() => Configuration = MSBuildDefaults.Configuration;
+
     /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
     public string? Framework { get; init; }
     /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
@@ -363,6 +369,9 @@ public sealed record DotNetRestore : DotNetTargetCommand
 /// <summary>Builds a <c>dotnet test</c> command.</summary>
 public sealed record DotNetTest : DotNetTargetCommand
 {
+    /// <summary>Creates a command with defaults for the current build locality.</summary>
+    public DotNetTest() => Configuration = MSBuildDefaults.Configuration;
+
     /// <summary>Supplies the value emitted by the <c>--settings</c> option.</summary>
     public string? Settings { get; init; }
     /// <summary>Controls emission of the <c>--list-tests</c> switch.</summary>
@@ -501,6 +510,7 @@ public sealed record DotNetWatch : ExecToolCommand
     {
         (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
         Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
+        Configuration = MSBuildDefaults.Configuration;
     }
     /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
     public bool Quiet { get; init; }

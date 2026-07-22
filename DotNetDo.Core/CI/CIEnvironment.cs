@@ -32,5 +32,5 @@ static class CIEnvironment
         return value is null ? null : parse(value);
     }
 
-    public static string? String(string name) => Environment.GetEnvironmentVariable(name);
+    public static string? String(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } value ? value : null;
 }

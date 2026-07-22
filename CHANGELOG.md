@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `Do.IsLocalBuild` and CI-sensitive typed tool defaults, including `Release` configuration for .NET and MSBuild commands.
 - `tools` array in `dotnetdo.toml` for declaring tool requirements by canonical name, installed on demand with the `:install` command.
 - `Tools.Azure.Install` for making the Azure CLI available, installing it through Scoop (and bootstrapping Scoop itself) when missing.
 - `Tools.Scoop` commands for installing, uninstalling, and updating apps, managing buckets and settings, plus `Tools.Scoop.InstallSelf` for bootstrapping Scoop with the official installer.
