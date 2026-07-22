@@ -4,7 +4,7 @@
   <Project Path="DotNetDo/DotNetDo.csproj" />
   <Folder Name="/scripts/">
     <File Path="scripts/build.cs" />
-    <File Path="scripts/make-release.cs" />
+    <File Path="scripts/prepare-release.cs" />
     <File Path="scripts/release.cs" />
   </Folder>
   <Folder Name="/Solution Items/">

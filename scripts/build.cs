@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.1.0
+#:package DotNetDo.Core@*
 using DotNetDo;
 using static DotNetDo.Tools;
 
@@ -27,18 +27,18 @@ await (DotNet.Test with
 
 await (DotNet.Pack with
     {
-        Targets = [(Do.RootDirectory / "DotNetDo.Core" / "DotNetDo.Core.csproj").ToString()],
+        Targets = [(Do.RootDirectory / "DotNetDo.Core" / "DotNetDo.Core.csproj").QuotedArgument()],
         Configuration = configuration,
         NoBuild = true,
         NoRestore = true,
-        Output = packages.ToString(),
+        Output = packages.QuotedArgument(),
     });
 
 await (DotNet.Pack with
     {
-        Targets = [(Do.RootDirectory / "DotNetDo" / "DotNetDo.csproj").ToString()],
+        Targets = [(Do.RootDirectory / "DotNetDo" / "DotNetDo.csproj").QuotedArgument()],
         Configuration = configuration,
         NoBuild = true,
         NoRestore = true,
-        Output = packages.ToString(),
+        Output = packages.QuotedArgument(),
     });

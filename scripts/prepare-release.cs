@@ -1,10 +1,10 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.1.0
+#:package DotNetDo.Core@*
 using System.Text.RegularExpressions;
 using DotNetDo;
 
 if (Do.GitRepo.IsDirty)
-    throw new InvalidOperationException("make-release requires a clean Git worktree.");
+    throw new InvalidOperationException("prepare-release requires a clean Git worktree.");
 
 var projectFile = Do.RootDirectory / "Directory.Build.props";
 var changelogFile = Do.RootDirectory / "CHANGELOG.md";
@@ -28,11 +28,11 @@ var next = bump switch
 };
 
 if (current != new Version(0, 0, 0))
-    UpdatePins(current.ToString(), manifestFile);
+    UpdateToolManifestPin(current.ToString(), manifestFile);
 
 projectFile.WriteText(Regex.Replace(
     project,
-    @"<VersionPrefix>[^<]+</VersionPrefix>",
+    "<VersionPrefix>[^<]+</VersionPrefix>",
     $"<VersionPrefix>{next}</VersionPrefix>"));
 
 var before = changelog[..unreleasedMatch.Index];
@@ -81,22 +81,13 @@ static Bump InferBump(string notes)
         : Bump.Patch;
 }
 
-static void UpdatePins(string version, AbsolutePath manifestFile)
+static void UpdateToolManifestPin(string version, AbsolutePath manifestFile)
 {
     var manifest = manifestFile.ReadText();
     var manifestVersion = new Regex("""(?m)("version"\s*:\s*")[^"]+(")""");
     if (!manifestVersion.IsMatch(manifest))
         throw new InvalidOperationException("Tool manifest has no package version.");
     manifestFile.WriteText(manifestVersion.Replace(manifest, $"${{1}}{version}${{2}}", 1));
-
-    foreach (var script in (Do.RootDirectory / "scripts").GlobFiles("*.cs"))
-    {
-        var content = script.ReadText();
-        script.WriteText(Regex.Replace(
-            content,
-            @"(?m)^(#:package\s+DotNetDo\.Core@)[^\s]+",
-            $"${{1}}{version}"));
-    }
 }
 
 enum Bump { Major, Minor, Patch }

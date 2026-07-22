@@ -1,9 +1,9 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.1.0
+#:package DotNetDo.Core@*
 using System.Text.RegularExpressions;
 using DotNetDo;
 
-var tag = Do.Param("tag", Environment.GetEnvironmentVariable("GITHUB_REF_NAME"), "Release tag.").Required().Value;
+var tag = Do.Param("tag", Do.GitHubActions?.Workflow.ReferenceName, "Release tag.").Required().Value;
 var apiKey = Do.Secret("nuget_api_key", null, "Temporary NuGet API key.").Required().Unwrap();
 var project = (Do.RootDirectory / "Directory.Build.props").ReadText();
 var versionMatch = Regex.Match(project, @"<VersionPrefix>(?<version>[^<]+)</VersionPrefix>");
@@ -22,9 +22,8 @@ if (!notesMatch.Success || string.IsNullOrWhiteSpace(notesMatch.Groups["notes"].
     throw new InvalidOperationException($"CHANGELOG.md has no release notes for {tag}.");
 
 var packages = Do.RootDirectory / "artifacts" / "packages";
-var packageFiles = Directory.GetFiles(packages, "*.nupkg")
-    .ToArray();
-var symbolFiles = Directory.GetFiles(packages, "*.snupkg");
+var packageFiles = packages.GlobFiles("*.nupkg");
+var symbolFiles = packages.GlobFiles("*.snupkg");
 var releaseFiles = packageFiles.Concat(symbolFiles).ToArray();
 if (packageFiles.Length != 2 || symbolFiles.Length != 2)
     throw new InvalidOperationException("Expected two NuGet packages and two symbol packages.");
