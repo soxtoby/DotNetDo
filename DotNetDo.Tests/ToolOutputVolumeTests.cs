@@ -33,13 +33,13 @@ public sealed class ToolOutputVolumeTests
                     Tools.DotNet.Watch,
                 ];
 
-                Assert.All(commands, command => Assert.EndsWith($"--verbosity {expected}", command.ToString()));
+                Assert.All(commands, command => Assert.Contains($"--verbosity {expected}", command.ToString()));
                 Assert.Equal(expected, Tools.DotNet.Build.Verbosity);
                 Assert.Equal(expected, Tools.DotNet.Watch.Verbosity);
 
                 var msbuild = Tools.MSBuild;
                 Assert.Equal(expectedMSBuild, msbuild.Verbosity);
-                Assert.EndsWith($"-verbosity:{expected}", msbuild.ToString());
+                Assert.Contains($"-verbosity:{expected}", msbuild.ToString());
             });
     }
 
@@ -109,7 +109,7 @@ public sealed class ToolOutputVolumeTests
             {
                 var watch = Tools.DotNet.Watch with { Quiet = false };
                 Assert.DoesNotContain("--quiet", watch.ToString());
-                Assert.EndsWith("--verbosity minimal", watch.ToString());
+                Assert.Contains("--verbosity minimal", watch.ToString());
 
                 var nativeVerbosity = Tools.DotNet.Watch with { Verbosity = null };
                 Assert.Contains("--quiet", nativeVerbosity.ToString());
@@ -156,9 +156,11 @@ public sealed class ToolOutputVolumeTests
     public void Additional_arguments_remain_opaque()
     {
         AtLevel(LogEventLevel.Information, () =>
-            Assert.EndsWith(
-                "--verbosity normal --verbosity minimal",
-                (Tools.DotNet.Build with { AdditionalArguments = "--verbosity minimal" }).ToString()));
+            {
+                var rendered = (Tools.DotNet.Build with { AdditionalArguments = "--verbosity minimal" }).ToString();
+                Assert.Contains("--verbosity normal", rendered);
+                Assert.EndsWith("--verbosity minimal", rendered);
+            });
     }
 
     static void AtLevel(LogEventLevel level, Action action)

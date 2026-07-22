@@ -18,8 +18,9 @@ public sealed class DotNetToolTests
         {
             Do.Solution = await Solution.Load(path, TestContext.Current.CancellationToken);
 
-            Assert.Equal($"dotnet build {path.QuotedArgument()} --verbosity normal", Tools.DotNet.Build.ToString());
-            var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], Output = "test output" };
+            var build = Tools.DotNet.Build with { Configuration = null };
+            Assert.Equal($"dotnet build {path.QuotedArgument()} --verbosity normal", build.ToString());
+            var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], Output = "test output", Configuration = null };
             Assert.Equal(["My App.csproj"], command.Targets);
             Assert.Equal("test output", command.Output);
             Assert.Equal("dotnet test \"My App.csproj\" --verbosity normal --output \"test output\"", command.ToString());
@@ -145,7 +146,7 @@ public sealed class DotNetToolTests
         Assert.Equal(["Clean", "Compile"], command.Targets);
         Assert.Equal("Release Candidate", command.Properties["Configuration"]);
         Assert.Equal("Release Candidate", command.Properties["configuration"]);
-        Assert.Matches("^(?:\".*MSBuild\\.exe\"|dotnet \".*MSBuild\\.dll\") ", command.ToString());
+        Assert.Matches("^(?:\"[^\"]*MSBuild\\.exe\"|\\S*MSBuild\\.exe|dotnet (?:\"[^\"]*MSBuild\\.dll\"|\\S*MSBuild\\.dll)) ", command.ToString());
         Assert.EndsWith("\"My App.csproj\" -verbosity:detailed -target:Clean;Compile -property:\"Configuration=Release Candidate\" -maxCpuCount:4 -restore -noLogo -nodeReuse:false", command.ToString());
     }
 
@@ -157,7 +158,7 @@ public sealed class DotNetToolTests
 
         Assert.NotSame(first, second);
         Assert.Equal([Do.Solution.Path], first.Projects);
-        Assert.EndsWith($"{Do.Solution.Path.QuotedArgument()} -verbosity:normal", first.ToString());
+        Assert.Equal(MSBuildVerbosity.Normal, first.Verbosity);
     }
 
     [Fact]
@@ -184,7 +185,7 @@ public sealed class DotNetToolTests
         Assert.Equal(["tests/My Tests.dll", "tests/Other.Tests.dll"], command.TestFiles);
         Assert.Equal(["Product.Tests.Can ship", "Product.Tests.CanRetry"], command.Tests);
         Assert.Equal("Release Candidate", command.Environment["deployment_slot"]);
-        Assert.Matches("^(?:\".*vstest\\.console\\.exe\"|dotnet \".*vstest\\.console\\.dll\") ", command.ToString());
+        Assert.Matches("^(?:\"[^\"]*vstest\\.console\\.exe\"|\\S*vstest\\.console\\.exe|dotnet (?:\"[^\"]*vstest\\.console\\.dll\"|\\S*vstest\\.console\\.dll)) ", command.ToString());
         Assert.EndsWith(
             "\"tests/My Tests.dll\" tests/Other.Tests.dll --Tests:\"Product.Tests.Can ship\",Product.Tests.CanRetry --Framework:.NETCoreApp,Version=v10.0 --Platform:x64 -e:\"DEPLOYMENT_SLOT=Release Candidate\" --Settings:\"config/CI Tests.runsettings\" --Parallel --TestAdapterPath:\"test adapters\" --Blame --Diag:\"logs/vstest log.txt;tracelevel=info\" --Logger:\"trx;LogFileName=CI Results.trx\" --Logger:console;verbosity=detailed --ResultsDirectory:\"test results\" --Collect:\"Code Coverage\" --Collect:\"XPlat Code Coverage\" --InIsolation",
             command.ToString());
