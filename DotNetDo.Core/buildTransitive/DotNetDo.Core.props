@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    DotNetDo tasks run as file-based apps, which build with Native AOT publishing defaults. Those
+    defaults turn off the reflection-based serialization that DotNetDo's TOML and JSON helpers rely
+    on, so re-enable it for consuming apps unless they opt out explicitly.
+  -->
+  <PropertyGroup>
+    <TomlynIsReflectionEnabledByDefault Condition="'$(TomlynIsReflectionEnabledByDefault)' == ''">true</TomlynIsReflectionEnabledByDefault>
+    <JsonSerializerIsReflectionEnabledByDefault Condition="'$(JsonSerializerIsReflectionEnabledByDefault)' == ''">true</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+</Project>

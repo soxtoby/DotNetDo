@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Serilog;
 using Serilog.Core;
 
@@ -9,6 +10,11 @@ static class LoggingBootstrap
     static ILogger? _bootstrapLogger;
 
     [ModuleInitializer]
+    [SuppressMessage(
+        "Usage",
+        "CA2255:The ModuleInitializer attribute should not be used in libraries",
+        Justification = "Bootstrapping the logger before task code runs is a core feature."
+    )]
     internal static void Initialize()
     {
         if (!ReferenceEquals(Log.Logger, Logger.None))

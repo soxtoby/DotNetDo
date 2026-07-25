@@ -59,7 +59,7 @@ sealed record WorkspaceConfiguration
 
         try
         {
-            var document = configurationFile.ReadToml<WorkspaceConfigurationDocument>()
+            var document = configurationFile.ReadToml<WorkspaceConfigurationDocument>(TomlContext.Default.Options)
                 ?? throw new InvalidOperationException("TOML document produced no configuration.");
 
             foreach (var (key, value) in document.ExtensionData)
@@ -163,27 +163,19 @@ sealed record WorkspaceConfiguration
             : relativePath;
     }
 
-    sealed class WorkspaceConfigurationDocument
+    internal sealed class WorkspaceConfigurationDocument
     {
-        [JsonPropertyName("scripts-path")]
         public string? ScriptsPath { get; init; }
-
-        [JsonPropertyName("solution-path")]
         public string? SolutionPath { get; init; }
-
-        [JsonPropertyName("tools")]
         public string[]? Tools { get; init; }
-
-        [JsonPropertyName("tasks")]
         public Dictionary<string, object?> Tasks { get; init; } = [];
-
         [TomlExtensionData]
         public Dictionary<string, object?> ExtensionData { get; init; } = [];
     }
 }
 
-sealed class DotNetDoConfigurationException : Exception
-{
-    public DotNetDoConfigurationException(string message, Exception? innerException = null)
-        : base(message, innerException) { }
-}
+[TomlSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
+[TomlSerializable(typeof(WorkspaceConfiguration.WorkspaceConfigurationDocument))]
+sealed partial class TomlContext : TomlSerializerContext;
+
+sealed class DotNetDoConfigurationException(string message, Exception? innerException = null) : Exception(message, innerException);

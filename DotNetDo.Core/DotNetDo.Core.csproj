@@ -7,7 +7,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>DotNetDo.Core</PackageId>
     <Description>Typed tools and helpers for C# automation.</Description>
-    <NoWarn>$(NoWarn);CA2255</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- CS0162: Tomlyn's TOML serializer context generator emits unreachable code for extension data members. -->
+    <NoWarn>$(NoWarn);CS0162</NoWarn>
     <RootNamespace>DotNetDo</RootNamespace>
   </PropertyGroup>
 
@@ -33,6 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="buildTransitive\DotNetDo.Core.props" Pack="true" PackagePath="buildTransitive" />
     <None Include="..\DotNetDo.Generators\bin\$(Configuration)\net10.0\DotNetDo.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
     <None Include="..\LICENSE" Pack="true" PackagePath="\" Visible="false" />

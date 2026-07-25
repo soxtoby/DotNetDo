@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## v0.3.1
+
+### Fixed
+- Tasks no longer fail to read `dotnetdo.toml` with a Tomlyn reflection-serialization error. Configuration now loads through source-generated TOML metadata, and DotNetDo.Core re-enables reflection-based TOML and JSON serialization for consuming apps, which file-based apps otherwise disable through their Native AOT publishing defaults. `AbsolutePath.ReadJson`/`ReadToml` and their write counterparts therefore work in tasks without per-task `#:property` directives.
+
 ## v0.3.0
 
 ### Added
