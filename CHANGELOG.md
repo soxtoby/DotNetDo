@@ -6,6 +6,7 @@
 - New task templates pin `DotNetDo.Core` to the running DotNetDo version.
 
 ### Added
+- `AbsolutePath.RecreateDirectory()` for recreating an existing directory empty or creating it when missing.
 - `:update` for updating the root-local DotNetDo tool manifest entry and exact package pins in workspace scripts, with named-package, `--all`, and `--prerelease` modes.
 - `Tools.DotNet.PackageSearch` and `Tools.DotNet.ToolUpdate` typed .NET CLI commands.
 - `QuotedArgument()` extensions for optional and required task parameters and secrets.

@@ -29,6 +29,23 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Recreates_directories()
+    {
+        using var workspace = Workspace.Create();
+        var existing = workspace.Path / "existing";
+        var missing = workspace.Path / "missing";
+        (existing / "nested").EnsureDirectoryExists();
+        File.WriteAllText(existing / "nested/file.txt", "content");
+
+        Assert.Same(existing, existing.RecreateDirectory());
+        Assert.True(existing.IsExistingDirectory);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(existing));
+
+        Assert.Same(missing, missing.RecreateDirectory());
+        Assert.True(missing.IsExistingDirectory);
+    }
+
+    [Fact]
     public void Gets_relative_path_to_another_absolute_path()
     {
         using var workspace = Workspace.Create();

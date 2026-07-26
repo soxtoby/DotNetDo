@@ -36,6 +36,8 @@ These properties directly use `File.Exists` and `Directory.Exists`, including th
 
 `EnsureDirectoryExists()` directly uses `Directory.CreateDirectory`, including its native link and error behavior.
 
+`AbsolutePath.RecreateDirectory()` recursively deletes an existing directory and recreates it empty, or creates it when missing. It returns the same path value for chaining and propagates native deletion and creation errors.
+
 `AbsolutePath` exposes synchronous, typed file-content helpers:
 
 ```csharp

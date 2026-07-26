@@ -18,6 +18,16 @@ public sealed partial record AbsolutePath
         return this;
     }
 
+    /// <summary>Delete and recreate this directory.</summary>
+    public AbsolutePath RecreateDirectory()
+    {
+        if (IsExistingDirectory)
+            Directory.Delete(this, recursive: true);
+
+        Directory.CreateDirectory(this);
+        return this;
+    }
+
     /// <summary>Returns files beneath this directory matched by the ordered include and exclude patterns.</summary>
     public AbsolutePath[] GlobFiles(string pattern, GlobOptions? options = null) => GlobFiles([pattern], options);
 
