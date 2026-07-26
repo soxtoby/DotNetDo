@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.4.0
+
 ### Changed
 - New task templates pin `DotNetDo.Core` to the running DotNetDo version.
 
