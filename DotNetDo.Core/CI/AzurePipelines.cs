@@ -84,14 +84,8 @@ public sealed class AzurePipelines
     public void UploadSummary(AbsolutePath path) => Vso("task.uploadsummary", path);
     /// <summary>Emits the provider's SetEndpoint command immediately.</summary>
     public void SetEndpoint(string id, AzureEndpointField field, string value, string? key = null) => Vso("task.setendpoint", value,
-        ("id", Required(id)), ("field", field switch
-        {
-            AzureEndpointField.AuthParameter => "authParameter",
-            AzureEndpointField.DataParameter => "dataParameter",
-            AzureEndpointField.Url => "url",
-            _ => throw new ArgumentOutOfRangeException(nameof(field))
-        }), ("key", field == AzureEndpointField.Url ? key : Required(key!)));
-
+        ("id", Required(id)), ("field", field.ToString().ToCamelCase()),
+        ("key", field == AzureEndpointField.Url ? key : Required(key!)));
     /// <summary>Emits the provider's AssociateArtifact command immediately.</summary>
     public void AssociateArtifact(string artifactName, AzureArtifactType type, string location) => Vso("artifact.associate", location,
         ("artifactname", Required(artifactName)), ("type", type.ToString().ToLowerInvariant()));

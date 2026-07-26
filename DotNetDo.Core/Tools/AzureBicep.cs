@@ -180,10 +180,10 @@ public sealed record AzureBicepFormat : AzureBicepOutputCommand
             return
                 [
                     Arg("--file", File),
-                    Arg("--indent-kind", IndentKind is null ? null : BicepToken.IndentKind(IndentKind.Value)),
+                    Arg("--indent-kind", IndentKind?.ToString().ToPascalCase()),
                     Arg("--indent-size", IndentSize),
                     Arg("--insert-final-newline", InsertFinalNewline),
-                    Arg("--newline-kind", NewlineKind is null ? null : BicepToken.NewlineKind(NewlineKind.Value)),
+                    Arg("--newline-kind", NewlineKind?.ToString().ToSnakeCaseUpper()),
                     ..OutputArguments,
                 ];
         }
@@ -213,7 +213,9 @@ public sealed record AzureBicepGenerateParams : AzureBicepOutputCommand
             return
                 [
                     Arg("--file", File),
-                    Arg("--include-params", IncludeParameters is null ? null : BicepToken.IncludedParameters(IncludeParameters.Value)),
+                    Arg("--include-params", IncludeParameters is null ? null 
+                        : IncludeParameters.Value is BicepIncludedParameters.All ? "all"
+                        : IncludeParameters.Value.ToString().ToPascalCase()),
                     Arg("--no-restore", NoRestore),
                     Arg("--output-format", OutputFormat),
                     ..OutputArguments,
@@ -316,7 +318,7 @@ public sealed record AzureBicepSnapshot : AzureBicepCommand
                     Arg("--deployment-name", DeploymentName),
                     Arg("--location", Location),
                     Arg("--management-group-id", ManagementGroupId),
-                    Arg("--mode", Mode is null ? null : BicepToken.SnapshotMode(Mode.Value)),
+                    Arg("--mode", Mode?.ToString().ToPascalCase()),
                     Arg("--resource-group", ResourceGroup),
                     Arg("--subscription-id", SubscriptionId),
                     Arg("--tenant-id", TenantId),
@@ -338,7 +340,7 @@ public sealed record AzureBicepInstall : AzureBicepCommand
     /// <inheritdoc />
     protected override IReadOnlyList<string?> BicepArguments =>
         [
-            Arg("--target-platform", TargetPlatform is null ? null : BicepToken.TargetPlatform(TargetPlatform.Value)),
+            Arg("--target-platform", TargetPlatform?.ToString().ToKebabCaseLower()),
             Arg("--version", Version),
         ];
 }
@@ -354,7 +356,7 @@ public sealed record AzureBicepUpgrade : AzureBicepCommand
     /// <inheritdoc />
     protected override IReadOnlyList<string?> BicepArguments =>
         [
-            Arg("--target-platform", TargetPlatform is null ? null : BicepToken.TargetPlatform(TargetPlatform.Value)),
+            Arg("--target-platform", TargetPlatform?.ToString().ToKebabCaseLower()),
         ];
 }
 
@@ -422,53 +424,4 @@ public enum BicepTargetPlatform
     WinArm64,
     /// <summary>Windows x64.</summary>
     WinX64,
-}
-
-static class BicepToken
-{
-    public static string IndentKind(BicepIndentKind value) =>
-        value switch
-            {
-                BicepIndentKind.Space => "Space",
-                BicepIndentKind.Tab => "Tab",
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-            };
-
-    public static string NewlineKind(BicepNewlineKind value) =>
-        value switch
-            {
-                BicepNewlineKind.CR => "CR",
-                BicepNewlineKind.CRLF => "CRLF",
-                BicepNewlineKind.LF => "LF",
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-            };
-
-    public static string IncludedParameters(BicepIncludedParameters value) =>
-        value switch
-            {
-                BicepIncludedParameters.All => "all",
-                BicepIncludedParameters.RequiredOnly => "RequiredOnly",
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-            };
-
-    public static string SnapshotMode(BicepSnapshotMode value) =>
-        value switch
-            {
-                BicepSnapshotMode.Overwrite => "Overwrite",
-                BicepSnapshotMode.Validate => "Validate",
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-            };
-
-    public static string TargetPlatform(BicepTargetPlatform value) =>
-        value switch
-            {
-                BicepTargetPlatform.LinuxArm64 => "linux-arm64",
-                BicepTargetPlatform.LinuxMuslX64 => "linux-musl-x64",
-                BicepTargetPlatform.LinuxX64 => "linux-x64",
-                BicepTargetPlatform.OsxArm64 => "osx-arm64",
-                BicepTargetPlatform.OsxX64 => "osx-x64",
-                BicepTargetPlatform.WinArm64 => "win-arm64",
-                BicepTargetPlatform.WinX64 => "win-x64",
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null),
-            };
 }
