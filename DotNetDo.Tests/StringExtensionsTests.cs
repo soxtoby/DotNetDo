@@ -36,6 +36,30 @@ public sealed class StringExtensionsTests
     }
 
     [Fact]
+    public void Quotes_parameter_values_for_command_interpolation()
+    {
+        var parameter = Do.Param($"parameter-{Guid.NewGuid()}", "some value");
+        var number = Do.Param($"number-{Guid.NewGuid()}", 12.5m);
+        var secret = Do.Secret($"secret-{Guid.NewGuid()}", "secret value");
+
+        Assert.Equal("\"some value\"", parameter.QuotedArgument());
+        Assert.Equal("\"some value\"", parameter.Required().QuotedArgument());
+        Assert.Equal("12.5", number.QuotedArgument());
+        Assert.Equal("\"secret value\"", secret.QuotedArgument());
+        Assert.Equal("\"secret value\"", secret.Required().QuotedArgument());
+    }
+
+    [Fact]
+    public void Missing_optional_parameters_render_as_null_arguments()
+    {
+        var parameter = Do.Param($"parameter-{Guid.NewGuid()}");
+        var secret = Do.Secret($"secret-{Guid.NewGuid()}");
+
+        Assert.Null(parameter.QuotedArgument());
+        Assert.Null(secret.QuotedArgument());
+    }
+
+    [Fact]
     public void Matches_regular_expressions()
     {
         const string input = "Version: 1.2\nVersion: 3.4";

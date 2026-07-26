@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 
@@ -95,6 +96,9 @@ public readonly record struct Param<T>
             ? new RequiredParam<T>(Name, _value.Value, Description)
             : throw new InvalidOperationException($"Parameter '{Name}' is required.");
 
+    /// <summary>Renders the resolved optional value as one quoted command-line argument.</summary>
+    public string? QuotedArgument() => _value.HasValue ? Convert.ToString(_value.Value, CultureInfo.InvariantCulture)?.QuotedArgument() : null;
+
     /// <summary>The resolved parameter value.</summary>
     public static implicit operator T?(Param<T> parameter) => parameter.Value;
 }
@@ -115,6 +119,9 @@ public readonly record struct RequiredParam<T>
     public string? Description { get; }
     /// <summary>The resolved parameter value.</summary>
     public T Value { get; }
+
+    /// <summary>Renders the resolved value as one quoted command-line argument.</summary>
+    public string QuotedArgument() => Convert.ToString(Value, CultureInfo.InvariantCulture)!.QuotedArgument();
 
     /// <summary>T.</summary>
     public static implicit operator T(RequiredParam<T> parameter) => parameter.Value;
@@ -152,6 +159,9 @@ public readonly record struct Secret
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
     public string? Unwrap() => _value.ValueOrDefault;
 
+    /// <summary>Renders the resolved optional secret value as one quoted command-line argument.</summary>
+    public string? QuotedArgument() => Unwrap()?.QuotedArgument();
+
     /// <summary>Converts the optional parameter to its required form, throwing when no value was supplied.</summary>
     public RequiredSecret Required() =>
         _value.HasValue
@@ -181,6 +191,9 @@ public readonly record struct RequiredSecret
 
     /// <summary>Returns the plaintext secret value; callers must avoid writing it to unredacted output.</summary>
     public string Unwrap() => _value;
+
+    /// <summary>Renders the resolved secret value as one quoted command-line argument.</summary>
+    public string QuotedArgument() => _value.QuotedArgument();
 
     /// <inheritdoc />
     public override string ToString() => "***";
