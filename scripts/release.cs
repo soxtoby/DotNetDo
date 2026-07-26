@@ -1,10 +1,10 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.3.1
+#:package DotNetDo.Core@0.4.0
 using System.Text.RegularExpressions;
 using DotNetDo;
 using static DotNetDo.Tools;
 
-var tag = Do.Param("tag", Do.GitHubActions?.Workflow.ReferenceName, "Release tag.").Required().Value;
+var tag = Do.Param("tag", Do.GitHubActions?.Workflow.ReferenceName, "Release tag.").Required();
 var apiKey = Do.Secret("nuget_api_key", null, "Temporary NuGet API key.").Required();
 
 var project = (Do.RootDirectory / "Directory.Build.props").ReadText();

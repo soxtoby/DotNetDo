@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.3.1
+#:package DotNetDo.Core@0.4.0
 using System.Text.RegularExpressions;
 using DotNetDo;
 using Serilog;
@@ -22,11 +22,11 @@ var unreleasedMatch = ParseUnreleased(changelog);
 var unreleased = unreleasedMatch.Groups["notes"].Value;
 var bump = InferBump(unreleased);
 var next = bump switch
-{
-    Bump.Major => new Version(current.Major + 1, 0, 0),
-    Bump.Minor => new Version(current.Major, current.Minor + 1, 0),
-    _ => new Version(current.Major, current.Minor, current.Build + 1),
-};
+    {
+        Bump.Major => new Version(current.Major + 1, 0, 0),
+        Bump.Minor => new Version(current.Major, current.Minor + 1, 0),
+        _ => new Version(current.Major, current.Minor, current.Build + 1),
+    };
 
 if (current != new Version(0, 0, 0))
     UpdatePins(current.ToString(), manifestFile);
