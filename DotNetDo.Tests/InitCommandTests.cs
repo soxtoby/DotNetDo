@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -16,7 +17,13 @@ public sealed class InitCommandTests
         Assert.Contains("Scripts path (default: scripts):", result.Output);
         Assert.Contains("Initial task name (default: build):", result.Output);
         Assert.Equal("scripts-path = \"scripts\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
-        Assert.Contains("Hello from build", File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs")));
+        var task = File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs"));
+        var version = typeof(Cli.TaskScaffolding).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+            .InformationalVersion
+            .Split('+', 2)[0];
+        Assert.Contains($"#:package DotNetDo.Core@{version}", task);
+        Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
         Assert.Equal("@dnx DotNetDo %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
         Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
         Assert.Contains("Created scripts path: scripts", result.Output);

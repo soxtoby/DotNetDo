@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace DotNetDo.Cli;
 
 static class TaskScaffolding
@@ -24,11 +26,18 @@ static class TaskScaffolding
     }
 
     static string Template(string name) =>
-        $"""
+        $$"""
         #!/usr/bin/env dotnet
-        #:package DotNetDo.Core@*
+        #:package DotNetDo.Core@{{PackageVersion}}
         using DotNetDo;
+        using Serilog;
 
-        Console.WriteLine("Hello from {name}");
+        Log.Information("Hello from {Task}", "{{name}}");
         """;
+
+    static string PackageVersion =>
+        typeof(TaskScaffolding).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+            .InformationalVersion
+            .Split('+', 2)[0];
 }

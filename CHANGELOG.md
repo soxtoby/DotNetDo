@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- New task templates pin `DotNetDo.Core` to the running DotNetDo version.
+
 ### Added
 - `:update` for updating the root-local DotNetDo tool manifest entry and exact package pins in workspace scripts, with named-package, `--all`, and `--prerelease` modes.
 - `Tools.DotNet.PackageSearch` and `Tools.DotNet.ToolUpdate` typed .NET CLI commands.
