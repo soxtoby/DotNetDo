@@ -12,6 +12,44 @@ public sealed class StringExtensionsTests
         Assert.Empty(string.Empty.SplitLines());
     }
 
+    [Theory]
+    [InlineData("HTTPServer2", "httpServer2", "HttpServer2", "http_server2", "HTTP_SERVER2", "http-server2", "HTTP-SERVER2")]
+    [InlineData("version2Value", "version2Value", "Version2Value", "version2_value", "VERSION2_VALUE", "version2-value", "VERSION2-VALUE")]
+    [InlineData("foo.bar/baz", "fooBarBaz", "FooBarBaz", "foo_bar_baz", "FOO_BAR_BAZ", "foo-bar-baz", "FOO-BAR-BAZ")]
+    [InlineData("cafe\u0301-value", "caféValue", "CaféValue", "café_value", "CAFÉ_VALUE", "café-value", "CAFÉ-VALUE")]
+    [InlineData("123 value", "123Value", "123Value", "123_value", "123_VALUE", "123-value", "123-VALUE")]
+    [InlineData("!!!", "", "", "", "", "", "")]
+    public void Converts_identifier_case(
+        string value,
+        string camel,
+        string pascal,
+        string snakeLower,
+        string snakeUpper,
+        string kebabLower,
+        string kebabUpper
+    )
+    {
+        Assert.Equal(camel, value.ToCamelCase());
+        Assert.Equal(pascal, value.ToPascalCase());
+        Assert.Equal(snakeLower, value.ToSnakeCaseLower());
+        Assert.Equal(snakeUpper, value.ToSnakeCaseUpper());
+        Assert.Equal(kebabLower, value.ToKebabCaseLower());
+        Assert.Equal(kebabUpper, value.ToKebabCaseUpper());
+    }
+
+    [Fact]
+    public void Casing_helpers_reject_null()
+    {
+        string value = null!;
+
+        Assert.Throws<ArgumentNullException>(() => value.ToCamelCase());
+        Assert.Throws<ArgumentNullException>(() => value.ToPascalCase());
+        Assert.Throws<ArgumentNullException>(() => value.ToSnakeCaseLower());
+        Assert.Throws<ArgumentNullException>(() => value.ToSnakeCaseUpper());
+        Assert.Throws<ArgumentNullException>(() => value.ToKebabCaseLower());
+        Assert.Throws<ArgumentNullException>(() => value.ToKebabCaseUpper());
+    }
+
     [Fact]
     public void Detects_null_empty_and_whitespace_strings()
     {
