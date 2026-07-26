@@ -1,7 +1,8 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.2.0
+#:package DotNetDo.Core@0.3.1
 using System.Text.RegularExpressions;
 using DotNetDo;
+using Serilog;
 
 if (Do.GitRepo.IsDirty)
     throw new InvalidOperationException("prepare-release requires a clean Git worktree.");
@@ -30,8 +31,7 @@ var next = bump switch
 if (current != new Version(0, 0, 0))
     UpdatePins(current.ToString(), manifestFile);
 
-projectFile.WriteText(Regex.Replace(
-    project,
+projectFile.WriteText(project.RegexReplace(
     "<VersionPrefix>[^<]+</VersionPrefix>",
     $"<VersionPrefix>{next}</VersionPrefix>"));
 
@@ -40,11 +40,11 @@ var after = changelog[(unreleasedMatch.Index + unreleasedMatch.Length)..].TrimSt
 var released = $"## Unreleased\n\n## v{next}\n\n{unreleased.Trim()}\n";
 changelogFile.WriteText(before + released + (after.Length == 0 ? "" : "\n" + after.TrimEnd() + "\n"));
 
-Console.WriteLine(next);
+Log.Information("Next version: {Next}", next);
 
 static Version ParseProjectVersion(string project)
 {
-    var match = Regex.Match(project, @"<VersionPrefix>(?<version>[^<]+)</VersionPrefix>");
+    var match = project.RegexMatch("<VersionPrefix>(?<version>[^<]+)</VersionPrefix>");
     return match.Success && Version.TryParse(match.Groups["version"].Value, out var version)
         ? version
         : throw new InvalidOperationException("Directory.Build.props has no valid VersionPrefix.");
@@ -52,29 +52,29 @@ static Version ParseProjectVersion(string project)
 
 static Version? ParseLatestRelease(string changelog)
 {
-    var match = Regex.Match(changelog, @"(?m)^## v(?<version>\d+\.\d+\.\d+)\s*$");
+    var match = changelog.RegexMatch(@"(?m)^## v(?<version>\d+\.\d+\.\d+)\s*$");
     return match.Success ? Version.Parse(match.Groups["version"].Value) : null;
 }
 
 static Match ParseUnreleased(string changelog)
 {
-    var match = Regex.Match(changelog, @"(?ms)^## Unreleased\s*\n(?<notes>.*?)(?=^## |\z)");
-    if (!match.Success || string.IsNullOrWhiteSpace(match.Groups["notes"].Value))
+    var match = changelog.RegexMatch(@"(?ms)^## Unreleased\s*\n(?<notes>.*?)(?=^## |\z)");
+    if (!match.Success || match.Groups["notes"].Value.IsNullOrWhiteSpace())
         throw new InvalidOperationException("CHANGELOG.md has no Unreleased notes.");
     return match;
 }
 
 static Bump InferBump(string notes)
 {
-    var headings = Regex.Matches(notes, @"(?m)^### (?<heading>.+?)\s*$")
+    var headings = notes.RegexMatches(@"(?m)^### (?<heading>.+?)\s*$")
         .Select(match => match.Groups["heading"].Value)
         .ToArray();
-    if (headings.Length == 0)
+    if (headings.None())
         throw new InvalidOperationException("Unreleased notes have no change headings.");
 
     var unknown = headings.Except(["Breaking", "Added", "Changed", "Fixed"], StringComparer.Ordinal).ToArray();
-    if (unknown.Length != 0)
-        throw new InvalidOperationException($"Unknown Unreleased change heading: {string.Join(", ", unknown)}.");
+    if (unknown.Any())
+        throw new InvalidOperationException($"Unknown Unreleased change heading: {unknown.JoinWith(", ")}.");
 
     return headings.Contains("Breaking", StringComparer.Ordinal) ? Bump.Major
         : headings.Contains("Added", StringComparer.Ordinal) || headings.Contains("Changed", StringComparer.Ordinal) ? Bump.Minor

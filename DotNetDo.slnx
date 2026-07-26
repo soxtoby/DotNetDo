@@ -3,9 +3,10 @@
   <Project Path="DotNetDo.Tests/DotNetDo.Tests.csproj" />
   <Project Path="DotNetDo/DotNetDo.csproj" />
   <Folder Name="/scripts/">
-    <File Path="scripts/build.cs" />
+    <File Path="scripts/pack.cs" />
     <File Path="scripts/prepare-release.cs" />
     <File Path="scripts/release.cs" />
+    <File Path="scripts/test.cs" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="CHANGELOG.md" />
