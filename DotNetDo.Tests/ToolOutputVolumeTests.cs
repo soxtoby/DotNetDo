@@ -120,6 +120,28 @@ public sealed class ToolOutputVolumeTests
             });
     }
 
+    [Theory]
+    [InlineData(LogEventLevel.Verbose, true, false, false)]
+    [InlineData(LogEventLevel.Debug, false, true, false)]
+    [InlineData(LogEventLevel.Information, false, false, false)]
+    [InlineData(LogEventLevel.Warning, false, false, true)]
+    [InlineData(LogEventLevel.Error, false, false, true)]
+    [InlineData(LogEventLevel.Fatal, false, false, true)]
+    public void Azure_controls_map_from_logging_level(
+        LogEventLevel level,
+        bool expectedDebug,
+        bool expectedVerbose,
+        bool expectedOnlyShowErrors)
+    {
+        AtLevel(level, () =>
+            {
+                var command = Tools.Azure.Bicep.Upgrade;
+                Assert.Equal(expectedDebug, command.Debug);
+                Assert.Equal(expectedVerbose, command.Verbose);
+                Assert.Equal(expectedOnlyShowErrors, command.OnlyShowErrors);
+            });
+    }
+
     [Fact]
     public void Git_volume_controls_render_before_positional_arguments()
     {
