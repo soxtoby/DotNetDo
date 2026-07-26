@@ -94,6 +94,10 @@ Task names use one grammar across both representations: letters, numbers, `_`, `
 
 Arguments after the task name in a run command are forwarded to the task.
 
+## Pinned package
+
+A script package directive with one exact version, including an exact prerelease version. Missing and floating versions are not pins and remain unchanged by package updates. Updates never select an older semantic version. Stable releases are candidates by default; prereleases are candidates only when explicitly requested, while an existing prerelease pin may advance to its newer stable release.
+
 ## Task parameter
 
 A task argument declared by a literal DotNetDo API call. DotNetDo can discover task parameters by source scanning without executing the task.
@@ -135,6 +139,10 @@ Initialization also creates root-local `do.cmd` and executable `do` launchers wh
 ## Install command
 
 The `:install` command executes the install plan for every tool requirement declared in DotNetDo configuration. It takes no arguments; installing an individual tool is the job of that tool's own tool install. An empty or absent declaration set succeeds trivially.
+
+## Update command
+
+The `:update` command updates the root-local manifest's DotNetDo tool and pinned DotNetDo.Core packages in scripts. A package name selects only that script package instead; `--all` selects every pinned script package and still updates the DotNetDo tool. `--prerelease` admits prerelease candidates for the selected packages.
 
 ## Tool command
 

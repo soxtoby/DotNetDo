@@ -109,6 +109,62 @@ public sealed class DotNetToolTests
     }
 
     [Fact]
+    public void Renders_dotnet_package_search_and_reads_json_result()
+    {
+        var command = Tools.DotNet.PackageSearch with
+            {
+                SearchTerm = "My.Package",
+                Sources = ["private feed", "https://api.nuget.org/v3/index.json"],
+                ExactMatch = true,
+                Prerelease = true,
+                ConfigFile = "NuGet.Config",
+                Verbosity = "minimal",
+            };
+
+        Assert.Equal(
+            "dotnet package search My.Package --source \"private feed\" --source https://api.nuget.org/v3/index.json --exact-match --prerelease --configfile NuGet.Config --format json --verbosity minimal",
+            command.ToString());
+
+        var result = DotNetPackageSearchResult.Parse(new ExecResult
+            {
+                Command = command.ToString(),
+                WorkingDirectory = "work",
+                ExitCode = 0,
+                AllOutput =
+                    [
+                        new(
+                            OutputType.Out,
+                            """{"version":2,"problems":[],"searchResult":[{"sourceName":"nuget.org","packages":[{"id":"My.Package","version":"1.0.0"},{"id":"My.Package","version":"2.0.0"}]}]}""")
+                    ],
+            });
+
+        Assert.Equal(2, result.Version);
+        Assert.Empty(result.Problems);
+        Assert.Equal("nuget.org", Assert.Single(result.Sources).Name);
+        var package = result.Sources[0].Packages.Last();
+        Assert.Equal("My.Package", package.Id);
+        Assert.Equal("2.0.0", package.Version);
+    }
+
+    [Fact]
+    public void Renders_dotnet_tool_update()
+    {
+        var command = Tools.DotNet.ToolUpdate with
+            {
+                Package = "DotNetDo",
+                ToolManifest = ".config/dotnet-tools.json",
+                AddSources = ["private feed"],
+                Prerelease = true,
+                NoHttpCache = true,
+                Verbosity = "minimal",
+            };
+
+        Assert.Equal(
+            "dotnet tool update DotNetDo --tool-manifest .config/dotnet-tools.json --add-source \"private feed\" --prerelease --no-http-cache --verbosity minimal",
+            command.ToString());
+    }
+
+    [Fact]
     public void Custom_format_command_deterministically_overrides_typed_command()
     {
         var typedFirst = Tools.DotNet.Format with

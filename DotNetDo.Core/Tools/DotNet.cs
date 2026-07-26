@@ -1,4 +1,6 @@
 using Serilog.Events;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DotNetDo;
 
@@ -18,6 +20,8 @@ public static partial class Tools
         public static DotNetFormat Format => new();
         /// <summary>Creates a new <see cref="DotNetPack"/> command definition.</summary>
         public static DotNetPack Pack => new();
+        /// <summary>Creates a new <see cref="DotNetPackageSearch"/> command definition.</summary>
+        public static DotNetPackageSearch PackageSearch => new();
         /// <summary>Creates a new <see cref="DotNetNuGetPush"/> command definition.</summary>
         public static DotNetNuGetPush NuGetPush => new();
         /// <summary>Creates a new <see cref="DotNetRestore"/> command definition.</summary>
@@ -26,6 +30,8 @@ public static partial class Tools
         public static DotNetTest Test => new();
         /// <summary>Creates a new <see cref="DotNetToolRestore"/> command definition.</summary>
         public static DotNetToolRestore ToolRestore => new();
+        /// <summary>Creates a new <see cref="DotNetToolUpdate"/> command definition.</summary>
+        public static DotNetToolUpdate ToolUpdate => new();
         /// <summary>Creates a new <see cref="DotNetWatch"/> command definition.</summary>
         public static DotNetWatch Watch => new();
     }
@@ -462,6 +468,157 @@ public sealed record DotNetTest : DotNetTargetCommand
             Arg("--arch", Architecture),
             Arg("--os", OperatingSystem),
             Arg("--disable-build-servers", DisableBuildServers),
+        ];
+}
+
+/// <summary>Searches configured NuGet package sources and returns structured JSON results.</summary>
+public sealed record DotNetPackageSearch : ToolCommand<DotNetPackageSearchResult>
+{
+    /// <summary>The package search term.</summary>
+    public string? SearchTerm { get; init; }
+    /// <summary>Package sources to search instead of the configured sources.</summary>
+    public IReadOnlyList<string> Sources { get; init => field = value.ToArray(); } = [];
+    /// <summary>Whether the package ID must exactly match the search term.</summary>
+    public bool ExactMatch { get; init; }
+    /// <summary>The maximum number of packages returned by each source.</summary>
+    public int? Take { get; init; }
+    /// <summary>The number of packages skipped by each source.</summary>
+    public int? Skip { get; init; }
+    /// <summary>Whether prerelease packages are included.</summary>
+    public bool Prerelease { get; init; }
+    /// <summary>Whether authentication may prompt interactively.</summary>
+    public bool Interactive { get; init; }
+    /// <summary>An explicit NuGet configuration file.</summary>
+    public string? ConfigFile { get; init; }
+    /// <summary>The command logging verbosity.</summary>
+    public string? Verbosity { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet package search",
+            Arg(SearchTerm),
+            Args("--source", Sources, " --source "),
+            Arg("--take", Take),
+            Arg("--skip", Skip),
+            Arg("--exact-match", ExactMatch),
+            Arg("--interactive", Interactive),
+            Arg("--prerelease", Prerelease),
+            Arg("--configfile", ConfigFile),
+            "--format json",
+            Arg("--verbosity", Verbosity),
+        ];
+
+    /// <inheritdoc />
+    protected override DotNetPackageSearchResult ReadResult(ExecResult result) =>
+        DotNetPackageSearchResult.Parse(result);
+}
+
+/// <summary>The structured result emitted by <c>dotnet package search</c>.</summary>
+public sealed record DotNetPackageSearchResult
+{
+    /// <summary>The output schema version.</summary>
+    [JsonPropertyName("version")]
+    public int Version { get; init; }
+    /// <summary>Problems reported while searching sources.</summary>
+    [JsonPropertyName("problems")]
+    public IReadOnlyList<JsonElement> Problems { get; init; } = [];
+    /// <summary>Results grouped by package source.</summary>
+    [JsonPropertyName("searchResult")]
+    public IReadOnlyList<DotNetPackageSearchSource> Sources { get; init; } = [];
+
+    internal static DotNetPackageSearchResult Parse(ExecResult result) =>
+        result.ReadJson<DotNetPackageSearchResult>()
+        ?? throw new JsonException("dotnet package search returned no JSON object.");
+}
+
+/// <summary>Package-search results from one NuGet source.</summary>
+public sealed record DotNetPackageSearchSource
+{
+    /// <summary>The configured source name.</summary>
+    [JsonPropertyName("sourceName")]
+    public string? Name { get; init; }
+    /// <summary>Packages returned by the source.</summary>
+    [JsonPropertyName("packages")]
+    public IReadOnlyList<DotNetPackageSearchPackage> Packages { get; init; } = [];
+}
+
+/// <summary>A package returned by <c>dotnet package search</c>.</summary>
+public sealed record DotNetPackageSearchPackage
+{
+    /// <summary>The package ID.</summary>
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+    /// <summary>The package version returned by an exact-match search.</summary>
+    [JsonPropertyName("version")]
+    public string? Version { get; init; }
+    /// <summary>The latest eligible version reported by the source.</summary>
+    [JsonPropertyName("latestVersion")]
+    public string? LatestVersion { get; init; }
+}
+
+/// <summary>Updates a global, local-manifest, or explicit-path .NET tool.</summary>
+public sealed record DotNetToolUpdate : ExecToolCommand
+{
+    /// <summary>The tool package ID.</summary>
+    public string? Package { get; init; }
+    /// <summary>Whether the global tool installation is updated.</summary>
+    public bool Global { get; init; }
+    /// <summary>Whether the local tool manifest is updated.</summary>
+    public bool Local { get; init; }
+    /// <summary>An explicit tool installation directory.</summary>
+    public string? ToolPath { get; init; }
+    /// <summary>An explicit package version.</summary>
+    public string? Version { get; init; }
+    /// <summary>An explicit NuGet configuration file.</summary>
+    public string? ConfigFile { get; init; }
+    /// <summary>An explicit local tool manifest.</summary>
+    public string? ToolManifest { get; init; }
+    /// <summary>Additional NuGet package sources.</summary>
+    public IReadOnlyList<string> AddSources { get; init => field = value.ToArray(); } = [];
+    /// <summary>Replacement NuGet package sources.</summary>
+    public IReadOnlyList<string> Sources { get; init => field = value.ToArray(); } = [];
+    /// <summary>An explicit target framework.</summary>
+    public string? Framework { get; init; }
+    /// <summary>Whether prerelease packages are eligible.</summary>
+    public bool Prerelease { get; init; }
+    /// <summary>Whether parallel restore is disabled.</summary>
+    public bool DisableParallel { get; init; }
+    /// <summary>Whether unavailable package sources are treated as warnings.</summary>
+    public bool IgnoreFailedSources { get; init; }
+    /// <summary>Whether NuGet caches are bypassed.</summary>
+    public bool NoHttpCache { get; init; }
+    /// <summary>Whether authentication may prompt interactively.</summary>
+    public bool Interactive { get; init; }
+    /// <summary>The restore logging verbosity.</summary>
+    public string? Verbosity { get; init; }
+    /// <summary>Whether an explicit downgrade is allowed.</summary>
+    public bool AllowDowngrade { get; init; }
+    /// <summary>Whether every tool in the selected manifest or scope is updated.</summary>
+    public bool All { get; init; }
+
+    /// <inheritdoc />
+    protected override IReadOnlyList<string?> CommandParts =>
+        [
+            "dotnet tool update",
+            Arg(Package),
+            Arg("--global", Global),
+            Arg("--local", Local),
+            Arg("--tool-path", ToolPath),
+            Arg("--version", Version),
+            Arg("--configfile", ConfigFile),
+            Arg("--tool-manifest", ToolManifest),
+            Args("--add-source", AddSources, " --add-source "),
+            Args("--source", Sources, " --source "),
+            Arg("--framework", Framework),
+            Arg("--prerelease", Prerelease),
+            Arg("--disable-parallel", DisableParallel),
+            Arg("--ignore-failed-sources", IgnoreFailedSources),
+            Arg("--no-http-cache", NoHttpCache),
+            Arg("--interactive", Interactive),
+            Arg("--verbosity", Verbosity),
+            Arg("--allow-downgrade", AllowDowngrade),
+            Arg("--all", All),
         ];
 }
 

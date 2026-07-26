@@ -15,6 +15,7 @@ static class HelpCommand
               dotnet do :init
               dotnet do :new <name>
               dotnet do :install
+              dotnet do :update [<package> | --all] [--prerelease]
               dotnet do :help <name>
               dotnet do :help
               dotnet do <name> [args...]

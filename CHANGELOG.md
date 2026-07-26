@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- `:update` for updating the root-local DotNetDo tool manifest entry and exact package pins in workspace scripts, with named-package, `--all`, and `--prerelease` modes.
+- `Tools.DotNet.PackageSearch` and `Tools.DotNet.ToolUpdate` typed .NET CLI commands.
+
 ## v0.3.1
 
 ### Fixed
