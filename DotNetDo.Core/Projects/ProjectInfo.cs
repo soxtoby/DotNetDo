@@ -17,6 +17,12 @@ public sealed class ProjectInfo
     /// <summary>The containing directory.</summary>
     public AbsolutePath Directory { get; }
 
+    /// <summary>Returns the absolute project file path.</summary>
+    public override string ToString() => Path;
+
+    /// <summary>Returns the absolute project file path.</summary>
+    public static implicit operator string(ProjectInfo project) => project.Path;
+
     /// <summary>Loads and parses the referenced project or solution resource.</summary>
     public LoadedProject Load(IReadOnlyDictionary<string, string>? globalProperties = null)
     {

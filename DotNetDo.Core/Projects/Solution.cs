@@ -54,6 +54,12 @@ public sealed class Solution
     /// <summary>Projects declared by the loaded solution.</summary>
     public IReadOnlyList<ProjectInfo> Projects { get; }
 
+    /// <summary>Returns the absolute solution file path.</summary>
+    public override string ToString() => Path;
+
+    /// <summary>Returns the absolute solution file path.</summary>
+    public static implicit operator string(Solution solution) => solution.Path;
+
     /// <summary>Exposes the configured value or operation to script authors.</summary>
     public ProjectInfo this[string solutionPath]
     {

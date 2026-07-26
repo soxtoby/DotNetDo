@@ -18,6 +18,10 @@ public sealed class SolutionTests
         Assert.Equal("src/App", project.SolutionPath);
         Assert.Equal(AbsolutePath.Parse(workspace.ProjectPath), project.Path);
         Assert.Equal(project.Path.Parent, project.Directory);
+        Assert.Equal(workspace.SolutionPath, solution.ToString());
+        Assert.Equal(workspace.SolutionPath, (string)solution);
+        Assert.Equal(workspace.ProjectPath, project.ToString());
+        Assert.Equal(workspace.ProjectPath, (string)project);
         Assert.Throws<KeyNotFoundException>(() => solution["app"]);
     }
 
