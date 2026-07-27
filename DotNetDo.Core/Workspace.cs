@@ -108,7 +108,8 @@ sealed record WorkspaceConfiguration
 
     static ToolInstall? FindTool(string name) => name switch
         {
-            Azure.ToolName => Azure.Install,
+            Azure.ToolName => Azure.EnsureAvailable,
+            Bun.ToolName => Bun.EnsureAvailable,
             _ => null,
         };
 

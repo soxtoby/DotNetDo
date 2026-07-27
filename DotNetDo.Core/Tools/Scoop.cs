@@ -10,8 +10,8 @@ public static partial class Tools
     /// <summary>Scoop, a command-line package manager for Windows.</summary>
     public static class Scoop
     {
-        /// <summary>Bootstraps Scoop with its official installer.</summary>
-        public static ScoopInstallSelf InstallSelf => new();
+        /// <summary>Makes the <c>scoop</c> command available through its official installer.</summary>
+        public static ScoopEnsureAvailable EnsureAvailable => new();
         /// <summary>Installs apps from configured buckets, manifests, or manifest URLs.</summary>
         public static ScoopInstall Install => new();
         /// <summary>Uninstalls apps managed by Scoop.</summary>
@@ -32,7 +32,7 @@ public abstract record ScoopCommand : ExecToolCommand
 }
 
 /// <summary>Bootstraps Scoop with its current official installer.</summary>
-public sealed record ScoopInstallSelf
+public sealed record ScoopEnsureAvailable
 {
     /// <summary>Ensures the <c>scoop</c> command is available; does nothing when it is already installed.</summary>
     public TaskAwaiter GetAwaiter() => InstallAsync().GetAwaiter();

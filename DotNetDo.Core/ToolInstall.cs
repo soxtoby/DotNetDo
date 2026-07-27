@@ -45,7 +45,7 @@ public sealed record ToolInstall
         if (!OperatingSystem.IsWindows())
             throw new ToolInstallException($"'{ToolName}' is unavailable and cannot be installed: DotNetDo has no installer for this platform yet.");
 
-        await Tools.Scoop.InstallSelf;
+        await Tools.Scoop.EnsureAvailable;
 
         Log.Information("Installing {App} with Scoop", ScoopApp);
         await (Tools.Scoop.Install with { Apps = [ScoopApp] });

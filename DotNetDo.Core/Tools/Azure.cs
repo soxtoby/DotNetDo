@@ -10,7 +10,7 @@ public static partial class Tools
         internal const string ToolName = "azure";
         
         /// <summary>Makes the <c>az</c> command available.</summary>
-        public static ToolInstall Install => new(ToolName, "az") { ScoopApp = "azure-cli" };
+        public static ToolInstall EnsureAvailable => new(ToolName, "az") { ScoopApp = "azure-cli" };
     }
 }
 

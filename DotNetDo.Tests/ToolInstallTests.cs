@@ -7,11 +7,21 @@ public sealed class ToolInstallTests
     [Fact]
     public void Azure_requirement_maps_canonical_name_to_executable_and_scoop_app()
     {
-        var install = Tools.Azure.Install;
+        var install = Tools.Azure.EnsureAvailable;
 
         Assert.Equal("azure", install.ToolName);
         Assert.Equal("az", install.ExecutableName);
         Assert.Equal("azure-cli", install.ScoopApp);
+    }
+
+    [Fact]
+    public void Bun_requirement_maps_canonical_name_to_executable_and_scoop_app()
+    {
+        var install = Tools.Bun.EnsureAvailable;
+
+        Assert.Equal("bun", install.ToolName);
+        Assert.Equal("bun", install.ExecutableName);
+        Assert.Equal("bun", install.ScoopApp);
     }
 
     [Fact]

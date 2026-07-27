@@ -3,7 +3,12 @@
 ## Unreleased
 
 ### Added
+- `Tools.Bun` typed commands for dependency installation, scripts, tests, builds, and package publishing.
+- `Tools.Bun.EnsureAvailable` for making Bun available through the shared tool-installation seam.
 - `Tools.Npm` typed commands for installing dependencies, running scripts and tests, packing, and publishing packages.
+
+### Changed
+- Tool availability commands use the common `EnsureAvailable` property name: `Tools.Azure.EnsureAvailable`, `Tools.Bun.EnsureAvailable`, and `Tools.Scoop.EnsureAvailable`.
 
 ## v0.4.0
 

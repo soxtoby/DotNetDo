@@ -26,4 +26,4 @@ var armTemplate = build.ReadJson<JsonDocument>();
 
 The supported commands are `Build`, `BuildParams`, `Lint`, `Format`, `GenerateParams`, `Restore`, `Publish`, `Snapshot`, `Install`, and `Upgrade`. Awaiting them returns `ExecResult`; use its `ReadText()` or `ReadJson<T>()` readers for standard-output content.
 
-`Tools.Azure.Install` installs Azure CLI. `Tools.Azure.Bicep.Install` runs `az bicep install` for explicit Bicep version or platform control. Other `az bicep` commands retain Azure CLI's native behavior of acquiring its internally managed Bicep binary when needed.
+`Tools.Azure.EnsureAvailable` makes Azure CLI available. `Tools.Azure.Bicep.Install` runs `az bicep install` for explicit Bicep version or platform control. Other `az bicep` commands retain Azure CLI's native behavior of acquiring its internally managed Bicep binary when needed.

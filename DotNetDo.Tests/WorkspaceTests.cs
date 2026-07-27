@@ -85,9 +85,9 @@ public sealed class WorkspaceTests
     public void Loads_declared_tool_requirements()
     {
         using var workspace = Workspace.Create();
-        File.WriteAllText(workspace.Path / "dotnetdo.toml", "tools = [\"azure\"]");
+        File.WriteAllText(workspace.Path / "dotnetdo.toml", "tools = [\"azure\", \"bun\"]");
 
-        Assert.Equal([Tools.Azure.Install], WorkspaceConfiguration.Load(workspace.Path).Tools);
+        Assert.Equal([Tools.Azure.EnsureAvailable, Tools.Bun.EnsureAvailable], WorkspaceConfiguration.Load(workspace.Path).Tools);
     }
 
     [Fact]
