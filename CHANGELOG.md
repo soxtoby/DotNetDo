@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- `Tools.Npm` typed commands for installing dependencies, running scripts and tests, packing, and publishing packages.
+
 ## v0.4.0
 
 ### Changed
