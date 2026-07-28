@@ -110,7 +110,7 @@ Task help is the DotNetDo-owned discovery surface for task parameters.
 
 Task parameters may include an optional description for task help output.
 
-Task parameter APIs return parameter wrappers. `.Required()` throws immediately when no value exists and otherwise returns a separate required wrapper so nullable flow matches runtime behavior. An immediate `.Required()` call marks a task parameter as always required for discovery; later `.Required()` calls are treated as conditional runtime validation.
+`Do.Param(name)` and `Do.Param<T>(name)` declare optional parameters with nullable values. `.Required()` throws immediately when no value exists and otherwise returns a non-nullable `Param<T>`; an immediate call marks the parameter as always required for discovery, while a later call is conditional runtime validation. `Do.Param(name, defaultValue, description)` requires a non-null default and also returns `Param<T>`; a defaulted parameter is never required input.
 
 ## Secret value
 

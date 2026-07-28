@@ -24,7 +24,6 @@ public sealed class TaskHelpTests
     }
 
     [Theory]
-    [InlineData("""var name = Do.Param("name", description: "The name");""")]
     [InlineData("""var name = Do.Param("name", defaultValue: "foo", description: "The name");""")]
     public void Named_description_is_discovered_without_its_argument_name(string source)
     {

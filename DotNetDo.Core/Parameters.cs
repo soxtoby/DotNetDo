@@ -9,11 +9,15 @@ public static partial class Do
     static readonly Lazy<IConfiguration> ParameterConfiguration = new(CreateParameterConfiguration);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
-    public static Param<string> Param(string name, string? defaultValue = null, string? description = null) =>
-        new(name, defaultValue is null ? ReadParam<string>(name) : ReadParam(name, defaultValue), description);
+    public static OptionalParam<string> Param(string name) =>
+        new(name, ReadParam<string>(name), null);
+
+    /// <summary>Declares an optional typed command-line parameter without a default value.</summary>
+    public static OptionalParam<T> Param<T>(string name) where T : notnull =>
+        new(name, ReadParam<T>(name), null);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
-    public static Param<T> Param<T>(string name, T defaultValue, string? description = null) =>
+    public static Param<T> Param<T>(string name, T defaultValue, string? description = null) where T : notnull =>
         new(name, ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
@@ -71,8 +75,8 @@ public static partial class Do
     }
 }
 
-/// <summary>An optional task parameter whose absence is represented by <see langword="null"/>.</summary>
-public readonly record struct Param<T>
+/// <summary>A task parameter guaranteed to resolve from configuration or its default value.</summary>
+public readonly record struct Param<T> where T : notnull
 {
     readonly ParameterValue<T> _value;
 
@@ -88,43 +92,46 @@ public readonly record struct Param<T>
     /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
     /// <summary>The resolved parameter value.</summary>
+    public T Value => _value.Value;
+
+    /// <summary>Renders the resolved value as one quoted command-line argument.</summary>
+    public string QuotedArgument() => Convert.ToString(_value.Value, CultureInfo.InvariantCulture)!.QuotedArgument();
+
+    /// <summary>The resolved parameter value.</summary>
+    public static implicit operator T(Param<T> parameter) => parameter.Value;
+}
+
+/// <summary>An optional string task parameter whose absence is represented by <see langword="null"/>.</summary>
+public readonly record struct OptionalParam<T>
+    where T : notnull
+{
+    readonly ParameterValue<T> _value;
+
+    internal OptionalParam(string name, ParameterValue<T> value, string? description)
+    {
+        Name = name;
+        _value = value;
+        Description = description;
+    }
+
+    /// <summary>The parameter name.</summary>
+    public string Name { get; }
+    /// <summary>Human-readable help text supplied by the task author.</summary>
+    public string? Description { get; }
+    /// <summary>The resolved parameter value, or <see langword="null"/> when absent.</summary>
     public T? Value => _value.ValueOrDefault;
 
-    /// <summary>Converts the optional parameter to its required form, throwing when no value was supplied.</summary>
-    public RequiredParam<T> Required() =>
+    /// <summary>Resolves the optional parameter, throwing when no value was supplied.</summary>
+    public Param<T> Required() =>
         _value.HasValue
-            ? new RequiredParam<T>(Name, _value.Value, Description)
+            ? new Param<T>(Name, _value, Description)
             : throw new InvalidOperationException($"Parameter '{Name}' is required.");
 
     /// <summary>Renders the resolved optional value as one quoted command-line argument.</summary>
     public string? QuotedArgument() => _value.HasValue ? Convert.ToString(_value.Value, CultureInfo.InvariantCulture)?.QuotedArgument() : null;
 
     /// <summary>The resolved parameter value.</summary>
-    public static implicit operator T?(Param<T> parameter) => parameter.Value;
-}
-
-/// <summary>A task parameter guaranteed to have resolved to a value.</summary>
-public readonly record struct RequiredParam<T>
-{
-    internal RequiredParam(string name, T value, string? description)
-    {
-        Name = name;
-        Value = value;
-        Description = description;
-    }
-
-    /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
-    public string Name { get; }
-    /// <summary>Human-readable help text supplied by the task author.</summary>
-    public string? Description { get; }
-    /// <summary>The resolved parameter value.</summary>
-    public T Value { get; }
-
-    /// <summary>Renders the resolved value as one quoted command-line argument.</summary>
-    public string QuotedArgument() => Convert.ToString(Value, CultureInfo.InvariantCulture)!.QuotedArgument();
-
-    /// <summary>T.</summary>
-    public static implicit operator T(RequiredParam<T> parameter) => parameter.Value;
+    public static implicit operator T?(OptionalParam<T> parameter) => parameter.Value;
 }
 
 /// <summary>An optional string parameter that masks its value in text and logs.</summary>

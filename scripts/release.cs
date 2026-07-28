@@ -4,7 +4,9 @@ using System.Text.RegularExpressions;
 using DotNetDo;
 using static DotNetDo.Tools;
 
-var tag = Do.Param("tag", Do.GitHubActions?.Workflow.ReferenceName, "Release tag.").Required();
+var tag = Do.GitHubActions?.Workflow.ReferenceName is { } defaultTag
+    ? Do.Param("tag", defaultTag, "Release tag.").Value
+    : Do.Param("tag").Required().Value;
 var apiKey = Do.Secret("nuget_api_key", null, "Temporary NuGet API key.").Required();
 
 var project = (Do.RootDirectory / "Directory.Build.props").ReadText();

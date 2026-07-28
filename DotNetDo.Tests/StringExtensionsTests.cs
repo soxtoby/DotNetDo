@@ -80,8 +80,12 @@ public sealed class StringExtensionsTests
         var number = Do.Param($"number-{Guid.NewGuid()}", 12.5m);
         var secret = Do.Secret($"secret-{Guid.NewGuid()}", "secret value");
 
+        string text = parameter.Value;
+        decimal value = number.Value;
+
+        Assert.Equal("some value", text);
+        Assert.Equal(12.5m, value);
         Assert.Equal("\"some value\"", parameter.QuotedArgument());
-        Assert.Equal("\"some value\"", parameter.Required().QuotedArgument());
         Assert.Equal("12.5", number.QuotedArgument());
         Assert.Equal("\"secret value\"", secret.QuotedArgument());
         Assert.Equal("\"secret value\"", secret.Required().QuotedArgument());
@@ -91,10 +95,22 @@ public sealed class StringExtensionsTests
     public void Missing_optional_parameters_render_as_null_arguments()
     {
         var parameter = Do.Param($"parameter-{Guid.NewGuid()}");
+        var typed = Do.Param<int>($"typed-parameter-{Guid.NewGuid()}");
         var secret = Do.Secret($"secret-{Guid.NewGuid()}");
 
         Assert.Null(parameter.QuotedArgument());
+        Assert.Null(typed.QuotedArgument());
         Assert.Null(secret.QuotedArgument());
+    }
+
+    [Fact]
+    public void Required_optional_parameters_return_non_nullable_parameters()
+    {
+        var name = $"parameter-{Guid.NewGuid()}";
+
+        var exception = Assert.Throws<InvalidOperationException>(() => Do.Param<int>(name).Required());
+
+        Assert.Equal($"Parameter '{name}' is required.", exception.Message);
     }
 
     [Fact]
