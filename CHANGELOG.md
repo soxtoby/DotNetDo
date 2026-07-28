@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- `AbsolutePath` helpers for user profile, documents, application data, local application data, Program Files, and 32-bit Program Files directories.
+
 ## v0.5.0
 
 ### Added

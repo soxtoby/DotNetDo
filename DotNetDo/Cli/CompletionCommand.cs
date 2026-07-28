@@ -12,16 +12,13 @@ static class CompletionCommand
 
         try
         {
-            var userProfile = AbsolutePath.Parse(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            var dataDirectory = AbsolutePath.Parse(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData))
-                / "DotNetDo" / "completion";
             return Run(
                 uninstall,
                 shell!,
-                userProfile,
-                dataDirectory,
+                Do.UserProfile,
+                Do.LocalApplicationData / "DotNetDo" / "completion",
                 Console.Out,
-                AbsolutePath.Parse(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)));
+                Do.Documents);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

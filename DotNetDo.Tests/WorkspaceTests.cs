@@ -17,6 +17,38 @@ public sealed class WorkspaceTests
     }
 
     [Fact]
+    public void Special_folder_properties_wrap_configured_paths()
+    {
+        (Func<AbsolutePath> Get, Environment.SpecialFolder Folder)[] properties =
+        [
+            (() => Do.UserProfile, Environment.SpecialFolder.UserProfile),
+            (() => Do.Documents, Environment.SpecialFolder.MyDocuments),
+            (() => Do.ApplicationData, Environment.SpecialFolder.ApplicationData),
+            (() => Do.LocalApplicationData, Environment.SpecialFolder.LocalApplicationData),
+            (() => Do.ProgramFiles, Environment.SpecialFolder.ProgramFiles),
+            (() => Do.ProgramFilesX86, Environment.SpecialFolder.ProgramFilesX86),
+        ];
+
+        foreach (var (get, folder) in properties)
+        {
+            var configured = Environment.GetFolderPath(folder, Environment.SpecialFolderOption.DoNotVerify);
+            if (string.IsNullOrEmpty(configured))
+                Assert.Throws<DirectoryNotFoundException>(() => get());
+            else
+                Assert.Equal(AbsolutePath.Parse(configured), get());
+        }
+    }
+
+    [Fact]
+    public void Empty_special_folder_path_throws_when_used()
+    {
+        var exception = Assert.Throws<DirectoryNotFoundException>(
+            () => SpecialFolders.Parse("", Environment.SpecialFolder.ProgramFilesX86));
+
+        Assert.Equal("ProgramFilesX86 directory is unavailable.", exception.Message);
+    }
+
+    [Fact]
     public void Root_directory_falls_back_until_configured_then_remains_stable()
     {
         using var workspace = Workspace.Create();
