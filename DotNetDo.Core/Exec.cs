@@ -67,8 +67,9 @@ public record ExecOptions
     internal static void DefaultLog(OutputType type, string message) =>
         Serilog.Log.Write(
             type == OutputType.Out ? LogEventLevel.Information : LogEventLevel.Error,
-            "{ToolOutput:l}",
-            message);
+            message
+                .Replace("{", "{{", StringComparison.Ordinal)
+                .Replace("}", "}}", StringComparison.Ordinal));
 }
 
 sealed record ExecCommand(string Program, string Arguments)

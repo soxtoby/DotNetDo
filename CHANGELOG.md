@@ -11,6 +11,9 @@
 ### Changed
 - Tool availability commands use the common `EnsureAvailable` property name: `Tools.Azure.EnsureAvailable`, `Tools.Bun.EnsureAvailable`, and `Tools.Scoop.EnsureAvailable`.
 
+### Fixed
+- Default process-output logging records each output line as the message instead of a structured log property.
+
 ## v0.4.0
 
 ### Changed
