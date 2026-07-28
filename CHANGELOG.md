@@ -14,6 +14,7 @@
 
 ### Fixed
 - Default process-output logging records each output line as the message instead of a structured log property.
+- Task help renders named API default values without the `defaultValue:` argument name.
 
 ## v0.4.0
 

@@ -130,10 +130,14 @@ static partial class TaskHelp
         if (arguments.Length < 2 || arguments[1].StartsWith("description:", StringComparison.Ordinal))
             return null;
 
-        if (arguments[1] == "null")
+        var value = arguments[1].StartsWith("defaultValue:", StringComparison.Ordinal)
+            ? arguments[1]["defaultValue:".Length..].Trim()
+            : arguments[1];
+
+        if (value == "null")
             return null;
 
-        return TryReadString(arguments[1]) ?? arguments[1];
+        return TryReadString(value) ?? value;
     }
 
     static string? Description(string[] arguments)
