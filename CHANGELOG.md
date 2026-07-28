@@ -9,6 +9,7 @@
 - `Tools.Npm` typed commands for installing dependencies, running scripts and tests, packing, and publishing packages.
 
 ### Changed
+- Boolean task parameters accept a bare `--flag` as `true`; explicit `true` and `false` values remain supported.
 - Name-only `Do.Param` declarations now return `OptionalParam<T>` and support typed parameters without defaults; defaults and `.Required()` both resolve to `Param<T>` with a non-nullable `Value`.
 - Tool availability commands use the common `EnsureAvailable` property name: `Tools.Azure.EnsureAvailable`, `Tools.Bun.EnsureAvailable`, and `Tools.Scoop.EnsureAvailable`.
 - Successful tool commands no longer emit a completion log after execution.

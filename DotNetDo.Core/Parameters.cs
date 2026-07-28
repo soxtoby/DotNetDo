@@ -6,6 +6,7 @@ namespace DotNetDo;
 
 public static partial class Do
 {
+    const string ImplicitBooleanValue = "\0";
     static readonly Lazy<IConfiguration> ParameterConfiguration = new(CreateParameterConfiguration);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
@@ -50,17 +51,23 @@ public static partial class Do
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        var rawValue = ParameterConfiguration.Value[name];
-        if (rawValue is null)
-            return ParameterValue<T>.Missing(name);
-
-        try
+        switch (ParameterConfiguration.Value[name])
         {
-            return ParameterValue<T>.Resolved(name, ParameterConfiguration.Value.GetValue<T>(name)!);
-        }
-        catch (Exception exception)
-        {
-            throw new InvalidOperationException($"Parameter '{name}' could not be parsed as {typeof(T).Name}.", exception);
+            case null:
+                return ParameterValue<T>.Missing(name);
+            case ImplicitBooleanValue:
+                return typeof(T) == typeof(bool) 
+                    ? ParameterValue<T>.Resolved(name, (T)(object)true) 
+                    : throw new InvalidOperationException($"Parameter '{name}' requires a value.");
+            default:
+                try
+                {
+                    return ParameterValue<T>.Resolved(name, ParameterConfiguration.Value.GetValue<T>(name)!);
+                }
+                catch (Exception exception)
+                {
+                    throw new InvalidOperationException($"Parameter '{name}' could not be parsed as {typeof(T).Name}.", exception);
+                }
         }
     }
 
@@ -69,9 +76,26 @@ public static partial class Do
         var builder = new ConfigurationBuilder()
             .AddUserSecrets(Assembly.GetEntryAssembly() ?? typeof(Do).Assembly, optional: true)
             .AddEnvironmentVariables("DOTNETDO_")
-            .AddCommandLine(Environment.GetCommandLineArgs().Skip(1).ToArray());
+            .AddCommandLine(NormalizeParameterArguments(Environment.GetCommandLineArgs().Skip(1)));
 
         return builder.Build();
+    }
+
+    internal static string[] NormalizeParameterArguments(IEnumerable<string> arguments)
+    {
+        var values = arguments.ToArray();
+
+        for (var index = 0; index < values.Length; index++)
+        {
+            var value = values[index];
+            if (value.Length > 2
+                && value.StartsWith("--", StringComparison.Ordinal)
+                && !value.Contains('=')
+                && (index == values.Length - 1 || values[index + 1].StartsWith("--", StringComparison.Ordinal)))
+                values[index] = $"{value}={ImplicitBooleanValue}";
+        }
+
+        return values;
     }
 }
 

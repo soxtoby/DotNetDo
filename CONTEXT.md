@@ -112,6 +112,8 @@ Task parameters may include an optional description for task help output.
 
 `Do.Param(name)` and `Do.Param<T>(name)` declare optional parameters with nullable values. `.Required()` throws immediately when no value exists and otherwise returns a non-nullable `Param<T>`; an immediate call marks the parameter as always required for discovery, while a later call is conditional runtime validation. `Do.Param(name, defaultValue, description)` requires a non-null default and also returns `Param<T>`; a defaulted parameter is never required input.
 
+A bare long option resolves to `true` for a Boolean parameter. Other parameter types require an explicit value.
+
 ## Secret value
 
 A string value intended to avoid accidental clear-text output. `Do.Secret(...)` returns a `Secret`; callers may also construct one directly with `new Secret(value)`. Both register the value with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters unwrap to `null`.

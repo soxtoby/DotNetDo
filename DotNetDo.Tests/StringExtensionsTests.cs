@@ -113,6 +113,17 @@ public sealed class StringExtensionsTests
         Assert.Equal($"Parameter '{name}' is required.", exception.Message);
     }
 
+    [Theory]
+    [InlineData(new[] { "build", "--pack" }, new[] { "build", "--pack=\0" })]
+    [InlineData(new[] { "build", "--pack", "--mode", "Fast" }, new[] { "build", "--pack=\0", "--mode", "Fast" })]
+    [InlineData(new[] { "build", "--pack", "false" }, new[] { "build", "--pack", "false" })]
+    [InlineData(new[] { "build", "--pack=false" }, new[] { "build", "--pack=false" })]
+    [InlineData(new[] { "build", "--" }, new[] { "build", "--" })]
+    public void Normalizes_bare_parameter_flags(string[] arguments, string[] expected)
+    {
+        Assert.Equal(expected, Do.NormalizeParameterArguments(arguments));
+    }
+
     [Fact]
     public void Matches_regular_expressions()
     {
