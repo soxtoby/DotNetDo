@@ -9,16 +9,12 @@ static class RootCommand
             if (args.Length == 0)
                 return ListCommand.Run();
 
-            return args[0] switch
-            {
-                ":init" => InitCommand.Run(args),
-                ":new" => NewCommand.Run(args),
-                ":install" => await InstallCommand.Run(args),
-                ":update" => await UpdateCommand.Run(args),
-                ":help" => HelpCommand.Run(args),
-                var command when command.StartsWith(':') => Fail($"Unknown command '{command}'."),
-                var taskName => await RunCommand.RunTask(taskName, args[1..])
-            };
+            if (CliCommands.TryGet(args[0], out var command))
+                return await command.Run(args);
+
+            return args[0].StartsWith(':')
+                ? Fail($"Unknown command '{args[0]}'.")
+                : await RunCommand.RunTask(args[0], args[1..]);
         }
         catch (DotNetDoConfigurationException exception)
         {

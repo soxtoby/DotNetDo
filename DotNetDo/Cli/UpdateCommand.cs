@@ -164,6 +164,12 @@ static partial class UpdateCommand
             .ToArray();
     }
 
+    internal static IEnumerable<string> PinnedPackages(AbsolutePath scripts) =>
+        ReadPins(scripts)
+            .Select(pin => pin.Package)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase);
+
     static int Fail(string message)
     {
         Console.Error.WriteLine(message);

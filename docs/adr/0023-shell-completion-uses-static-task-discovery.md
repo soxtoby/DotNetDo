@@ -1,0 +1,3 @@
+# Shell completion uses static task discovery
+
+DotNetDo installs user-scoped PowerShell, Bash, or Zsh adapters through bare `:completion`; the adapters query a hidden shell-neutral endpoint for built-in commands, discovered tasks, and their parameters, guaranteeing `dotnet-do` completion without replacing the .NET SDK's `dotnet` completer. Completion reuses static task discovery, recursively unions meta-task leaf parameters, and discovers boolean and same-file enum values with lightweight lexical scanning; it never executes, restores, compiles, contacts the network, loads Roslyn, or persists a cache, keeping completion safe and responsive.

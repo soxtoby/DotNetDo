@@ -43,7 +43,7 @@ static partial class TaskHelp
         return 0;
     }
 
-    static IEnumerable<TaskParameter> Discover(string fileName)
+    internal static IEnumerable<TaskParameter> Discover(string fileName)
     {
         var source = File.ReadAllText(fileName);
         foreach (Match match in ParameterRegex().Matches(source))
@@ -60,10 +60,35 @@ static partial class TaskHelp
                     : match.Groups["type"].Success
                         ? FriendlyTypeName(match.Groups["type"].Value)
                         : InferType(defaultValue);
+                var genericType = match.Groups["type"].Success ? match.Groups["type"].Value : null;
+                var values = (secret, type, genericType) switch
+                    {
+                        (true, _, _) => [],
+                        (false, "bool", _) => ["true", "false"],
+                        (false, _, not null) => DiscoverEnumMembers(source, genericType),
+                        _ => [],
+                    };
 
-                yield return new TaskParameter(name, type, description, defaultValue, required, secret);
+                yield return new TaskParameter(name, type, description, defaultValue, required, secret, values);
             }
         }
+    }
+
+    static string[] DiscoverEnumMembers(string source, string type)
+    {
+        var simpleType = type.Split('.').Last().Trim().TrimEnd('?');
+        var declaration = Regex.Match(
+            source,
+            $@"(?ms)^[ \t]*(?:(?:public|internal|private|protected)[ \t]+)*enum[ \t]+{Regex.Escape(simpleType)}\b[^{{]*\{{(?<body>.*?)^[ \t]*\}}");
+        if (!declaration.Success)
+            return [];
+
+        return
+        [
+            .. EnumMemberRegex().Matches(declaration.Groups["body"].Value)
+                .Select(match => match.Groups["name"].Value)
+                .Distinct(StringComparer.Ordinal)
+        ];
     }
 
     static string[] ParseArguments(string text)
@@ -176,11 +201,24 @@ static partial class TaskHelp
     [GeneratedRegex("[^A-Za-z0-9]+")]
     private static partial Regex NonAlphaNumericRegex();
 
-    sealed record TaskParameter(
+    [GeneratedRegex(@"(?m)^(?:[ \t]*\[[^\r\n]*\][ \t]*\r?\n)*[ \t]*(?:\[[^\r\n]*\][ \t]*)*(?<name>[A-Za-z_][A-Za-z0-9_]*)[ \t]*(?:=|,|$)")]
+    private static partial Regex EnumMemberRegex();
+
+    internal sealed record TaskParameter(
         string Name,
         string Type,
         string? Description,
         string? DefaultValue,
         bool Required,
-        bool Secret);
+        bool Secret,
+        IReadOnlyList<string> Values)
+    {
+        public bool HasSameCompletionMetadata(TaskParameter other) =>
+            Name == other.Name
+            && Type == other.Type
+            && Description == other.Description
+            && Required == other.Required
+            && Secret == other.Secret
+            && Values.SequenceEqual(other.Values, StringComparer.Ordinal);
+    }
 }

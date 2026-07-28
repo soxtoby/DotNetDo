@@ -55,6 +55,16 @@ sealed class TaskCatalog
     public bool TryGetMetaTask(string name, out TaskInvocation[] invocations) =>
         _metaTasks.TryGetValue(name, out invocations!);
 
+    public IEnumerable<string> LeafTasks(string name)
+    {
+        if (!_metaTasks.TryGetValue(name, out var invocations))
+            return _csharpTasks.Contains(name) ? [name] : [];
+
+        return invocations
+            .SelectMany(invocation => LeafTasks(invocation.TaskName))
+            .Distinct(StringComparer.Ordinal);
+    }
+
     static void ValidateReferences(HashSet<string> csharpTasks, IReadOnlyDictionary<string, TaskInvocation[]> metaTasks)
     {
         foreach (var (owner, invocations) in metaTasks)

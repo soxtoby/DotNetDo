@@ -8,7 +8,10 @@ Note that DotNetDo requires .NET 10.
 
 ```console
 dotnet tool install --global DotNetDo
+dotnet-do :completion
 ```
+
+The second command installs task and parameter completion for PowerShell, Bash, or Zsh. Restart the shell afterward.
 
 ```console
 dnx DotNetDo build
@@ -35,5 +38,7 @@ await Tools.DotNet.Build;
 ```
 
 Use `dotnet do :help` for runner commands or `dotnet do :help <name>` for a script's declared parameters.
+
+See [shell completion](docs/completion.md) for installation, supported candidates, and removal.
 
 Licensed under the [MIT License](LICENSE).

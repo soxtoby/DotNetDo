@@ -148,7 +148,11 @@ The `:update` command updates the root-local manifest's DotNetDo tool and pinned
 
 A command whose name starts with `:` is owned by DotNetDo. Task names cannot start with `:`.
 
-DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, tool requirement installation with `:install`, and task execution by name.
+DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, shell completion setup with `:completion`, tool requirement installation with `:install`, and task execution by name.
+
+## Shell completion
+
+User-scoped shell integration that completes DotNetDo task names and their discoverable parameters. Bare `:completion` installs it for the current shell; completion remains separate from workspace tool installation.
 
 ## Exec helper
 

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- User-scoped PowerShell, Bash, and Zsh completion through `dotnet-do :completion`, including built-in commands, task names, task parameters, booleans, and same-file enum values.
 - `Tools.Bun` typed commands for dependency installation, scripts, tests, builds, and package publishing.
 - `Tools.Bun.EnsureAvailable` for making Bun available through the shared tool-installation seam.
 - `Tools.Npm` typed commands for installing dependencies, running scripts and tests, packing, and publishing packages.

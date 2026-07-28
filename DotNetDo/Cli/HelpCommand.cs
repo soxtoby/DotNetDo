@@ -9,15 +9,17 @@ static class HelpCommand
                 ? TaskHelp.Show(args[1])
                 : Fail(TaskName.InvalidMessage);
 
-        Console.WriteLine("""
+        Console.WriteLine($$"""
             Usage:
               dotnet do
-              dotnet do :init
-              dotnet do :new <name>
-              dotnet do :install
-              dotnet do :update [<package> | --all] [--prerelease]
-              dotnet do :help <name>
-              dotnet do :help
+              dotnet do {{CliCommands.Init.Name}}
+              dotnet do {{CliCommands.New.Name}} <name>
+              dotnet do {{CliCommands.Install.Name}}
+              dotnet do {{CliCommands.Completion.Name}} [pwsh|bash|zsh]
+              dotnet do {{CliCommands.Completion.Name}} uninstall [pwsh|bash|zsh]
+              dotnet do {{CliCommands.Update.Name}} [<package> | --all] [--prerelease]
+              dotnet do {{CliCommands.Help.Name}} <name>
+              dotnet do {{CliCommands.Help.Name}}
               dotnet do <name> [args...]
             """);
         return 0;
