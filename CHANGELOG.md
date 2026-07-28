@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.5.0
+
 ### Added
 - User-scoped PowerShell, Bash, and Zsh completion through `dotnet-do :completion`, including built-in commands, task names, task parameters, booleans, and same-file enum values.
 - `Tools.Bun` typed commands for dependency installation, scripts, tests, builds, and package publishing.
