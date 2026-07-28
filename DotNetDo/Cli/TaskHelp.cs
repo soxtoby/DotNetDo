@@ -166,8 +166,6 @@ static partial class TaskHelp
         if (!string.IsNullOrWhiteSpace(parameter.Description))
             line += $"  {parameter.Description}";
 
-        line += $"  env: {EnvironmentName(parameter.Name)}";
-
         if (parameter.Required)
             line += "  required";
 
@@ -178,9 +176,6 @@ static partial class TaskHelp
 
         return line;
     }
-
-    static string EnvironmentName(string name) =>
-        "DOTNETDO_" + NonAlphaNumericRegex().Replace(name, "_").ToUpperInvariant();
 
     static string FriendlyTypeName(string type) =>
         type switch
@@ -201,9 +196,6 @@ static partial class TaskHelp
 
     [GeneratedRegex(@"Do\.(?<kind>Param|Secret)(?:<(?<type>[^>]+)>)?\((?<arguments>[^)]*)\)(?<required>\.Required\(\))?")]
     private static partial Regex ParameterRegex();
-
-    [GeneratedRegex("[^A-Za-z0-9]+")]
-    private static partial Regex NonAlphaNumericRegex();
 
     [GeneratedRegex(@"(?m)^(?:[ \t]*\[[^\r\n]*\][ \t]*\r?\n)*[ \t]*(?:\[[^\r\n]*\][ \t]*)*(?<name>[A-Za-z_][A-Za-z0-9_]*)[ \t]*(?:=|,|$)")]
     private static partial Regex EnumMemberRegex();
