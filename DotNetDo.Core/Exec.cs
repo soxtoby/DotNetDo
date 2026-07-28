@@ -149,9 +149,7 @@ public sealed class ExecProcess
 
                 output.Complete();
 
-                if (result.ExitCode == 0)
-                    Log.Debug("Command {Command} completed successfully", command);
-                else
+                if (result.ExitCode != 0)
                     Log.Error("Command {Command} failed with exit code {ExitCode}", command, result.ExitCode);
 
                 return result;
