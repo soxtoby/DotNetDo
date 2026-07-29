@@ -38,6 +38,8 @@ These properties directly use `File.Exists` and `Directory.Exists`, including th
 
 `AbsolutePath.RecreateDirectory()` recursively deletes an existing directory and recreates it empty, or creates it when missing. It returns the same path value for chaining and propagates native deletion and creation errors.
 
+`Do.CreateTempDirectory(prefix)` and `Do.CreateTempFile(prefix, extension)` create uniquely named temporary artifacts and return their `AbsolutePath`. The optional prefix must be a file-name prefix. File extensions are dot-prefixed and default to `.tmp`. Callers own cleanup.
+
 `AbsolutePath` exposes synchronous, typed file-content helpers:
 
 ```csharp

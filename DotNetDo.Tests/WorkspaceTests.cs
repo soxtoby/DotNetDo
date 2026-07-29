@@ -49,6 +49,57 @@ public sealed class WorkspaceTests
     }
 
     [Fact]
+    public void Creates_unique_temp_directory_with_prefix()
+    {
+        var directory = Do.CreateTempDirectory("dotnetdo-directory-");
+
+        try
+        {
+            Assert.True(directory.IsExistingDirectory);
+            Assert.StartsWith("dotnetdo-directory-", directory.Name);
+        }
+        finally
+        {
+            Directory.Delete(directory);
+        }
+    }
+
+    [Fact]
+    public void Creates_unique_empty_temp_file_with_prefix()
+    {
+        var file = Do.CreateTempFile("dotnetdo-file-", ".json");
+
+        try
+        {
+            Assert.True(file.IsExistingFile);
+            Assert.StartsWith("dotnetdo-file-", file.Name);
+            Assert.Equal(".json", file.Extension);
+            Assert.Equal(0, new FileInfo(file).Length);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void Temp_artifact_prefix_must_be_a_file_name()
+    {
+        Assert.Throws<ArgumentException>(() => Do.CreateTempDirectory("nested/path"));
+        Assert.Throws<ArgumentException>(() => Do.CreateTempFile(@"nested\path"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("json")]
+    [InlineData(".")]
+    [InlineData(".nested/json")]
+    public void Temp_file_extension_must_be_dot_prefixed(string extension)
+    {
+        Assert.Throws<ArgumentException>(() => Do.CreateTempFile(extension: extension));
+    }
+
+    [Fact]
     public void Root_directory_falls_back_until_configured_then_remains_stable()
     {
         using var workspace = Workspace.Create();
