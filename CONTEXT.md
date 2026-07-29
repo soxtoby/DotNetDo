@@ -124,7 +124,7 @@ The run command executes a task through SDK file execution, equivalent to `dotne
 
 ## Task list
 
-Running `dotnet do` with no arguments shows basic task invocation usage followed by a headed, indented list of C# tasks directly inside the scripts path and meta-tasks from DotNetDo configuration together, alphabetically and without representation markers. Nested directories are not searched. A missing scripts path produces only configured meta-tasks. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
+Running `dotnet do` with no arguments shows basic task invocation usage followed by a headed, indented list of C# tasks directly inside the scripts path and meta-tasks from DotNetDo configuration together, alphabetically and without representation markers. C# tasks may declare a concise, statically discoverable description with `[assembly: TaskDescription("...")]`; it appears in task lists, task help, and shell completion. Nested directories are not searched. A missing scripts path produces only configured meta-tasks. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
 
 ## New command
 

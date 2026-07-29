@@ -7,9 +7,12 @@ static partial class TaskHelp
     public static int Show(string taskName)
     {
         var catalog = TaskCatalog.Load();
+        var description = catalog.Tasks.FirstOrDefault(task => task.Name == taskName)?.Description;
         if (catalog.TryGetMetaTask(taskName, out var invocations))
         {
             Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
+            if (description is not null)
+                Console.WriteLine(description);
             Console.WriteLine();
             Console.WriteLine("Invocations:");
             foreach (var invocation in invocations)
@@ -30,6 +33,8 @@ static partial class TaskHelp
         var parameters = Discover(file).ToArray();
 
         Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
+        if (description is not null)
+            Console.WriteLine(description);
 
         if (parameters.Length == 0)
             return 0;

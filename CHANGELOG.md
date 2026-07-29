@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- C# tasks can declare an assembly-level `TaskDescription` shown in task lists, task help, and shell completion.
 - `AbsolutePath` helpers for user profile, documents, application data, local application data, Program Files, and 32-bit Program Files directories.
 - `Do.CreateTempDirectory()` and `Do.CreateTempFile()` for creating uniquely named temporary artifacts with optional prefixes and file extensions.
 

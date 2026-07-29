@@ -28,7 +28,7 @@ static class CompletionEngine
 
     static CompletionCandidate[] CompleteCommands(TaskCatalog catalog, string prefix) =>
         [
-            .. Match(catalog.Names.Select(name => new CompletionCandidate(name, "Task")), prefix),
+            .. Match(catalog.Tasks.Select(task => new CompletionCandidate(task.Name, task.Description ?? "Task")), prefix),
             .. Match(
                 CliCommands.Visible
                     .Where(command => command != CliCommands.Completion)
@@ -40,7 +40,7 @@ static class CompletionEngine
         ];
 
     static CompletionCandidate[] CompleteTaskNames(TaskCatalog catalog, string prefix) =>
-        Match(catalog.Names.Select(name => new CompletionCandidate(name, "Task")), prefix);
+        Match(catalog.Tasks.Select(task => new CompletionCandidate(task.Name, task.Description ?? "Task")), prefix);
 
     static CompletionCandidate[] CompleteUpdate(TaskCatalog catalog, AbsolutePath root, IReadOnlyList<string> tokens, int activeIndex)
     {

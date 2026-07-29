@@ -119,18 +119,22 @@ public sealed class MetaTaskTests
             [tasks]
             test = ["build --configuration Release", "test-csharp"]
             """);
-        workspace.WriteTask("build", "Console.WriteLine(\"build\");");
+        workspace.WriteTask("build", """
+            [assembly: DotNetDo.TaskDescription("Build the solution")]
+            Console.WriteLine("build");
+            """);
         workspace.WriteTask("test-csharp", "Console.WriteLine(\"test\");");
 
         var list = await workspace.Run();
         var help = await workspace.Run(":help", "test");
+        var taskHelp = await workspace.Run(":help", "build");
 
         Assert.Equal(0, list.ExitCode);
         Assert.Equal(
             [
                 "Usage: dotnet do <task> [args...]",
                 "Tasks:",
-                "  build",
+                "  build        Build the solution",
                 "  test",
                 "  test-csharp"
             ],
@@ -140,6 +144,7 @@ public sealed class MetaTaskTests
         Assert.Contains("  build --configuration Release", help.Output);
         Assert.Contains("  test-csharp", help.Output);
         Assert.Contains("Arguments are forwarded to each task.", help.Output);
+        Assert.Contains("Build the solution", taskHelp.Output);
     }
 
     sealed class Workspace : IDisposable

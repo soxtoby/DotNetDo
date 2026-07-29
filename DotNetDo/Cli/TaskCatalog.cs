@@ -2,10 +2,10 @@ namespace DotNetDo.Cli;
 
 sealed class TaskCatalog
 {
-    readonly HashSet<string> _csharpTasks;
+    readonly IReadOnlyDictionary<string, TaskDefinition> _csharpTasks;
     readonly IReadOnlyDictionary<string, TaskInvocation[]> _metaTasks;
 
-    TaskCatalog(RelativePath scriptsPath, HashSet<string> csharpTasks, IReadOnlyDictionary<string, TaskInvocation[]> metaTasks)
+    TaskCatalog(RelativePath scriptsPath, IReadOnlyDictionary<string, TaskDefinition> csharpTasks, IReadOnlyDictionary<string, TaskInvocation[]> metaTasks)
     {
         ScriptsPath = scriptsPath;
         _csharpTasks = csharpTasks;
@@ -13,7 +13,10 @@ sealed class TaskCatalog
     }
 
     public RelativePath ScriptsPath { get; }
-    public IEnumerable<string> Names => _csharpTasks.Concat(_metaTasks.Keys).Order(StringComparer.OrdinalIgnoreCase);
+    public IEnumerable<TaskDefinition> Tasks =>
+        _csharpTasks.Values
+            .Concat(_metaTasks.Keys.Select(name => new TaskDefinition(name, null)))
+            .OrderBy(task => task.Name, StringComparer.OrdinalIgnoreCase);
 
     public static TaskCatalog Load()
     {
@@ -30,14 +33,15 @@ sealed class TaskCatalog
         var scriptsDirectory = rootDirectory / scriptsPath;
         var csharpTasks = scriptsDirectory.IsExistingDirectory
             ? scriptsDirectory.GlobFiles("*.cs")
-                .Select(f => f.NameWithoutExtension)
-                .Where(name => name is not null && TaskName.IsValid(name))
-                .Cast<string>()
-                .ToHashSet(StringComparer.Ordinal)
-            : new HashSet<string>(StringComparer.Ordinal);
+                .Where(file => file.NameWithoutExtension is { } name && TaskName.IsValid(name))
+                .ToDictionary(
+                    file => file.NameWithoutExtension!,
+                    file => new TaskDefinition(file.NameWithoutExtension!, TaskMetadata.DiscoverDescription(file)),
+                    StringComparer.Ordinal)
+            : new Dictionary<string, TaskDefinition>(StringComparer.Ordinal);
 
         foreach (var name in configuration.MetaTasks.Keys)
-            if (csharpTasks.Contains(name))
+            if (csharpTasks.ContainsKey(name))
                 throw new DotNetDoConfigurationException($"Task '{name}' is defined by both '{scriptsPath / $"{name}.cs"}' and the 'tasks' table.");
 
         var metaTasks = configuration.MetaTasks.ToDictionary(
@@ -50,7 +54,7 @@ sealed class TaskCatalog
         return new(scriptsPath, csharpTasks, metaTasks);
     }
 
-    public bool Contains(string name) => _csharpTasks.Contains(name) || _metaTasks.ContainsKey(name);
+    public bool Contains(string name) => _csharpTasks.ContainsKey(name) || _metaTasks.ContainsKey(name);
 
     public bool TryGetMetaTask(string name, out TaskInvocation[] invocations) =>
         _metaTasks.TryGetValue(name, out invocations!);
@@ -58,18 +62,18 @@ sealed class TaskCatalog
     public IEnumerable<string> LeafTasks(string name)
     {
         if (!_metaTasks.TryGetValue(name, out var invocations))
-            return _csharpTasks.Contains(name) ? [name] : [];
+            return _csharpTasks.ContainsKey(name) ? [name] : [];
 
         return invocations
             .SelectMany(invocation => LeafTasks(invocation.TaskName))
             .Distinct(StringComparer.Ordinal);
     }
 
-    static void ValidateReferences(HashSet<string> csharpTasks, IReadOnlyDictionary<string, TaskInvocation[]> metaTasks)
+    static void ValidateReferences(IReadOnlyDictionary<string, TaskDefinition> csharpTasks, IReadOnlyDictionary<string, TaskInvocation[]> metaTasks)
     {
         foreach (var (owner, invocations) in metaTasks)
             foreach (var invocation in invocations)
-                if (!csharpTasks.Contains(invocation.TaskName) && !metaTasks.ContainsKey(invocation.TaskName))
+                if (!csharpTasks.ContainsKey(invocation.TaskName) && !metaTasks.ContainsKey(invocation.TaskName))
                     throw new DotNetDoConfigurationException($"Meta-task '{owner}' invokes unknown task '{invocation.TaskName}'.");
     }
 
@@ -106,6 +110,8 @@ sealed class TaskCatalog
         }
     }
 }
+
+sealed record TaskDefinition(string Name, string? Description);
 
 sealed record TaskInvocation(string TaskName, string Arguments)
 {

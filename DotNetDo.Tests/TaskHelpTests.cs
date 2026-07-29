@@ -6,6 +6,27 @@ namespace DotNetDo.Tests;
 public sealed class TaskHelpTests
 {
     [Fact]
+    public void Assembly_task_description_is_discovered_without_execution()
+    {
+        var file = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(file, """
+                [assembly: DotNetDo.TaskDescription("Build \"everything\"")]
+                throw new InvalidOperationException();
+                """);
+
+            var description = TaskMetadata.DiscoverDescription(file);
+
+            Assert.Equal("Build \"everything\"", description);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
     public void Named_default_value_is_discovered_without_its_argument_name()
     {
         var file = Path.GetTempFileName();

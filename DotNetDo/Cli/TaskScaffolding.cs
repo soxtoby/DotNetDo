@@ -32,6 +32,8 @@ static class TaskScaffolding
         using DotNetDo;
         using Serilog;
 
+        [assembly: TaskDescription("Says hello")]
+
         Log.Information("Hello from {Task}", "{{name}}");
         """;
 

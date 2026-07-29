@@ -9,12 +9,13 @@ public sealed class CompletionTests
     public void Completes_tool_commands_and_tasks_by_case_insensitive_prefix()
     {
         using var workspace = Workspace.Create();
-        workspace.WriteTask("Build", "");
+        workspace.WriteTask("Build", """[assembly: DotNetDo.TaskDescription("Build the solution")]""");
         var catalog = workspace.Catalog();
 
         var candidates = Complete(catalog, workspace.Root, 1, "dotnet-do", "b");
 
         Assert.Equal(["Build"], candidates.Select(candidate => candidate.Value));
+        Assert.Equal("Build the solution", candidates[0].Detail);
         var commands = Complete(catalog, workspace.Root, 1, "dotnet-do", ":").Select(candidate => candidate.Value);
         Assert.Equal(
             CliCommands.Visible.Where(command => command != CliCommands.Completion).Select(command => command.Name).Order(StringComparer.OrdinalIgnoreCase)

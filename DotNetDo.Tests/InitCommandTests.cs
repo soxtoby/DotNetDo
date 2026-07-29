@@ -23,6 +23,7 @@ public sealed class InitCommandTests
             .InformationalVersion
             .Split('+', 2)[0];
         Assert.Contains($"#:package DotNetDo.Core@{version}", task);
+        Assert.Contains("""[assembly: TaskDescription("Say hello from build")]""", task);
         Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
         Assert.Equal("@dnx DotNetDo %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
         Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));

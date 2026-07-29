@@ -7,8 +7,12 @@ static class ListCommand
         Console.WriteLine("Usage: dotnet do <task> [args...]");
         Console.WriteLine();
         Console.WriteLine("Tasks:");
-        foreach (var task in TaskCatalog.Load().Names)
-            Console.WriteLine($"  {task}");
+        var tasks = TaskCatalog.Load().Tasks.ToArray();
+        var nameWidth = tasks.Select(task => task.Name.Length).DefaultIfEmpty().Max();
+        foreach (var task in tasks)
+            Console.WriteLine(task.Description is null
+                ? $"  {task.Name}"
+                : $"  {task.Name.PadRight(nameWidth)}  {task.Description}");
         return 0;
     }
 }
