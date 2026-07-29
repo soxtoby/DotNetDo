@@ -31,11 +31,20 @@ public sealed class SecretTests
     }
 
     [Fact]
-    public void Do_secret_returns_secret()
+    public void Do_secret_returns_optional_secret()
     {
-        Secret secret = Do.Secret($"secret-{Guid.NewGuid()}", "value");
+        OptionalSecret secret = Do.Secret($"secret-{Guid.NewGuid()}", "value");
 
         Assert.Equal("value", secret.Unwrap());
+    }
+
+    [Fact]
+    public void Required_secret_has_non_nullable_value()
+    {
+        Secret secret = Do.Secret($"secret-{Guid.NewGuid()}", "value").Required();
+        string value = secret.Unwrap();
+
+        Assert.Equal("value", value);
     }
 
     sealed class CapturingSink : ILogEventSink

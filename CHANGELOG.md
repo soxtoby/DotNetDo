@@ -6,6 +6,9 @@
 - `AbsolutePath` helpers for user profile, documents, application data, local application data, Program Files, and 32-bit Program Files directories.
 - `Do.CreateTempDirectory()` and `Do.CreateTempFile()` for creating uniquely named temporary artifacts with optional prefixes and file extensions.
 
+### Changed
+- `Do.Secret(...)` now returns `OptionalSecret`; `.Required()` and `new Secret(value)` produce a `Secret` with a non-nullable value.
+
 ## v0.5.0
 
 ### Added

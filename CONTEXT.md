@@ -116,7 +116,7 @@ A bare long option resolves to `true` for a Boolean parameter. Other parameter t
 
 ## Secret value
 
-A string value intended to avoid accidental clear-text output. `Do.Secret(...)` returns a `Secret`; callers may also construct one directly with `new Secret(value)`. Both register the value with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and missing secret parameters unwrap to `null`.
+A string value intended to avoid accidental clear-text output. `Do.Secret(...)` returns an `OptionalSecret`; `.Required()` resolves it to a `Secret`. Callers may also construct a known value directly with `new Secret(value)`. Resolved values register with DotNetDo's redacting logger and the native masking command of every active CI provider. Secret values require `Unwrap()` before use as plain text, render as redacted text, and only optional secret parameters unwrap to `null`.
 
 ## Run command
 

@@ -22,7 +22,7 @@ public static partial class Do
         new(name, ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
-    public static Secret Secret(string name, string? defaultValue = null, string? description = null) =>
+    public static OptionalSecret Secret(string name, string? defaultValue = null, string? description = null) =>
         new(name, ReadSecret(name, defaultValue), description);
 
     static ParameterValue<T> ReadParam<T>(string name) =>
@@ -41,10 +41,9 @@ public static partial class Do
             ? configured.Value
             : defaultValue;
 
-        if (value is null)
-            return ParameterValue<string>.Missing(name);
-
-        return ParameterValue<string>.Resolved(name, value);
+        return value is null
+            ? ParameterValue<string>.Missing(name)
+            : ParameterValue<string>.Resolved(name, value);
     }
 
     static ParameterValue<T> ReadConfigurationValue<T>(string name)
@@ -56,8 +55,8 @@ public static partial class Do
             case null:
                 return ParameterValue<T>.Missing(name);
             case ImplicitBooleanValue:
-                return typeof(T) == typeof(bool) 
-                    ? ParameterValue<T>.Resolved(name, (T)(object)true) 
+                return typeof(T) == typeof(bool)
+                    ? ParameterValue<T>.Resolved(name, (T)(object)true)
                     : throw new InvalidOperationException($"Parameter '{name}' requires a value.");
             default:
                 try
@@ -73,12 +72,11 @@ public static partial class Do
 
     static IConfiguration CreateParameterConfiguration()
     {
-        var builder = new ConfigurationBuilder()
+        return new ConfigurationBuilder()
             .AddUserSecrets(Assembly.GetEntryAssembly() ?? typeof(Do).Assembly, optional: true)
             .AddEnvironmentVariables("DOTNETDO_")
-            .AddCommandLine(NormalizeParameterArguments(Environment.GetCommandLineArgs().Skip(1)));
-
-        return builder.Build();
+            .AddCommandLine(NormalizeParameterArguments(Environment.GetCommandLineArgs().Skip(1)))
+            .Build();
     }
 
     internal static string[] NormalizeParameterArguments(IEnumerable<string> arguments)
@@ -92,7 +90,9 @@ public static partial class Do
                 && value.StartsWith("--", StringComparison.Ordinal)
                 && !value.Contains('=')
                 && (index == values.Length - 1 || values[index + 1].StartsWith("--", StringComparison.Ordinal)))
+            {
                 values[index] = $"{value}={ImplicitBooleanValue}";
+            }
         }
 
         return values;
@@ -159,21 +159,11 @@ public readonly record struct OptionalParam<T>
 }
 
 /// <summary>An optional string parameter that masks its value in text and logs.</summary>
-public readonly record struct Secret
+public readonly record struct OptionalSecret
 {
     readonly ParameterValue<string> _value;
 
-    /// <summary>Wraps and registers a plaintext value for log redaction.</summary>
-    public Secret(string value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        Name = null;
-        _value = ParameterValue<string>.Resolved(string.Empty, value);
-        Description = null;
-        SecretRedaction.Register(value);
-    }
-
-    internal Secret(string name, ParameterValue<string> value, string? description)
+    internal OptionalSecret(string name, ParameterValue<string> value, string? description)
     {
         Name = name;
         _value = value;
@@ -194,25 +184,31 @@ public readonly record struct Secret
     public string? QuotedArgument() => Unwrap()?.QuotedArgument();
 
     /// <summary>Converts the optional parameter to its required form, throwing when no value was supplied.</summary>
-    public RequiredSecret Required() =>
+    public Secret Required() =>
         _value.HasValue
-            ? new RequiredSecret(Name, _value.Value, Description)
+            ? new Secret(Name, _value.Value, Description)
             : throw new InvalidOperationException($"Secret parameter '{Name}' is required.");
 
     /// <inheritdoc />
     public override string ToString() => "***";
 }
 
-/// <summary>A required secret parameter with an available plaintext value.</summary>
-public readonly record struct RequiredSecret
+/// <summary>A secret with an available plaintext value.</summary>
+public readonly record struct Secret
 {
     readonly string _value;
 
-    internal RequiredSecret(string? name, string value, string? description)
+    /// <summary>Wraps and registers a plaintext value for log redaction.</summary>
+    public Secret(string value)
+        : this(null, value, null) { }
+
+    internal Secret(string? name, string value, string? description)
     {
+        ArgumentNullException.ThrowIfNull(value);
         Name = name;
         _value = value;
         Description = description;
+        SecretRedaction.Register(value);
     }
 
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
