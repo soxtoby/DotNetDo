@@ -4,7 +4,7 @@ public static partial class Tools
 {
     public static partial class Azure
     {
-        /// <summary>Provides fresh definitions for supported <c>az bicep</c> commands.</summary>
+        /// <summary>Authors, validates, publishes, restores, and manages Bicep through Azure CLI.</summary>
         public static class Bicep
         {
             /// <summary>Builds a Bicep template.</summary>
@@ -34,9 +34,9 @@ public static partial class Tools
 /// <summary>Models shared <c>az bicep</c> command rendering.</summary>
 public abstract record AzureBicepCommand : AzureCommand
 {
-    /// <summary>The Bicep subcommand name.</summary>
+    /// <summary>Selects the Bicep operation executed beneath <c>az bicep</c>.</summary>
     protected abstract string BicepCommand { get; }
-    /// <summary>The canonically ordered Bicep-specific arguments.</summary>
+    /// <summary>Provides operation-specific arguments before inherited Azure CLI global behavior.</summary>
     protected abstract IReadOnlyList<string?> BicepArguments { get; }
 
     /// <inheritdoc />

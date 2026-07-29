@@ -7,10 +7,11 @@ public sealed record RelativePath
 
     internal string[] Segments { get; }
 
-    /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+    /// <summary>The path containing no components, rendered as <c>.</c>.</summary>
     public static RelativePath Empty { get; } = new([]);
 
-    /// <summary>Validates and converts textual input into the normalized value.</summary>
+    /// <summary>Normalizes relative path text without accessing the filesystem.</summary>
+    /// <param name="path">Relative path text; may use either separator. Rooted, drive-relative, and NUL-containing paths are rejected. Empty and <c>.</c> produce <see cref="Empty"/>.</param>
     public static RelativePath Parse(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -22,7 +23,8 @@ public sealed record RelativePath
         return new(PathSegments.Normalize(PathSegments.Parse(path), allowLeadingParents: true));
     }
 
-    /// <summary>Raw.</summary>
+    /// <summary>Creates a one-component relative path without interpreting directory separators in the component.</summary>
+    /// <param name="segment">A non-empty filename or path component. It cannot be <c>.</c>, <c>..</c>, or contain NUL; directory separators are preserved literally.</param>
     public static RelativePath Raw(string segment)
     {
         ArgumentNullException.ThrowIfNull(segment);
@@ -31,22 +33,24 @@ public sealed record RelativePath
         return new([segment]);
     }
 
-    /// <summary>Renders the normalized path using the requested directory separator.</summary>
+    /// <summary>Renders the normalized path with forward slashes, regardless of the current platform.</summary>
     public string UnixPath => Render('/');
-    /// <summary>Renders the normalized path using the requested directory separator.</summary>
+    /// <summary>Renders the normalized path with backslashes, regardless of the current platform.</summary>
     public string WindowsPath => Render('\\');
     /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
     public string? Name => Segments.Length == 0 ? null : Segments[^1];
-    /// <summary>Extension.</summary>
+    /// <summary>The final component's extension, including its leading period; empty when it has none.</summary>
     public string Extension => PathSegments.Extension(Name);
-    /// <summary>Name without extension.</summary>
+    /// <summary>The final component without its last extension; <see langword="null"/> for <see cref="Empty"/>.</summary>
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
-    /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+    /// <summary>The containing relative path, or <see langword="null"/> when fewer than two components remain.</summary>
     public RelativePath? Parent => Segments.Length <= 1 ? null : new(Segments[..^1]);
     /// <summary>Renders the value as one quoted command-line argument.</summary>
     public string QuotedArgument() => ToString().QuotedArgument();
 
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
+    /// <summary>Combines and normalizes two relative paths, preserving valid leading parent traversal.</summary>
+    /// <param name="left">The base relative path.</param>
+    /// <param name="right">The relative path appended to it.</param>
     public static RelativePath operator /(RelativePath left, RelativePath right)
     {
         ArgumentNullException.ThrowIfNull(left);
@@ -54,7 +58,9 @@ public sealed record RelativePath
         return new(PathSegments.Normalize([.. left.Segments, .. right.Segments], allowLeadingParents: true));
     }
 
-    /// <summary>Validates and converts textual input into the normalized value.</summary>
+    /// <summary>Parses and appends relative path text.</summary>
+    /// <param name="left">The base relative path.</param>
+    /// <param name="right">Relative path text; rooted, drive-relative, and NUL-containing values are rejected.</param>
     public static RelativePath operator /(RelativePath left, string right) => left / Parse(right);
     /// <summary>Renders the path using the current operating system's directory separator.</summary>
     public static implicit operator string(RelativePath path) => path.Render(Path.DirectorySeparatorChar);

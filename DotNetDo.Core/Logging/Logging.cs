@@ -11,7 +11,7 @@ public static class Logging
     internal static readonly LoggingLevelSwitch LevelSwitch = new();
 
     /// <summary>
-    /// Gets or sets DotNetDo's output-volume preference. It controls the bootstrap logger minimum and
+    /// Controls DotNetDo's output volume. It sets the bootstrap logger minimum and
     /// defaults for newly created tool commands. The default is <see cref="LogEventLevel.Information"/>.
     /// </summary>
     public static LogEventLevel Level { get => LevelSwitch.MinimumLevel; set => LevelSwitch.MinimumLevel = value; }

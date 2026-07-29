@@ -14,7 +14,7 @@ public static partial class Tools
     }
 }
 
-/// <summary>Models shared Azure CLI options and canonical rendering.</summary>
+/// <summary>Applies Azure CLI-wide subscription, output, query, warning, and diagnostic behavior after command-specific arguments.</summary>
 public abstract record AzureCommand : ExecToolCommand
 {
     /// <summary>Initializes Azure CLI output controls from the task logging level.</summary>
@@ -42,7 +42,7 @@ public abstract record AzureCommand : ExecToolCommand
     /// <summary>The JMESPath query applied by Azure CLI.</summary>
     public string? Query { get; init; }
 
-    /// <summary>Gets the command-specific parts rendered before global Azure CLI options.</summary>
+    /// <summary>Provides the operation-specific arguments that execute before Azure CLI global processing.</summary>
     protected abstract IReadOnlyList<string?> AzureCommandParts { get; }
 
     /// <inheritdoc />

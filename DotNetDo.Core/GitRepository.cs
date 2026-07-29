@@ -4,7 +4,7 @@ namespace DotNetDo;
 
 public static partial class Do
 {
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
+    /// <summary>Creates a command preconfigured to stage paths in this repository.</summary>
     public static GitRepository GitRepo
     {
         get
@@ -50,7 +50,7 @@ public sealed class GitRepository : IDisposable
         PushTag = new(this);
     }
 
-    /// <summary>The root directory or root component represented by this value.</summary>
+    /// <summary>The repository working-tree root discovered from the supplied directory.</summary>
     public AbsolutePath Root { get; }
     /// <summary>The checked-out branch name, or <see langword="null"/> for a detached HEAD.</summary>
     public string? CurrentBranch => Repository.Info.IsHeadDetached ? null : Repository.Head.FriendlyName;
@@ -68,17 +68,17 @@ public sealed class GitRepository : IDisposable
     /// <summary>The underlying LibGit2Sharp repository; owned and disposed by this wrapper.</summary>
     public Repository Repository { get; }
 
-    /// <summary>Gets or sets add.</summary>
+    /// <summary>Creates a fresh <c>git add</c> command bound to this repository root.</summary>
     public GitAdd Add { get; }
-    /// <summary>Gets or sets reset.</summary>
+    /// <summary>Creates a fresh <c>git reset</c> command bound to this repository root.</summary>
     public GitReset Reset { get; }
-    /// <summary>Gets or sets commit.</summary>
+    /// <summary>Creates a fresh <c>git commit</c> command bound to this repository root.</summary>
     public GitCommit Commit { get; }
-    /// <summary>Gets or sets push.</summary>
+    /// <summary>Creates a fresh <c>git push</c> command bound to this repository root.</summary>
     public GitPush Push { get; }
-    /// <summary>Gets or sets create tag.</summary>
+    /// <summary>Creates a fresh tag-creation command bound to this repository root.</summary>
     public GitCreateTag CreateTag { get; }
-    /// <summary>Gets or sets push tag.</summary>
+    /// <summary>Creates a fresh tag-push command bound to this repository root.</summary>
     public GitPushTag PushTag { get; }
 
     /// <summary>Walks commits from HEAD back to, but excluding, the merge base with the supplied branch.</summary>

@@ -5,7 +5,7 @@ namespace DotNetDo;
 
 public static partial class Do
 {
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
+    /// <summary>Loads the workspace solution configured by <c>solution-path</c>, or the sole solution beneath the workspace root.</summary>
     public static Solution Solution
     {
         get => field ??= Solution.DiscoverAsync().GetAwaiter().GetResult();
@@ -31,11 +31,11 @@ public sealed class Solution
         _projectsByPath = Projects.ToDictionary(project => project.SolutionPath, StringComparer.Ordinal);
     }
 
-    /// <summary>Loads and parses the referenced project or solution resource.</summary>
+    /// <summary>Loads an absolute or working-directory-relative solution file asynchronously.</summary>
     public static Task<Solution> Load(string path, CancellationToken cancellationToken = default) =>
         Load(Resolve(path), cancellationToken);
 
-    /// <summary>Loads and parses the referenced project or solution resource.</summary>
+    /// <summary>Loads an absolute solution file asynchronously without evaluating its projects.</summary>
     public static async Task<Solution> Load(AbsolutePath path, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(path);
@@ -60,7 +60,7 @@ public sealed class Solution
     /// <summary>Returns the absolute solution file path.</summary>
     public static implicit operator string(Solution solution) => solution.Path;
 
-    /// <summary>Exposes the configured value or operation to script authors.</summary>
+    /// <summary>Returns the already-loaded workspace solution.</summary>
     public ProjectInfo this[string solutionPath]
     {
         get

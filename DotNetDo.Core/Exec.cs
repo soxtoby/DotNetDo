@@ -9,6 +9,7 @@ namespace DotNetDo;
 public static partial class Do
 {
     /// <summary>Starts the rendered command in the configured working directory, using the native batch host when required.</summary>
+    /// <param name="command">A typed command whose canonical rendering and execution options are used.</param>
     public static ExecProcess Exec(ToolCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -16,6 +17,8 @@ public static partial class Do
     }
 
     /// <summary>Starts the command in the configured working directory, using the native batch host when required.</summary>
+    /// <param name="command">One executable and its arguments. The first token may be quoted; shell operators and expansion are not interpreted.</param>
+    /// <param name="options">Optional working-directory and per-line logging behavior.</param>
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
         options ??= new ExecOptions();

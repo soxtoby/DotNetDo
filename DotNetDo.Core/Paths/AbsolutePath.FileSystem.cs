@@ -6,12 +6,12 @@ public sealed partial record AbsolutePath
 {
     /// <summary>Whether a file or directory currently exists at this path.</summary>
     public bool Exists => IsExistingFile || IsExistingDirectory;
-    /// <summary>Exists.</summary>
+    /// <summary>Whether an existing regular file occupies this path.</summary>
     public bool IsExistingFile => File.Exists(this);
-    /// <summary>Exists.</summary>
+    /// <summary>Whether an existing directory occupies this path.</summary>
     public bool IsExistingDirectory => Directory.Exists(this);
 
-    /// <summary>Ensure directory exists.</summary>
+    /// <summary>Creates this directory and any missing parents, returning this path.</summary>
     public AbsolutePath EnsureDirectoryExists()
     {
         Directory.CreateDirectory(this);
@@ -29,9 +29,13 @@ public sealed partial record AbsolutePath
     }
 
     /// <summary>Returns files beneath this directory matched by the ordered include and exclude patterns.</summary>
+    /// <param name="pattern">A glob relative to this directory. Prefix with <c>!</c> to exclude earlier matches.</param>
+    /// <param name="options">Optional glob comparison settings; defaults to ordinal matching.</param>
     public AbsolutePath[] GlobFiles(string pattern, GlobOptions? options = null) => GlobFiles([pattern], options);
 
     /// <summary>Returns files beneath this directory matched by the ordered include and exclude patterns.</summary>
+    /// <param name="patterns">Ordered directory-relative globs. Exclusions begin with <c>!</c> and remove earlier matches.</param>
+    /// <param name="options">Optional glob comparison settings; defaults to ordinal matching.</param>
     public AbsolutePath[] GlobFiles(IEnumerable<string> patterns, GlobOptions? options = null) =>
         CreateMatcher(patterns, options)
             .GetResultsInFullPath(this)
@@ -40,9 +44,13 @@ public sealed partial record AbsolutePath
             .ToArray();
 
     /// <summary>Returns directories beneath this directory matched by the ordered include and exclude patterns.</summary>
+    /// <param name="pattern">A glob relative to this directory. Prefix with <c>!</c> to exclude earlier matches.</param>
+    /// <param name="options">Optional glob comparison settings; defaults to ordinal matching.</param>
     public AbsolutePath[] GlobDirectories(string pattern, GlobOptions? options = null) => GlobDirectories([pattern], options);
 
     /// <summary>Returns directories beneath this directory matched by the ordered include and exclude patterns.</summary>
+    /// <param name="patterns">Ordered directory-relative globs. Exclusions begin with <c>!</c> and remove earlier matches.</param>
+    /// <param name="options">Optional glob comparison settings; defaults to ordinal matching.</param>
     public AbsolutePath[] GlobDirectories(IEnumerable<string> patterns, GlobOptions? options = null)
     {
         var candidates = Directory
@@ -71,18 +79,26 @@ public sealed partial record AbsolutePath
     }
 
     /// <summary>Copies this file or directory to the exact destination path.</summary>
+    /// <param name="destination">The exact destination filename or directory path.</param>
+    /// <param name="options">Controls replacement of existing items and creation of missing parent directories.</param>
     public AbsolutePath CopyTo(AbsolutePath destination, TransferOptions? options = null) =>
         Copy(destination, options, into: false);
 
     /// <summary>Copies this item beneath the supplied destination directory using its current name.</summary>
+    /// <param name="directory">The directory that will contain a copy under this item's current name.</param>
+    /// <param name="options">Controls replacement of existing items and creation of missing directories.</param>
     public AbsolutePath CopyInto(AbsolutePath directory, TransferOptions? options = null) =>
         Copy(directory, options, into: true);
 
     /// <summary>Moves this file or directory to the exact destination path.</summary>
+    /// <param name="destination">The exact destination filename or directory path.</param>
+    /// <param name="options">Controls replacement of existing items and creation of missing parent directories.</param>
     public AbsolutePath MoveTo(AbsolutePath destination, TransferOptions? options = null) =>
         Move(destination, options, into: false);
 
     /// <summary>Moves this item beneath the supplied destination directory using its current name.</summary>
+    /// <param name="directory">The directory that will contain this item under its current name.</param>
+    /// <param name="options">Controls replacement of existing items and creation of missing directories.</param>
     public AbsolutePath MoveInto(AbsolutePath directory, TransferOptions? options = null) =>
         Move(directory, options, into: true);
 

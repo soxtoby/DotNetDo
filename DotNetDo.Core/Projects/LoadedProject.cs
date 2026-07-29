@@ -13,7 +13,7 @@ public sealed class LoadedProject : IDisposable
         _projects = projects;
     }
 
-    /// <summary>Gets or sets project.</summary>
+    /// <summary>The evaluated MSBuild project; valid until this wrapper is disposed.</summary>
     public Project Project { get; }
 
     /// <summary>Releases resources owned by this wrapper.</summary>

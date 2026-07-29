@@ -9,10 +9,10 @@ public static partial class Do
 {
     static readonly WorkspaceRoot WorkspaceRoot = new();
 
-    /// <summary>Exposes the configured value or operation to task authors.</summary>
+    /// <summary>The process working directory used by relative execution and workspace discovery; setting it changes the process-wide current directory.</summary>
     public static AbsolutePath WorkingDirectory { get => AbsolutePath.Parse(Environment.CurrentDirectory); set => Directory.SetCurrentDirectory(value); }
 
-    /// <summary>Exposes the configured value or operation to task authors.</summary>
+    /// <summary>The nearest ancestor containing <c>dotnetdo.toml</c>, or the working directory when no marker exists; resolved once per process.</summary>
     public static AbsolutePath RootDirectory => WorkspaceRoot.Resolve(WorkingDirectory);
 
     internal static RelativePath ScriptsPath => WorkspaceConfiguration.Load(RootDirectory).ScriptsPath;

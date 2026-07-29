@@ -6,7 +6,8 @@ namespace DotNetDo.Generators;
 [Generator]
 public sealed class MSBuildRegistrationGenerator : IIncrementalGenerator
 {
-    /// <summary>Initialize.</summary>
+    /// <summary>Adds generated startup code that registers the newest installed MSBuild toolset.</summary>
+    /// <param name="context">The compiler pipeline used to emit the module initializer.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context) =>
         context.RegisterPostInitializationOutput(output => output.AddSource("DotNetDo.MSBuildRegistration.g.cs", Source));
 

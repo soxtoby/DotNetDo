@@ -24,17 +24,17 @@ public sealed class AzurePipelines
         System = new();
     }
 
-    /// <summary>Gets or configures the provider value for Agent.</summary>
+    /// <summary>The Agent metadata read from the provider environment.</summary>
     public AzureAgentMetadata Agent { get; }
-    /// <summary>Gets or configures the provider value for Build.</summary>
+    /// <summary>The Build metadata read from the provider environment.</summary>
     public AzureBuildMetadata Build { get; }
-    /// <summary>Gets or configures the provider value for Deployment.</summary>
+    /// <summary>The Deployment metadata read from the provider environment.</summary>
     public AzureDeploymentMetadata Deployment { get; }
-    /// <summary>Gets or configures the provider value for Pipeline.</summary>
+    /// <summary>The Pipeline metadata read from the provider environment.</summary>
     public AzurePipelineMetadata Pipeline { get; }
-    /// <summary>Gets or configures the provider value for Release.</summary>
+    /// <summary>The Release metadata read from the provider environment.</summary>
     public AzureReleaseMetadata Release { get; }
-    /// <summary>Gets or configures the provider value for System.</summary>
+    /// <summary>The System metadata read from the provider environment.</summary>
     public AzureSystemMetadata System { get; }
 
     /// <summary>Emits the provider's Debug command immediately.</summary>
@@ -141,7 +141,7 @@ public sealed class AzurePipelines
     static string Required(string value) { ArgumentException.ThrowIfNullOrWhiteSpace(value); return value; }
 }
 
-/// <summary>Represents provider data for AzureIssueType.</summary>
+/// <summary>Environment metadata used by AzureIssueType.</summary>
 public enum AzureIssueType
 {
     /// <summary>Records an error.</summary>
@@ -150,7 +150,7 @@ public enum AzureIssueType
     Warning
 }
 
-/// <summary>Represents provider data for AzureTaskResult.</summary>
+/// <summary>Environment metadata used by AzureTaskResult.</summary>
 public enum AzureTaskResult
 {
     /// <summary>Completes successfully.</summary>
@@ -161,7 +161,7 @@ public enum AzureTaskResult
     Failed
 }
 
-/// <summary>Represents provider data for AzureTimelineState.</summary>
+/// <summary>Environment metadata used by AzureTimelineState.</summary>
 public enum AzureTimelineState
 {
     /// <summary>The agent has no known state.</summary>
@@ -174,7 +174,7 @@ public enum AzureTimelineState
     Completed
 }
 
-/// <summary>Represents provider data for AzureEndpointField.</summary>
+/// <summary>Environment metadata used by AzureEndpointField.</summary>
 public enum AzureEndpointField
 {
     /// <summary>Updates an endpoint authentication parameter.</summary>
@@ -200,229 +200,229 @@ public enum AzureArtifactType
     TfvcLabel
 }
 
-/// <summary>Represents provider data for AzureLogIssue.</summary>
+/// <summary>Fields attached to an Azure Pipelines error or warning timeline issue.</summary>
 public sealed record AzureLogIssue
 {
-    /// <summary>Gets or configures the provider value for Type.</summary>
+    /// <summary>Whether the issue is recorded as an error or warning.</summary>
     public required AzureIssueType Type { get; init; }
-    /// <summary>Gets or configures the provider value for SourcePath.</summary>
+    /// <summary>The source file path associated with the issue.</summary>
     public RelativePath? SourcePath { get; init; }
-    /// <summary>Gets or configures the provider value for LineNumber.</summary>
+    /// <summary>The one-based source line associated with the issue.</summary>
     public long? LineNumber { get; init; }
-    /// <summary>Gets or configures the provider value for ColumnNumber.</summary>
+    /// <summary>The one-based source column associated with the issue.</summary>
     public long? ColumnNumber { get; init; }
-    /// <summary>Gets or configures the provider value for Code.</summary>
+    /// <summary>The diagnostic or error code associated with the issue.</summary>
     public string? Code { get; init; }
 }
 
-/// <summary>Represents provider data for AzureVariableOptions.</summary>
+/// <summary>Controls how an Azure Pipelines task variable is stored and exposed.</summary>
 public sealed record AzureVariableOptions
 {
-    /// <summary>Gets or configures the provider value for IsSecret.</summary>
+    /// <summary>Whether Azure Pipelines masks the value and withholds it from automatic environment mapping.</summary>
     public bool? IsSecret { get; init; }
-    /// <summary>Gets or configures the provider value for IsOutput.</summary>
+    /// <summary>Whether later jobs and stages may consume the variable as a task output.</summary>
     public bool? IsOutput { get; init; }
-    /// <summary>Gets or configures the provider value for IsReadOnly.</summary>
+    /// <summary>Whether later logging commands are prevented from changing the variable.</summary>
     public bool? IsReadOnly { get; init; }
 }
 
-/// <summary>Represents provider data for AzureLogDetail.</summary>
+/// <summary>Fields used to create or update an Azure Pipelines timeline record.</summary>
 public sealed record AzureLogDetail
 {
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>The stable identifier used to update the same timeline record.</summary>
     public required Guid Id { get; init; }
-    /// <summary>Gets or configures the provider value for ParentId.</summary>
+    /// <summary>The parent timeline record identifier, when nesting records.</summary>
     public Guid? ParentId { get; init; }
-    /// <summary>Gets or configures the provider value for Type.</summary>
+    /// <summary>The caller-defined record category.</summary>
     public string? Type { get; init; }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>The display name shown for the record.</summary>
     public string? Name { get; init; }
-    /// <summary>Gets or configures the provider value for Order.</summary>
+    /// <summary>The record's display order among siblings.</summary>
     public int? Order { get; init; }
-    /// <summary>Gets or configures the provider value for StartTime.</summary>
+    /// <summary>The time work represented by the record started.</summary>
     public DateTimeOffset? StartTime { get; init; }
-    /// <summary>Gets or configures the provider value for FinishTime.</summary>
+    /// <summary>The time work represented by the record finished.</summary>
     public DateTimeOffset? FinishTime { get; init; }
-    /// <summary>Gets or configures the provider value for Progress.</summary>
+    /// <summary>The completion percentage reported for the record.</summary>
     public int? Progress { get; init; }
-    /// <summary>Gets or configures the provider value for State.</summary>
+    /// <summary>The current timeline lifecycle state.</summary>
     public AzureTimelineState? State { get; init; }
-    /// <summary>Gets or configures the provider value for Result.</summary>
+    /// <summary>The completed task result, when known.</summary>
     public AzureTaskResult? Result { get; init; }
 }
 
-/// <summary>Represents provider data for AzureAgentMetadata.</summary>
+/// <summary>Environment metadata used by AzureAgentMetadata.</summary>
 public sealed record AzureAgentMetadata
 {
     internal AzureAgentMetadata() { }
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>Reads <c>AGENT_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Id { get; } = CIEnvironment.Long("AGENT_ID");
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>AGENT_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("AGENT_NAME");
-    /// <summary>Gets or configures the provider value for MachineName.</summary>
+    /// <summary>Reads <c>AGENT_MACHINENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? MachineName { get; } = CIEnvironment.String("AGENT_MACHINENAME");
-    /// <summary>Gets or configures the provider value for Os.</summary>
+    /// <summary>Reads <c>AGENT_OS</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Os { get; } = CIEnvironment.String("AGENT_OS");
-    /// <summary>Gets or configures the provider value for Architecture.</summary>
+    /// <summary>Reads <c>AGENT_OSARCHITECTURE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Architecture { get; } = CIEnvironment.String("AGENT_OSARCHITECTURE");
-    /// <summary>Gets or configures the provider value for Version.</summary>
+    /// <summary>Reads <c>AGENT_VERSION</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Version { get; } = CIEnvironment.String("AGENT_VERSION");
-    /// <summary>Gets or configures the provider value for BuildDirectory.</summary>
+    /// <summary>Reads <c>AGENT_BUILDDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? BuildDirectory { get; } = CIEnvironment.Path("AGENT_BUILDDIRECTORY");
-    /// <summary>Gets or configures the provider value for HomeDirectory.</summary>
+    /// <summary>Reads <c>AGENT_HOMEDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? HomeDirectory { get; } = CIEnvironment.Path("AGENT_HOMEDIRECTORY");
-    /// <summary>Gets or configures the provider value for TempDirectory.</summary>
+    /// <summary>Reads <c>AGENT_TEMPDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? TempDirectory { get; } = CIEnvironment.Path("AGENT_TEMPDIRECTORY");
-    /// <summary>Gets or configures the provider value for ToolsDirectory.</summary>
+    /// <summary>Reads <c>AGENT_TOOLSDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? ToolsDirectory { get; } = CIEnvironment.Path("AGENT_TOOLSDIRECTORY");
-    /// <summary>Gets or configures the provider value for WorkFolder.</summary>
+    /// <summary>Reads <c>AGENT_WORKFOLDER</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? WorkFolder { get; } = CIEnvironment.Path("AGENT_WORKFOLDER");
-    /// <summary>Gets or configures the provider value for JobName.</summary>
+    /// <summary>Reads <c>AGENT_JOBNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? JobName { get; } = CIEnvironment.String("AGENT_JOBNAME");
-    /// <summary>Gets or configures the provider value for JobStatus.</summary>
+    /// <summary>Reads <c>AGENT_JOBSTATUS</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? JobStatus { get; } = CIEnvironment.String("AGENT_JOBSTATUS");
 }
 
-/// <summary>Represents provider data for AzureBuildMetadata.</summary>
+/// <summary>Environment metadata used by AzureBuildMetadata.</summary>
 public sealed record AzureBuildMetadata
 {
     internal AzureBuildMetadata() { }
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>Reads <c>BUILD_BUILDID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Id { get; } = CIEnvironment.Long("BUILD_BUILDID");
-    /// <summary>Gets or configures the provider value for Number.</summary>
+    /// <summary>Reads <c>BUILD_BUILDNUMBER</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Number { get; } = CIEnvironment.String("BUILD_BUILDNUMBER");
-    /// <summary>Gets or configures the provider value for Uri.</summary>
+    /// <summary>Reads <c>BUILD_BUILDURI</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? Uri { get; } = CIEnvironment.Uri("BUILD_BUILDURI");
-    /// <summary>Gets or configures the provider value for DefinitionName.</summary>
+    /// <summary>Reads <c>BUILD_DEFINITIONNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? DefinitionName { get; } = CIEnvironment.String("BUILD_DEFINITIONNAME");
-    /// <summary>Gets or configures the provider value for DefinitionId.</summary>
+    /// <summary>Reads <c>SYSTEM_DEFINITIONID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? DefinitionId { get; } = CIEnvironment.Long("SYSTEM_DEFINITIONID");
-    /// <summary>Gets or configures the provider value for Reason.</summary>
+    /// <summary>Reads <c>BUILD_REASON</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Reason { get; } = CIEnvironment.String("BUILD_REASON");
-    /// <summary>Gets or configures the provider value for RepositoryName.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RepositoryName { get; } = CIEnvironment.String("BUILD_REPOSITORY_NAME");
-    /// <summary>Gets or configures the provider value for RepositoryId.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RepositoryId { get; } = CIEnvironment.String("BUILD_REPOSITORY_ID");
-    /// <summary>Gets or configures the provider value for RepositoryProvider.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_PROVIDER</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RepositoryProvider { get; } = CIEnvironment.String("BUILD_REPOSITORY_PROVIDER");
-    /// <summary>Gets or configures the provider value for RepositoryUri.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_URI</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? RepositoryUri { get; } = CIEnvironment.Uri("BUILD_REPOSITORY_URI");
-    /// <summary>Gets or configures the provider value for RepositoryClean.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_CLEAN</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public bool? RepositoryClean { get; } = CIEnvironment.Bool("BUILD_REPOSITORY_CLEAN");
-    /// <summary>Gets or configures the provider value for RepositoryGitSubmoduleCheckout.</summary>
+    /// <summary>Reads <c>BUILD_REPOSITORY_GIT_SUBMODULECHECKOUT</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public bool? RepositoryGitSubmoduleCheckout { get; } = CIEnvironment.Bool("BUILD_REPOSITORY_GIT_SUBMODULECHECKOUT");
-    /// <summary>Gets or configures the provider value for SourceBranch.</summary>
+    /// <summary>Reads <c>BUILD_SOURCEBRANCH</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? SourceBranch { get; } = CIEnvironment.String("BUILD_SOURCEBRANCH");
-    /// <summary>Gets or configures the provider value for SourceBranchName.</summary>
+    /// <summary>Reads <c>BUILD_SOURCEBRANCHNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? SourceBranchName { get; } = CIEnvironment.String("BUILD_SOURCEBRANCHNAME");
-    /// <summary>Gets or configures the provider value for SourceVersion.</summary>
+    /// <summary>Reads <c>BUILD_SOURCEVERSION</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? SourceVersion { get; } = CIEnvironment.String("BUILD_SOURCEVERSION");
-    /// <summary>Gets or configures the provider value for SourceVersionMessage.</summary>
+    /// <summary>Reads <c>BUILD_SOURCEVERSIONMESSAGE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? SourceVersionMessage { get; } = CIEnvironment.String("BUILD_SOURCEVERSIONMESSAGE");
-    /// <summary>Gets or configures the provider value for SourcesDirectory.</summary>
+    /// <summary>Reads <c>BUILD_SOURCESDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? SourcesDirectory { get; } = CIEnvironment.Path("BUILD_SOURCESDIRECTORY");
-    /// <summary>Gets or configures the provider value for ArtifactStagingDirectory.</summary>
+    /// <summary>Reads <c>BUILD_ARTIFACTSTAGINGDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? ArtifactStagingDirectory { get; } = CIEnvironment.Path("BUILD_ARTIFACTSTAGINGDIRECTORY");
-    /// <summary>Gets or configures the provider value for BinariesDirectory.</summary>
+    /// <summary>Reads <c>BUILD_BINARIESDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? BinariesDirectory { get; } = CIEnvironment.Path("BUILD_BINARIESDIRECTORY");
-    /// <summary>Gets or configures the provider value for StagingDirectory.</summary>
+    /// <summary>Reads <c>BUILD_STAGINGDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? StagingDirectory { get; } = CIEnvironment.Path("BUILD_STAGINGDIRECTORY");
-    /// <summary>Gets or configures the provider value for RequestedFor.</summary>
+    /// <summary>Reads <c>BUILD_REQUESTEDFOR</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RequestedFor { get; } = CIEnvironment.String("BUILD_REQUESTEDFOR");
-    /// <summary>Gets or configures the provider value for RequestedForEmail.</summary>
+    /// <summary>Reads <c>BUILD_REQUESTEDFOREMAIL</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RequestedForEmail { get; } = CIEnvironment.String("BUILD_REQUESTEDFOREMAIL");
-    /// <summary>Gets or configures the provider value for RequestedForId.</summary>
+    /// <summary>Reads <c>BUILD_REQUESTEDFORID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RequestedForId { get; } = CIEnvironment.String("BUILD_REQUESTEDFORID");
 }
 
-/// <summary>Represents provider data for AzurePipelineMetadata.</summary>
+/// <summary>Environment metadata used by AzurePipelineMetadata.</summary>
 public sealed record AzurePipelineMetadata
 {
     internal AzurePipelineMetadata() { }
-    /// <summary>Gets or configures the provider value for Workspace.</summary>
+    /// <summary>Reads <c>PIPELINE_WORKSPACE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Workspace { get; } = CIEnvironment.Path("PIPELINE_WORKSPACE");
 }
 
-/// <summary>Represents provider data for AzureSystemMetadata.</summary>
+/// <summary>Environment metadata used by AzureSystemMetadata.</summary>
 public sealed record AzureSystemMetadata
 {
     internal AzureSystemMetadata() { }
-    /// <summary>Gets or configures the provider value for CollectionId.</summary>
+    /// <summary>Reads <c>SYSTEM_COLLECTIONID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Guid? CollectionId { get; } = CIEnvironment.Guid("SYSTEM_COLLECTIONID");
-    /// <summary>Gets or configures the provider value for CollectionUri.</summary>
+    /// <summary>Reads <c>SYSTEM_COLLECTIONURI</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? CollectionUri { get; } = CIEnvironment.Uri("SYSTEM_COLLECTIONURI");
-    /// <summary>Gets or configures the provider value for TeamProject.</summary>
+    /// <summary>Reads <c>SYSTEM_TEAMPROJECT</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? TeamProject { get; } = CIEnvironment.String("SYSTEM_TEAMPROJECT");
-    /// <summary>Gets or configures the provider value for TeamProjectId.</summary>
+    /// <summary>Reads <c>SYSTEM_TEAMPROJECTID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? TeamProjectId { get; } = CIEnvironment.String("SYSTEM_TEAMPROJECTID");
-    /// <summary>Gets or configures the provider value for JobId.</summary>
+    /// <summary>Reads <c>SYSTEM_JOBID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? JobId { get; } = CIEnvironment.String("SYSTEM_JOBID");
-    /// <summary>Gets or configures the provider value for JobName.</summary>
+    /// <summary>Reads <c>SYSTEM_JOBNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? JobName { get; } = CIEnvironment.String("SYSTEM_JOBNAME");
-    /// <summary>Gets or configures the provider value for JobDisplayName.</summary>
+    /// <summary>Reads <c>SYSTEM_JOBDISPLAYNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? JobDisplayName { get; } = CIEnvironment.String("SYSTEM_JOBDISPLAYNAME");
-    /// <summary>Gets or configures the provider value for JobAttempt.</summary>
+    /// <summary>The JobAttempt metadata read from the provider environment.</summary>
     public int? JobAttempt { get; } = (int?)CIEnvironment.Long("SYSTEM_JOBATTEMPT");
-    /// <summary>Gets or configures the provider value for PhaseName.</summary>
+    /// <summary>Reads <c>SYSTEM_PHASENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? PhaseName { get; } = CIEnvironment.String("SYSTEM_PHASENAME");
-    /// <summary>Gets or configures the provider value for StageName.</summary>
+    /// <summary>Reads <c>SYSTEM_STAGENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? StageName { get; } = CIEnvironment.String("SYSTEM_STAGENAME");
-    /// <summary>Gets or configures the provider value for StageDisplayName.</summary>
+    /// <summary>Reads <c>SYSTEM_STAGEDISPLAYNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? StageDisplayName { get; } = CIEnvironment.String("SYSTEM_STAGEDISPLAYNAME");
-    /// <summary>Gets or configures the provider value for StageAttempt.</summary>
+    /// <summary>The StageAttempt metadata read from the provider environment.</summary>
     public int? StageAttempt { get; } = (int?)CIEnvironment.Long("SYSTEM_STAGEATTEMPT");
-    /// <summary>Gets or configures the provider value for DefaultWorkingDirectory.</summary>
+    /// <summary>Reads <c>SYSTEM_DEFAULTWORKINGDIRECTORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? DefaultWorkingDirectory { get; } = CIEnvironment.Path("SYSTEM_DEFAULTWORKINGDIRECTORY");
-    /// <summary>Gets or configures the provider value for TaskInstanceId.</summary>
+    /// <summary>Reads <c>SYSTEM_TASKINSTANCEID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? TaskInstanceId { get; } = CIEnvironment.String("SYSTEM_TASKINSTANCEID");
 }
 
-/// <summary>Represents provider data for AzureDeploymentMetadata.</summary>
+/// <summary>Environment metadata used by AzureDeploymentMetadata.</summary>
 public sealed record AzureDeploymentMetadata
 {
     internal AzureDeploymentMetadata() { }
-    /// <summary>Gets or configures the provider value for EnvironmentName.</summary>
+    /// <summary>Reads <c>ENVIRONMENT_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? EnvironmentName { get; } = CIEnvironment.String("ENVIRONMENT_NAME");
-    /// <summary>Gets or configures the provider value for EnvironmentId.</summary>
+    /// <summary>Reads <c>ENVIRONMENT_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? EnvironmentId { get; } = CIEnvironment.String("ENVIRONMENT_ID");
-    /// <summary>Gets or configures the provider value for ResourceName.</summary>
+    /// <summary>Reads <c>ENVIRONMENT_RESOURCENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? ResourceName { get; } = CIEnvironment.String("ENVIRONMENT_RESOURCENAME");
-    /// <summary>Gets or configures the provider value for ResourceId.</summary>
+    /// <summary>Reads <c>ENVIRONMENT_RESOURCEID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? ResourceId { get; } = CIEnvironment.String("ENVIRONMENT_RESOURCEID");
-    /// <summary>Gets or configures the provider value for StrategyName.</summary>
+    /// <summary>Reads <c>STRATEGY_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? StrategyName { get; } = CIEnvironment.String("STRATEGY_NAME");
-    /// <summary>Gets or configures the provider value for CycleName.</summary>
+    /// <summary>Reads <c>STRATEGY_CYCLENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? CycleName { get; } = CIEnvironment.String("STRATEGY_CYCLENAME");
 }
 
-/// <summary>Represents provider data for AzureReleaseMetadata.</summary>
+/// <summary>Environment metadata used by AzureReleaseMetadata.</summary>
 public sealed record AzureReleaseMetadata
 {
     internal AzureReleaseMetadata() { }
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>Reads <c>RELEASE_RELEASEID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Id { get; } = CIEnvironment.Long("RELEASE_RELEASEID");
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>RELEASE_RELEASENAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("RELEASE_RELEASENAME");
-    /// <summary>Gets or configures the provider value for Description.</summary>
+    /// <summary>Reads <c>RELEASE_RELEASEDESCRIPTION</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Description { get; } = CIEnvironment.String("RELEASE_RELEASEDESCRIPTION");
-    /// <summary>Gets or configures the provider value for WebUrl.</summary>
+    /// <summary>Reads <c>RELEASE_RELEASEWEBURL</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? WebUrl { get; } = CIEnvironment.Uri("RELEASE_RELEASEWEBURL");
-    /// <summary>Gets or configures the provider value for EnvironmentName.</summary>
+    /// <summary>Reads <c>RELEASE_ENVIRONMENTNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? EnvironmentName { get; } = CIEnvironment.String("RELEASE_ENVIRONMENTNAME");
-    /// <summary>Gets or configures the provider value for EnvironmentId.</summary>
+    /// <summary>Reads <c>RELEASE_ENVIRONMENTID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? EnvironmentId { get; } = CIEnvironment.Long("RELEASE_ENVIRONMENTID");
-    /// <summary>Gets or configures the provider value for DefinitionName.</summary>
+    /// <summary>Reads <c>RELEASE_DEFINITIONNAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? DefinitionName { get; } = CIEnvironment.String("RELEASE_DEFINITIONNAME");
-    /// <summary>Gets or configures the provider value for DefinitionId.</summary>
+    /// <summary>Reads <c>RELEASE_DEFINITIONID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? DefinitionId { get; } = CIEnvironment.Long("RELEASE_DEFINITIONID");
-    /// <summary>Gets or configures the provider value for DeploymentId.</summary>
+    /// <summary>Reads <c>RELEASE_DEPLOYMENTID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? DeploymentId { get; } = CIEnvironment.String("RELEASE_DEPLOYMENTID");
-    /// <summary>Gets or configures the provider value for AttemptNumber.</summary>
+    /// <summary>The AttemptNumber metadata read from the provider environment.</summary>
     public int? AttemptNumber { get; } = (int?)CIEnvironment.Long("RELEASE_ATTEMPTNUMBER");
-    /// <summary>Gets or configures the provider value for Reason.</summary>
+    /// <summary>Reads <c>RELEASE_REASON</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Reason { get; } = CIEnvironment.String("RELEASE_REASON");
-    /// <summary>Gets or configures the provider value for RequestedFor.</summary>
+    /// <summary>Reads <c>RELEASE_REQUESTEDFOR</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RequestedFor { get; } = CIEnvironment.String("RELEASE_REQUESTEDFOR");
-    /// <summary>Gets or configures the provider value for RequestedForId.</summary>
+    /// <summary>Reads <c>RELEASE_REQUESTEDFORID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? RequestedForId { get; } = CIEnvironment.String("RELEASE_REQUESTEDFORID");
 }

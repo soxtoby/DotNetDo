@@ -27,19 +27,19 @@ public sealed class GitHubActions
         Workflow = new();
     }
 
-    /// <summary>Gets or configures the provider value for Action.</summary>
+    /// <summary>The Action metadata read from the provider environment.</summary>
     public GitHubActionMetadata Action { get; }
-    /// <summary>Gets or configures the provider value for Event.</summary>
+    /// <summary>The Event metadata read from the provider environment.</summary>
     public GitHubEventMetadata Event { get; }
-    /// <summary>Gets or configures the provider value for Files.</summary>
+    /// <summary>The Files metadata read from the provider environment.</summary>
     public GitHubCommandFileMetadata Files { get; }
-    /// <summary>Gets or configures the provider value for Repository.</summary>
+    /// <summary>The Repository metadata read from the provider environment.</summary>
     public GitHubRepositoryMetadata Repository { get; }
-    /// <summary>Gets or configures the provider value for Run.</summary>
+    /// <summary>The Run metadata read from the provider environment.</summary>
     public GitHubRunMetadata Run { get; }
-    /// <summary>Gets or configures the provider value for Runner.</summary>
+    /// <summary>The Runner metadata read from the provider environment.</summary>
     public GitHubRunnerMetadata Runner { get; }
-    /// <summary>Gets or configures the provider value for Workflow.</summary>
+    /// <summary>The Workflow metadata read from the provider environment.</summary>
     public GitHubWorkflowMetadata Workflow { get; }
 
     /// <summary>Emits the provider's Debug command immediately.</summary>
@@ -134,151 +134,151 @@ public sealed class GitHubActions
     static void Required(string value) => ArgumentException.ThrowIfNullOrWhiteSpace(value);
 }
 
-/// <summary>Represents provider data for GitHubAnnotation.</summary>
+/// <summary>Optional source location attached to a GitHub Actions notice, warning, or error annotation.</summary>
 public sealed record GitHubAnnotation
 {
-    /// <summary>Gets or configures the provider value for Title.</summary>
+    /// <summary>The annotation title shown separately from its message.</summary>
     public string? Title { get; init; }
-    /// <summary>Gets or configures the provider value for File.</summary>
+    /// <summary>The workspace-relative file associated with the annotation.</summary>
     public RelativePath? File { get; init; }
-    /// <summary>Gets or configures the provider value for Line.</summary>
+    /// <summary>The one-based starting line; required when a column is supplied.</summary>
     public long? Line { get; init; }
-    /// <summary>Gets or configures the provider value for EndLine.</summary>
+    /// <summary>The one-based ending line; omitted for a single-line annotation.</summary>
     public long? EndLine { get; init; }
-    /// <summary>Gets or configures the provider value for Column.</summary>
+    /// <summary>The one-based starting column; valid only for a single-line or same-line range.</summary>
     public long? Column { get; init; }
-    /// <summary>Gets or configures the provider value for EndColumn.</summary>
+    /// <summary>The one-based ending column; valid only when the start and end lines are equal.</summary>
     public long? EndColumn { get; init; }
 }
 
-/// <summary>Represents provider data for GitHubActionMetadata.</summary>
+/// <summary>Environment metadata used by GitHubActionMetadata.</summary>
 public sealed record GitHubActionMetadata
 {
     internal GitHubActionMetadata() { }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>GITHUB_ACTION</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("GITHUB_ACTION");
-    /// <summary>Gets or configures the provider value for Repository.</summary>
+    /// <summary>Reads <c>GITHUB_ACTION_REPOSITORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Repository { get; } = CIEnvironment.String("GITHUB_ACTION_REPOSITORY");
-    /// <summary>Gets or configures the provider value for Reference.</summary>
+    /// <summary>Reads <c>GITHUB_ACTION_REF</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Reference { get; } = CIEnvironment.String("GITHUB_ACTION_REF");
-    /// <summary>Gets or configures the provider value for Path.</summary>
+    /// <summary>Reads <c>GITHUB_ACTION_PATH</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Path { get; } = CIEnvironment.Path("GITHUB_ACTION_PATH");
 }
 
-/// <summary>Represents provider data for GitHubEventMetadata.</summary>
+/// <summary>Environment metadata used by GitHubEventMetadata.</summary>
 public sealed record GitHubEventMetadata
 {
     internal GitHubEventMetadata() { }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>GITHUB_EVENT_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("GITHUB_EVENT_NAME");
-    /// <summary>Gets or configures the provider value for Path.</summary>
+    /// <summary>Reads <c>GITHUB_EVENT_PATH</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Path { get; } = CIEnvironment.Path("GITHUB_EVENT_PATH");
-    /// <summary>Gets or configures the provider value for Actor.</summary>
+    /// <summary>Reads <c>GITHUB_ACTOR</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Actor { get; } = CIEnvironment.String("GITHUB_ACTOR");
-    /// <summary>Gets or configures the provider value for ActorId.</summary>
+    /// <summary>Reads <c>GITHUB_ACTOR_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? ActorId { get; } = CIEnvironment.Long("GITHUB_ACTOR_ID");
-    /// <summary>Gets or configures the provider value for TriggeringActor.</summary>
+    /// <summary>Reads <c>GITHUB_TRIGGERING_ACTOR</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? TriggeringActor { get; } = CIEnvironment.String("GITHUB_TRIGGERING_ACTOR");
 }
 
-/// <summary>Represents provider data for GitHubRepositoryMetadata.</summary>
+/// <summary>Environment metadata used by GitHubRepositoryMetadata.</summary>
 public sealed record GitHubRepositoryMetadata
 {
     internal GitHubRepositoryMetadata() { }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>GITHUB_REPOSITORY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("GITHUB_REPOSITORY");
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>Reads <c>GITHUB_REPOSITORY_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Id { get; } = CIEnvironment.Long("GITHUB_REPOSITORY_ID");
-    /// <summary>Gets or configures the provider value for Owner.</summary>
+    /// <summary>Reads <c>GITHUB_REPOSITORY_OWNER</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Owner { get; } = CIEnvironment.String("GITHUB_REPOSITORY_OWNER");
-    /// <summary>Gets or configures the provider value for OwnerId.</summary>
+    /// <summary>Reads <c>GITHUB_REPOSITORY_OWNER_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? OwnerId { get; } = CIEnvironment.Long("GITHUB_REPOSITORY_OWNER_ID");
-    /// <summary>Gets or configures the provider value for ServerUrl.</summary>
+    /// <summary>Reads <c>GITHUB_SERVER_URL</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? ServerUrl { get; } = CIEnvironment.Uri("GITHUB_SERVER_URL");
-    /// <summary>Gets or configures the provider value for ApiUrl.</summary>
+    /// <summary>Reads <c>GITHUB_API_URL</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? ApiUrl { get; } = CIEnvironment.Uri("GITHUB_API_URL");
-    /// <summary>Gets or configures the provider value for GraphQlUrl.</summary>
+    /// <summary>Reads <c>GITHUB_GRAPHQL_URL</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public Uri? GraphQlUrl { get; } = CIEnvironment.Uri("GITHUB_GRAPHQL_URL");
 }
 
-/// <summary>Represents provider data for GitHubRunMetadata.</summary>
+/// <summary>Environment metadata used by GitHubRunMetadata.</summary>
 public sealed record GitHubRunMetadata
 {
     internal GitHubRunMetadata() { }
-    /// <summary>Gets or configures the provider value for Id.</summary>
+    /// <summary>Reads <c>GITHUB_RUN_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Id { get; } = CIEnvironment.Long("GITHUB_RUN_ID");
-    /// <summary>Gets or configures the provider value for Number.</summary>
+    /// <summary>Reads <c>GITHUB_RUN_NUMBER</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Number { get; } = CIEnvironment.Long("GITHUB_RUN_NUMBER");
-    /// <summary>Gets or configures the provider value for Attempt.</summary>
+    /// <summary>Reads <c>GITHUB_RUN_ATTEMPT</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? Attempt { get; } = CIEnvironment.Long("GITHUB_RUN_ATTEMPT");
-    /// <summary>Gets or configures the provider value for Job.</summary>
+    /// <summary>Reads <c>GITHUB_JOB</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Job { get; } = CIEnvironment.String("GITHUB_JOB");
-    /// <summary>Gets or configures the provider value for RetentionDays.</summary>
+    /// <summary>Reads <c>GITHUB_RETENTION_DAYS</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public long? RetentionDays { get; } = CIEnvironment.Long("GITHUB_RETENTION_DAYS");
 }
 
-/// <summary>Represents provider data for GitHubCommandFileMetadata.</summary>
+/// <summary>Environment metadata used by GitHubCommandFileMetadata.</summary>
 public sealed record GitHubCommandFileMetadata
 {
     internal GitHubCommandFileMetadata() { }
-    /// <summary>Gets or configures the provider value for Environment.</summary>
+    /// <summary>Reads <c>GITHUB_ENV</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Environment { get; } = CIEnvironment.Path("GITHUB_ENV");
-    /// <summary>Gets or configures the provider value for Output.</summary>
+    /// <summary>Reads <c>GITHUB_OUTPUT</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Output { get; } = CIEnvironment.Path("GITHUB_OUTPUT");
-    /// <summary>Gets or configures the provider value for Path.</summary>
+    /// <summary>Reads <c>GITHUB_PATH</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Path { get; } = CIEnvironment.Path("GITHUB_PATH");
-    /// <summary>Gets or configures the provider value for State.</summary>
+    /// <summary>Reads <c>GITHUB_STATE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? State { get; } = CIEnvironment.Path("GITHUB_STATE");
-    /// <summary>Gets or configures the provider value for StepSummary.</summary>
+    /// <summary>Reads <c>GITHUB_STEP_SUMMARY</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? StepSummary { get; } = CIEnvironment.Path("GITHUB_STEP_SUMMARY");
 }
 
-/// <summary>Represents provider data for GitHubRunnerMetadata.</summary>
+/// <summary>Environment metadata used by GitHubRunnerMetadata.</summary>
 public sealed record GitHubRunnerMetadata
 {
     internal GitHubRunnerMetadata() { }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>RUNNER_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("RUNNER_NAME");
-    /// <summary>Gets or configures the provider value for Os.</summary>
+    /// <summary>Reads <c>RUNNER_OS</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Os { get; } = CIEnvironment.String("RUNNER_OS");
-    /// <summary>Gets or configures the provider value for Architecture.</summary>
+    /// <summary>Reads <c>RUNNER_ARCH</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Architecture { get; } = CIEnvironment.String("RUNNER_ARCH");
-    /// <summary>Gets or configures the provider value for Environment.</summary>
+    /// <summary>Reads <c>RUNNER_ENVIRONMENT</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Environment { get; } = CIEnvironment.String("RUNNER_ENVIRONMENT");
-    /// <summary>Gets or configures the provider value for Debug.</summary>
+    /// <summary>Reads <c>RUNNER_DEBUG</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public bool? Debug { get; } = CIEnvironment.Bool("RUNNER_DEBUG");
-    /// <summary>Gets or configures the provider value for TrackingId.</summary>
+    /// <summary>Reads <c>RUNNER_TRACKING_ID</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? TrackingId { get; } = CIEnvironment.String("RUNNER_TRACKING_ID");
-    /// <summary>Gets or configures the provider value for TempDirectory.</summary>
+    /// <summary>Reads <c>RUNNER_TEMP</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? TempDirectory { get; } = CIEnvironment.Path("RUNNER_TEMP");
-    /// <summary>Gets or configures the provider value for ToolCacheDirectory.</summary>
+    /// <summary>Reads <c>RUNNER_TOOL_CACHE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? ToolCacheDirectory { get; } = CIEnvironment.Path("RUNNER_TOOL_CACHE");
-    /// <summary>Gets or configures the provider value for Workspace.</summary>
+    /// <summary>Reads <c>GITHUB_WORKSPACE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public AbsolutePath? Workspace { get; } = CIEnvironment.Path("GITHUB_WORKSPACE");
 }
 
-/// <summary>Represents provider data for GitHubWorkflowMetadata.</summary>
+/// <summary>Environment metadata used by GitHubWorkflowMetadata.</summary>
 public sealed record GitHubWorkflowMetadata
 {
     internal GitHubWorkflowMetadata() { }
-    /// <summary>Gets or configures the provider value for Name.</summary>
+    /// <summary>Reads <c>GITHUB_WORKFLOW</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? Name { get; } = CIEnvironment.String("GITHUB_WORKFLOW");
-    /// <summary>Gets or configures the provider value for WorkflowReference.</summary>
+    /// <summary>Reads <c>GITHUB_WORKFLOW_REF</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? WorkflowReference { get; } = CIEnvironment.String("GITHUB_WORKFLOW_REF");
-    /// <summary>Gets or configures the provider value for WorkflowSha.</summary>
+    /// <summary>Reads <c>GITHUB_WORKFLOW_SHA</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? WorkflowSha { get; } = CIEnvironment.String("GITHUB_WORKFLOW_SHA");
-    /// <summary>Gets or configures the provider value for CommitSha.</summary>
+    /// <summary>Reads <c>GITHUB_SHA</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? CommitSha { get; } = CIEnvironment.String("GITHUB_SHA");
-    /// <summary>Gets or configures the provider value for ReferenceName.</summary>
+    /// <summary>Reads <c>GITHUB_REF_NAME</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? ReferenceName { get; } = CIEnvironment.String("GITHUB_REF_NAME");
-    /// <summary>Gets or configures the provider value for ReferenceType.</summary>
+    /// <summary>Reads <c>GITHUB_REF_TYPE</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? ReferenceType { get; } = CIEnvironment.String("GITHUB_REF_TYPE");
-    /// <summary>Gets or configures the provider value for GitReference.</summary>
+    /// <summary>Reads <c>GITHUB_REF</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? GitReference { get; } = CIEnvironment.String("GITHUB_REF");
-    /// <summary>Gets or configures the provider value for ReferenceProtected.</summary>
+    /// <summary>Reads <c>GITHUB_REF_PROTECTED</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public bool? ReferenceProtected { get; } = CIEnvironment.Bool("GITHUB_REF_PROTECTED");
-    /// <summary>Gets or configures the provider value for HeadReference.</summary>
+    /// <summary>Reads <c>GITHUB_HEAD_REF</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? HeadReference { get; } = CIEnvironment.String("GITHUB_HEAD_REF");
-    /// <summary>Gets or configures the provider value for BaseReference.</summary>
+    /// <summary>Reads <c>GITHUB_BASE_REF</c>; returns <see langword="null"/> when it is unset or empty.</summary>
     public string? BaseReference { get; } = CIEnvironment.String("GITHUB_BASE_REF");
 }

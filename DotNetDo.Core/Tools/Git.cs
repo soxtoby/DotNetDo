@@ -5,25 +5,25 @@ namespace DotNetDo;
 
 public static partial class Tools
 {
-    /// <summary>Provides fresh definitions for supported Git commands.</summary>
+    /// <summary>Stages, unstages, commits, pushes, and tags the discovered workspace repository.</summary>
     public static class Git
     {
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Stages selected or all working-tree changes.</summary>
         public static GitAdd Add => new();
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Unstages selected or all index changes without changing working-tree files.</summary>
         public static GitReset Reset => new();
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Records staged changes as a new commit.</summary>
         public static GitCommit Commit => new();
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Pushes the current branch to its configured or selected remote.</summary>
         public static GitPush Push => new();
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Creates an annotated tag at HEAD or a selected commit.</summary>
         public static GitCreateTag CreateTag => new();
-        /// <summary>Returns a fresh value so later <c>with</c> customization cannot affect other callers.</summary>
+        /// <summary>Pushes one selected tag to the configured or selected remote.</summary>
         public static GitPushTag PushTag => new();
     }
 }
 
-/// <summary>Models the <c>GitCommand</c> command and its typed options.</summary>
+/// <summary>Runs Git against an explicitly bound repository, or the discovered workspace repository.</summary>
 public abstract record GitCommand : ExecToolCommand
 {
     readonly GitRepository? _repository;
@@ -35,13 +35,13 @@ public abstract record GitCommand : ExecToolCommand
     /// <summary>Initializes a Git command, optionally bound to a repository working directory.</summary>
     protected GitCommand(GitCommand original) : base(original) => _repository = original._repository;
 
-    /// <summary>The underlying LibGit2Sharp repository; owned and disposed by this wrapper.</summary>
+    /// <summary>The bound repository, falling back to the workspace repository when none was supplied.</summary>
     protected GitRepository Repository => _repository ?? Do.GitRepo;
 
-    /// <summary>Renders the value as one quoted command-line argument.</summary>
+    /// <summary>Targets Git at the repository root without changing the process working directory.</summary>
     protected string GitPrefix => $"git -C {Repository.Root.QuotedArgument()}";
 
-    /// <summary>Render paths.</summary>
+    /// <summary>Renders either explicit repository-relative paths or the command's all-path form, rejecting ambiguous selection.</summary>
     protected static string RenderPaths(IReadOnlyList<RelativePath> paths, bool all, string allArguments)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -62,15 +62,15 @@ public abstract record GitCommand : ExecToolCommand
     }
 }
 
-/// <summary>Models the <c>GitAdd</c> command and its typed options.</summary>
+/// <summary>Stages selected paths or all working-tree changes in the repository index.</summary>
 public sealed record GitAdd : GitCommand
 {
     internal GitAdd() => Verbose = GitOutputVolume.From(Logging.Level).Verbose;
     internal GitAdd(GitRepository repository) : base(repository) => Verbose = GitOutputVolume.From(Logging.Level).Verbose;
 
-    /// <summary>Paths passed to the Git command.</summary>
+    /// <summary>Repository-relative paths to stage; cannot be combined with <see cref="All"/>.</summary>
     public IReadOnlyList<RelativePath> Paths { get; init => field = value.ToArray(); } = [];
-    /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
+    /// <summary>Stages tracked, modified, deleted, and untracked paths; cannot be combined with <see cref="Paths"/>.</summary>
     public bool All { get; init; }
     /// <summary>Whether Git reports each added path.</summary>
     public bool Verbose { get; init; }
@@ -84,15 +84,15 @@ public sealed record GitAdd : GitCommand
         ];
 }
 
-/// <summary>Models the <c>GitReset</c> command and its typed options.</summary>
+/// <summary>Resets selected or all index entries to HEAD without changing working-tree files.</summary>
 public sealed record GitReset : GitCommand
 {
     internal GitReset() => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
     internal GitReset(GitRepository repository) : base(repository) => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
 
-    /// <summary>Paths passed to the Git command.</summary>
+    /// <summary>Repository-relative paths to unstage; cannot be combined with <see cref="All"/>.</summary>
     public IReadOnlyList<RelativePath> Paths { get; init => field = value.ToArray(); } = [];
-    /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
+    /// <summary>Unstages every path beneath the repository root; cannot be combined with <see cref="Paths"/>.</summary>
     public bool All { get; init; }
     /// <summary>Whether Git reports only errors.</summary>
     public bool Quiet { get; init; }
@@ -105,7 +105,7 @@ public sealed record GitReset : GitCommand
         ];
 }
 
-/// <summary>Models the <c>GitCommit</c> command and its typed options.</summary>
+/// <summary>Creates a commit from staged changes, optionally staging tracked modifications first.</summary>
 public sealed record GitCommit : GitCommand
 {
     internal GitCommit() => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
@@ -113,9 +113,9 @@ public sealed record GitCommit : GitCommand
     internal GitCommit(GitRepository repository)
         : base(repository) => Quiet = GitOutputVolume.From(Logging.Level).Quiet;
 
-    /// <summary>The message passed to the command.</summary>
+    /// <summary>The required non-empty commit message.</summary>
     public string? Message { get; init; }
-    /// <summary>Whether the command should operate on all applicable paths or changes.</summary>
+    /// <summary>Stages modifications and deletions to tracked files before committing; untracked files remain unstaged.</summary>
     public bool All { get; init; }
 
     /// <summary>The author identity used for the commit.</summary>
@@ -149,7 +149,7 @@ public sealed record GitCommit : GitCommand
     }
 }
 
-/// <summary>Models the <c>GitPush</c> command and its typed options.</summary>
+/// <summary>Pushes the current branch using Git's configured refspec and upstream behavior.</summary>
 public sealed record GitPush : GitCommand
 {
     internal GitPush()
@@ -180,7 +180,7 @@ public sealed record GitPush : GitCommand
         ];
 }
 
-/// <summary>Models the <c>GitCreateTag</c> command and its typed options.</summary>
+/// <summary>Creates an annotated tag with a required name and message.</summary>
 public sealed record GitCreateTag : GitCommand
 {
     internal GitCreateTag() { }
@@ -188,9 +188,9 @@ public sealed record GitCreateTag : GitCommand
     internal GitCreateTag(GitRepository repository)
         : base(repository) { }
 
-    /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
+    /// <summary>The required non-empty tag name accepted by Git.</summary>
     public string? Name { get; init; }
-    /// <summary>The message passed to the command.</summary>
+    /// <summary>The required non-empty annotation message.</summary>
     public string? Message { get; init; }
     /// <summary>The commit tagged; when omitted, Git tags HEAD.</summary>
     public Commit? Target { get; init; }
@@ -216,7 +216,7 @@ public sealed record GitCreateTag : GitCommand
     }
 }
 
-/// <summary>Models the <c>GitPushTag</c> command and its typed options.</summary>
+/// <summary>Pushes one existing tag without pushing branches or other tags.</summary>
 public sealed record GitPushTag : GitCommand
 {
     internal GitPushTag()
@@ -230,7 +230,7 @@ public sealed record GitPushTag : GitCommand
         (Quiet, Verbose) = GitOutputVolume.From(Logging.Level);
     }
 
-    /// <summary>The tag to push.</summary>
+    /// <summary>The required repository tag to push.</summary>
     public Tag? Tag { get; init; }
     /// <summary>The remote name; when omitted, Git uses its configured default.</summary>
     public string? Remote { get; init; }

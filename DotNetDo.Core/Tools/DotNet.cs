@@ -4,86 +4,86 @@ using System.Text.Json.Serialization;
 
 namespace DotNetDo;
 
-/// <summary>Provides strongly typed definitions for supported command-line tools.</summary>
+/// <summary>Exposes supported external tools as immutable, directly executable command values.</summary>
 public static partial class Tools
 {
-    /// <summary>Provides command definitions for the .NET CLI.</summary>
+    /// <summary>Builds, restores, tests, packs, formats, watches, and manages tools through the .NET CLI.</summary>
     public static class DotNet
     {
-        /// <summary>Creates a new <see cref="DotNetBuild"/> command definition.</summary>
+        /// <summary>Compiles the workspace solution or selected projects and their dependencies.</summary>
         public static DotNetBuild Build => new();
-        /// <summary>Creates a new <see cref="DotNetClean"/> command definition.</summary>
+        /// <summary>Removes build outputs produced for the workspace solution or selected projects.</summary>
         public static DotNetClean Clean => new();
-        /// <summary>Creates a new <see cref="DotNetDevCerts"/> command definition.</summary>
+        /// <summary>Creates, checks, trusts, imports, exports, or removes HTTPS development certificates.</summary>
         public static DotNetDevCerts DevCerts => new();
-        /// <summary>Creates a new <see cref="DotNetFormat"/> command definition.</summary>
+        /// <summary>Applies or verifies whitespace, style, and analyzer formatting across a workspace.</summary>
         public static DotNetFormat Format => new();
-        /// <summary>Creates a new <see cref="DotNetPack"/> command definition.</summary>
+        /// <summary>Builds projects and produces NuGet packages.</summary>
         public static DotNetPack Pack => new();
-        /// <summary>Creates a new <see cref="DotNetPackageSearch"/> command definition.</summary>
+        /// <summary>Searches configured NuGet feeds and returns structured package results.</summary>
         public static DotNetPackageSearch PackageSearch => new();
-        /// <summary>Creates a new <see cref="DotNetNuGetPush"/> command definition.</summary>
+        /// <summary>Uploads NuGet packages and optional symbol packages to a package source.</summary>
         public static DotNetNuGetPush NuGetPush => new();
-        /// <summary>Creates a new <see cref="DotNetRestore"/> command definition.</summary>
+        /// <summary>Resolves project dependencies and writes restore assets for the workspace.</summary>
         public static DotNetRestore Restore => new();
-        /// <summary>Creates a new <see cref="DotNetTest"/> command definition.</summary>
+        /// <summary>Builds and runs tests in the workspace solution or selected projects.</summary>
         public static DotNetTest Test => new();
-        /// <summary>Creates a new <see cref="DotNetToolRestore"/> command definition.</summary>
+        /// <summary>Installs local tools declared by the applicable tool manifest.</summary>
         public static DotNetToolRestore ToolRestore => new();
-        /// <summary>Creates a new <see cref="DotNetToolUpdate"/> command definition.</summary>
+        /// <summary>Updates a global, local-manifest, or explicit-path .NET tool package.</summary>
         public static DotNetToolUpdate ToolUpdate => new();
-        /// <summary>Creates a new <see cref="DotNetWatch"/> command definition.</summary>
+        /// <summary>Rebuilds or hot-reloads an application when watched source files change.</summary>
         public static DotNetWatch Watch => new();
     }
 }
 
-/// <summary>Base command definition for .NET CLI commands that accept project or solution targets.</summary>
+/// <summary>Defaults target-based .NET operations to the workspace solution and logging-derived verbosity.</summary>
 public abstract record DotNetTargetCommand : ExecToolCommand
 {
-    /// <summary>Dot net target command.</summary>
+    /// <summary>Defaults target-based commands to the workspace solution and maps logging level to MSBuild verbosity.</summary>
     protected DotNetTargetCommand()
     {
         Targets = [Do.Solution.Path];
         Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
     }
 
-    /// <summary>Supplies the values emitted by the <c>--target</c> option.</summary>
+    /// <summary>Projects or solutions operated on; defaults to the discovered workspace solution.</summary>
     public IReadOnlyList<string> Targets { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
+    /// <summary>MSBuild output detail; defaults from <see cref="Logging.Level"/>.</summary>
     public string? Verbosity { get; init; }
 
-    /// <summary>Gets the canonically ordered target arguments shared by derived commands.</summary>
+    /// <summary>Places targets before logging verbosity for all target-based .NET operations.</summary>
     protected IReadOnlyList<string?> TargetParts => [Args(Targets), Arg("--verbosity", Verbosity)];
 }
 
-/// <summary>Base command definition for .NET CLI commands sharing build options.</summary>
+/// <summary>Shares build configuration, restore, runtime, output, and build-server behavior across build and pack.</summary>
 public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
 {
     /// <summary>Creates a command with defaults for the current build locality.</summary>
     protected DotNetBuildOptionsCommand() => Configuration = MSBuildDefaults.Configuration;
 
-    /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
+    /// <summary>Uses the current runtime as the target runtime instead of resolving one from the project.</summary>
     public bool CurrentRuntime { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
+    /// <summary>The build configuration; defaults to <c>Debug</c> locally and <c>Release</c> in CI.</summary>
     public string? Configuration { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
+    /// <summary>The target runtime identifier, such as <c>win-x64</c>.</summary>
     public string? Runtime { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--version-suffix</c> option.</summary>
+    /// <summary>Replaces the project's version suffix when forming the build version.</summary>
     public string? VersionSuffix { get; init; }
-    /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
+    /// <summary>Skips implicit restore; assets must already be current.</summary>
     public bool NoRestore { get; init; }
-    /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
+    /// <summary>Allows authentication and other restore operations to prompt for input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
+    /// <summary>Places all build outputs in this directory instead of project-defined locations.</summary>
     public string? Output { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
+    /// <summary>Places outputs for all projects beneath this artifacts root, separated by project.</summary>
     public string? ArtifactsPath { get; init; }
-    /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
+    /// <summary>Suppresses the startup banner and copyright message.</summary>
     public bool NoLogo { get; init; }
-    /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
+    /// <summary>Prevents reuse of persistent build servers during this invocation.</summary>
     public bool DisableBuildServers { get; init; }
 
-    /// <summary>Gets the canonically ordered build arguments shared by derived commands.</summary>
+    /// <summary>Places shared target and build behavior before operation-specific arguments.</summary>
     protected IReadOnlyList<string?> BuildParts =>
         [
             ..TargetParts,
@@ -100,22 +100,22 @@ public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet build</c> command.</summary>
+/// <summary>Compiles selected projects and their dependencies, restoring first unless disabled.</summary>
 public sealed record DotNetBuild : DotNetBuildOptionsCommand
 {
-    /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
+    /// <summary>Builds only the specified target framework, which must exist in the project.</summary>
     public string? Framework { get; init; }
-    /// <summary>Controls emission of the <c>--debug</c> switch.</summary>
+    /// <summary>Enables additional CLI debug diagnostics.</summary>
     public bool Debug { get; init; }
-    /// <summary>Controls emission of the <c>--no-incremental</c> switch.</summary>
+    /// <summary>Forces a clean dependency graph evaluation instead of an incremental build.</summary>
     public bool NoIncremental { get; init; }
-    /// <summary>Controls emission of the <c>--no-dependencies</c> switch.</summary>
+    /// <summary>Builds the selected project without building project references.</summary>
     public bool NoDependencies { get; init; }
-    /// <summary>Controls emission of the <c>--self-contained</c> switch.</summary>
+    /// <summary>Controls whether the .NET runtime is bundled; <see langword="null"/> leaves project defaults unchanged.</summary>
     public bool? SelfContained { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
+    /// <summary>Shorthand target architecture combined with the default runtime identifier.</summary>
     public string? Architecture { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
+    /// <summary>Shorthand target operating system combined with the default runtime identifier.</summary>
     public string? OperatingSystem { get; init; }
 
     /// <inheritdoc />
@@ -133,27 +133,27 @@ public sealed record DotNetBuild : DotNetBuildOptionsCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet clean</c> command.</summary>
+/// <summary>Removes build outputs for selected projects, framework, runtime, and configuration.</summary>
 public sealed record DotNetClean : DotNetTargetCommand
 {
     /// <summary>Creates a command with defaults for the current build locality.</summary>
     public DotNetClean() => Configuration = MSBuildDefaults.Configuration;
 
-    /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
+    /// <summary>Selects one target framework declared by the project.</summary>
     public string? Framework { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
+    /// <summary>Targets the specified runtime identifier, such as <c>win-x64</c>.</summary>
     public string? Runtime { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
+    /// <summary>Selects the named build configuration.</summary>
     public string? Configuration { get; init; }
-    /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
+    /// <summary>Allows authentication and other operations to prompt for input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
+    /// <summary>Places command outputs in the specified directory.</summary>
     public string? Output { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
+    /// <summary>Places outputs for all projects beneath this artifacts root, separated by project.</summary>
     public string? ArtifactsPath { get; init; }
-    /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
+    /// <summary>Suppresses the startup banner and copyright message.</summary>
     public bool NoLogo { get; init; }
-    /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
+    /// <summary>Prevents reuse of persistent build servers during this invocation.</summary>
     public bool DisableBuildServers { get; init; }
 
     /// <inheritdoc />
@@ -172,7 +172,7 @@ public sealed record DotNetClean : DotNetTargetCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet dev-certs</c> command.</summary>
+/// <summary>Manages the local HTTPS development certificate used by ASP.NET Core.</summary>
 public sealed record DotNetDevCerts : ExecToolCommand
 {
     /// <summary>Creates a command with output volume derived from the current logging level.</summary>
@@ -181,27 +181,27 @@ public sealed record DotNetDevCerts : ExecToolCommand
         (Quiet, Verbose) = DotNetOutputVolume.From(Logging.Level);
     }
 
-    /// <summary>Supplies the value emitted by the <c>--export-path</c> option.</summary>
+    /// <summary>Exports the HTTPS development certificate to this file; the extension determines the default format.</summary>
     public string? ExportPath { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--password</c> option.</summary>
+    /// <summary>Protects the exported certificate with this password; requires an export path.</summary>
     public string? Password { get; init; }
-    /// <summary>Controls emission of the <c>--no-password</c> switch.</summary>
+    /// <summary>Exports a certificate without password protection; requires PEM format and cannot be combined with a password.</summary>
     public bool NoPassword { get; init; }
-    /// <summary>Controls emission of the <c>--check</c> switch.</summary>
+    /// <summary>Checks whether a valid HTTPS development certificate exists without creating one.</summary>
     public bool Check { get; init; }
-    /// <summary>Controls emission of the <c>--clean</c> switch.</summary>
+    /// <summary>Removes HTTPS development certificates from the local certificate store.</summary>
     public bool Clean { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--import</c> option.</summary>
+    /// <summary>Clears other HTTPS development certificates, then imports this certificate into the machine store.</summary>
     public string? Import { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--format</c> option.</summary>
+    /// <summary>Selects the exported certificate format, <c>Pfx</c> or <c>Pem</c>.</summary>
     public string? Format { get; init; }
-    /// <summary>Controls emission of the <c>--trust</c> switch.</summary>
+    /// <summary>Trusts the selected HTTPS development certificate when supported by the platform.</summary>
     public bool Trust { get; init; }
-    /// <summary>Controls emission of the <c>--verbose</c> switch.</summary>
+    /// <summary>Writes diagnostic detail beyond normal command output.</summary>
     public bool Verbose { get; init; }
-    /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
+    /// <summary>Suppresses nonessential command output.</summary>
     public bool Quiet { get; init; }
-    /// <summary>Controls emission of the <c>--check-trust-machine-readable</c> switch.</summary>
+    /// <summary>Checks for a trusted certificate and reports the result as JSON without changing the store.</summary>
     public bool CheckTrustMachineReadable { get; init; }
 
     /// <inheritdoc />
@@ -222,18 +222,18 @@ public sealed record DotNetDevCerts : ExecToolCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet pack</c> command.</summary>
+/// <summary>Builds selected projects and produces NuGet packages from their package metadata.</summary>
 public sealed record DotNetPack : DotNetBuildOptionsCommand
 {
-    /// <summary>Controls emission of the <c>--no-build</c> switch.</summary>
+    /// <summary>Skips building before the operation; required outputs must already exist.</summary>
     public bool NoBuild { get; init; }
-    /// <summary>Controls emission of the <c>--include-symbols</c> switch.</summary>
+    /// <summary>Creates an additional symbols package alongside the main NuGet package.</summary>
     public bool IncludeSymbols { get; init; }
-    /// <summary>Controls emission of the <c>--include-source</c> switch.</summary>
+    /// <summary>Includes source files in the symbols package and implies symbol-package creation.</summary>
     public bool IncludeSource { get; init; }
-    /// <summary>Controls emission of the <c>--serviceable</c> switch.</summary>
+    /// <summary>Marks the produced package as serviceable in its project properties.</summary>
     public bool Serviceable { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--version</c> option.</summary>
+    /// <summary>Sets the package version for this pack invocation.</summary>
     public string? Version { get; init; }
 
     /// <inheritdoc />
@@ -249,10 +249,10 @@ public sealed record DotNetPack : DotNetBuildOptionsCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet nuget push</c> command.</summary>
+/// <summary>Uploads a NuGet package and, unless disabled, its matching symbol package.</summary>
 public sealed record DotNetNuGetPush : ExecToolCommand
 {
-    /// <summary>Supplies the package path to push.</summary>
+    /// <summary>The <c>.nupkg</c> file to upload; glob patterns are accepted by the .NET CLI.</summary>
     public string? Package { get; init; }
     /// <summary>Allows connections to package sources using HTTP.</summary>
     public bool AllowInsecureConnections { get; init; }
@@ -262,24 +262,24 @@ public sealed record DotNetNuGetPush : ExecToolCommand
     public bool ForceEnglishOutput { get; init; }
     /// <summary>Allows the command to wait for interactive authentication or input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Supplies the API key for the package source.</summary>
+    /// <summary>The credential sent to the package source; use a <see cref="Secret"/> value to keep it redacted.</summary>
     public string? ApiKey { get; init; }
     /// <summary>Prevents symbol packages from being pushed.</summary>
     public bool NoSymbols { get; init; }
     /// <summary>Prevents <c>api/v2/package</c> from being appended to the source URL.</summary>
     public bool NoServiceEndpoint { get; init; }
-    /// <summary>Supplies the package source URL.</summary>
+    /// <summary>The source name, path, or URL receiving the package; defaults to NuGet configuration.</summary>
     public string? Source { get; init; }
     /// <summary>Skips packages whose version already exists at the source.</summary>
     public bool SkipDuplicate { get; init; }
-    /// <summary>Supplies the API key for the symbol source.</summary>
+    /// <summary>The credential sent when uploading the symbol package.</summary>
     public string? SymbolApiKey { get; init; }
-    /// <summary>Supplies the symbol server URL.</summary>
+    /// <summary>The source name, path, or URL receiving the symbol package.</summary>
     public string? SymbolSource { get; init; }
 
-    /// <summary>Supplies the push timeout in seconds.</summary>
+    /// <summary>Maximum duration allowed for a server push; rendered as whole seconds.</summary>
     public TimeSpan? Timeout { get; init; }
-    /// <summary>Supplies the NuGet configuration file.</summary>
+    /// <summary>Uses this NuGet configuration file instead of the configuration hierarchy.</summary>
     public string? ConfigFile { get; init; }
 
     /// <inheritdoc />
@@ -303,46 +303,46 @@ public sealed record DotNetNuGetPush : ExecToolCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet restore</c> command.</summary>
+/// <summary>Resolves NuGet dependencies and writes the assets required by later build operations.</summary>
 public sealed record DotNetRestore : DotNetTargetCommand
 {
-    /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
+    /// <summary>Prevents reuse of persistent build servers during restore.</summary>
     public bool DisableBuildServers { get; init; }
-    /// <summary>Supplies the values emitted by the <c>--source</c> option.</summary>
+    /// <summary>Package sources used instead of those configured in NuGet configuration files.</summary>
     public IReadOnlyList<string> Sources { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the value emitted by the <c>--packages</c> option.</summary>
+    /// <summary>Directory in which restored packages are installed.</summary>
     public string? Packages { get; init; }
-    /// <summary>Controls emission of the <c>--use-current-runtime</c> switch.</summary>
+    /// <summary>Uses the current runtime as a restore target in addition to project-declared runtimes.</summary>
     public bool CurrentRuntime { get; init; }
-    /// <summary>Controls emission of the <c>--disable-parallel</c> switch.</summary>
+    /// <summary>Restores projects sequentially instead of concurrently.</summary>
     public bool DisableParallel { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--configfile</c> option.</summary>
+    /// <summary>Uses only this NuGet configuration file instead of the configuration hierarchy.</summary>
     public string? ConfigFile { get; init; }
-    /// <summary>Controls emission of the <c>--no-http-cache</c> switch.</summary>
+    /// <summary>Bypasses cached HTTP responses and downloads package metadata again.</summary>
     public bool NoHttpCache { get; init; }
-    /// <summary>Controls emission of the <c>--ignore-failed-sources</c> switch.</summary>
+    /// <summary>Treats unavailable sources as warnings when required packages are available elsewhere.</summary>
     public bool IgnoreFailedSources { get; init; }
-    /// <summary>Controls emission of the <c>--force</c> switch.</summary>
+    /// <summary>Re-resolves every dependency even when the existing assets file is current.</summary>
     public bool Force { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
+    /// <summary>Restores packages for this runtime identifier in addition to project-declared runtimes.</summary>
     public string? Runtime { get; init; }
-    /// <summary>Controls emission of the <c>--no-dependencies</c> switch.</summary>
+    /// <summary>Restores the selected project without restoring project references.</summary>
     public bool NoDependencies { get; init; }
-    /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
+    /// <summary>Allows authentication providers and other restore operations to prompt for input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
+    /// <summary>Places restore outputs for all projects beneath this artifacts root.</summary>
     public string? ArtifactsPath { get; init; }
-    /// <summary>Controls emission of the <c>--use-lock-file</c> switch.</summary>
+    /// <summary>Generates or updates a dependency lock file during restore.</summary>
     public bool UseLockFile { get; init; }
-    /// <summary>Controls emission of the <c>--locked-mode</c> switch.</summary>
+    /// <summary>Fails when restore would change the existing dependency lock file.</summary>
     public bool LockedMode { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--lock-file-path</c> option.</summary>
+    /// <summary>Writes the lock file to this project-relative path instead of <c>packages.lock.json</c>.</summary>
     public string? LockFilePath { get; init; }
-    /// <summary>Controls emission of the <c>--force-evaluate</c> switch.</summary>
+    /// <summary>Re-evaluates dependencies and updates the lock file even when it is otherwise current.</summary>
     public bool ForceEvaluate { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
+    /// <summary>Shorthand restore architecture combined with the default runtime identifier.</summary>
     public string? Architecture { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
+    /// <summary>Shorthand restore operating system combined with the default runtime identifier.</summary>
     public string? OperatingSystem { get; init; }
 
     /// <inheritdoc />
@@ -372,67 +372,67 @@ public sealed record DotNetRestore : DotNetTargetCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet test</c> command.</summary>
+/// <summary>Builds selected test projects and runs their tests through the configured test platform.</summary>
 public sealed record DotNetTest : DotNetTargetCommand
 {
     /// <summary>Creates a command with defaults for the current build locality.</summary>
     public DotNetTest() => Configuration = MSBuildDefaults.Configuration;
 
-    /// <summary>Supplies the value emitted by the <c>--settings</c> option.</summary>
+    /// <summary>Uses this run-settings file to configure the test run.</summary>
     public string? Settings { get; init; }
-    /// <summary>Controls emission of the <c>--list-tests</c> switch.</summary>
+    /// <summary>Discovers and lists tests without executing them.</summary>
     public bool ListTests { get; init; }
-    /// <summary>Supplies the values emitted by the <c>--environment</c> option.</summary>
+    /// <summary>Sets test-host environment variables as <c>NAME=VALUE</c>; specifying any value runs tests in an isolated process.</summary>
     public IReadOnlyList<string> Environment { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the value emitted by the <c>--filter</c> option.</summary>
+    /// <summary>Runs only tests matching the VSTest filter expression.</summary>
     public string? Filter { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--test-adapter-path</c> option.</summary>
+    /// <summary>Searches this directory for additional test adapters.</summary>
     public string? TestAdapterPath { get; init; }
-    /// <summary>Supplies the values emitted by the <c>--logger</c> option.</summary>
+    /// <summary>Enables test loggers; each value may include semicolon-delimited logger settings.</summary>
     public IReadOnlyList<string> Loggers { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the value emitted by the <c>--output</c> option.</summary>
+    /// <summary>Places command outputs in the specified directory.</summary>
     public string? Output { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
+    /// <summary>Places outputs for all projects beneath this artifacts root, separated by project.</summary>
     public string? ArtifactsPath { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--diag</c> option.</summary>
+    /// <summary>Writes diagnostic test-platform logs to this file.</summary>
     public string? Diag { get; init; }
-    /// <summary>Controls emission of the <c>--no-build</c> switch.</summary>
+    /// <summary>Skips building before the operation; required outputs must already exist.</summary>
     public bool NoBuild { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--results-directory</c> option.</summary>
+    /// <summary>Places test results and generated artifacts in this directory.</summary>
     public string? ResultsDirectory { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--collect</c> option.</summary>
+    /// <summary>Enables the named data collector; collector settings may follow after a semicolon.</summary>
     public string? Collect { get; init; }
-    /// <summary>Controls emission of the <c>--blame</c> switch.</summary>
+    /// <summary>Collects a sequence file identifying tests running near a crash or hang.</summary>
     public bool Blame { get; init; }
-    /// <summary>Controls emission of the <c>--blame-crash</c> switch.</summary>
+    /// <summary>Collects a process dump when the test host crashes.</summary>
     public bool BlameCrash { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--blame-crash-dump-type</c> option.</summary>
+    /// <summary>Selects <c>mini</c> or <c>full</c> crash dumps; requires crash blame.</summary>
     public string? BlameCrashDumpType { get; init; }
-    /// <summary>Controls emission of the <c>--blame-crash-collect-always</c> switch.</summary>
+    /// <summary>Collects a crash dump even when the test host exits normally; requires crash blame.</summary>
     public bool BlameCrashCollectAlways { get; init; }
-    /// <summary>Controls emission of the <c>--blame-hang</c> switch.</summary>
+    /// <summary>Terminates and dumps a test host when a test exceeds the configured hang timeout.</summary>
     public bool BlameHang { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--blame-hang-dump-type</c> option.</summary>
+    /// <summary>Selects <c>mini</c>, <c>full</c>, or <c>none</c> for hang dumps; requires hang blame.</summary>
     public string? BlameHangDumpType { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--blame-hang-timeout</c> option.</summary>
+    /// <summary>Sets the per-test hang timeout using a value such as <c>90s</c>, <c>2m</c>, or <c>1h</c>.</summary>
     public string? BlameHangTimeout { get; init; }
-    /// <summary>Controls emission of the <c>--nologo</c> switch.</summary>
+    /// <summary>Suppresses the startup banner and copyright message.</summary>
     public bool NoLogo { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
+    /// <summary>Selects the named build configuration.</summary>
     public string? Configuration { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
+    /// <summary>Selects one target framework declared by the project.</summary>
     public string? Framework { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
+    /// <summary>Targets the specified runtime identifier, such as <c>win-x64</c>.</summary>
     public string? Runtime { get; init; }
-    /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
+    /// <summary>Skips implicit restore; assets must already be current.</summary>
     public bool NoRestore { get; init; }
-    /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
+    /// <summary>Allows authentication and other operations to prompt for input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
+    /// <summary>Shorthand target architecture combined with the default runtime identifier.</summary>
     public string? Architecture { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
+    /// <summary>Shorthand target operating system combined with the default runtime identifier.</summary>
     public string? OperatingSystem { get; init; }
-    /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
+    /// <summary>Prevents reuse of persistent build servers during this invocation.</summary>
     public bool DisableBuildServers { get; init; }
 
     /// <inheritdoc />
@@ -659,7 +659,7 @@ public sealed record DotNetToolRestore : ExecToolCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet watch</c> command.</summary>
+/// <summary>Watches project files and rebuilds, restarts, or hot-reloads the application after changes.</summary>
 public sealed record DotNetWatch : ExecToolCommand
 {
     /// <summary>Creates a command with output volume derived from the current logging level.</summary>
@@ -669,37 +669,37 @@ public sealed record DotNetWatch : ExecToolCommand
         Verbosity = MSBuildOutputVolume.From(Logging.Level).ToString().ToLowerInvariant();
         Configuration = MSBuildDefaults.Configuration;
     }
-    /// <summary>Controls emission of the <c>--quiet</c> switch.</summary>
+    /// <summary>Suppresses nonessential command output.</summary>
     public bool Quiet { get; init; }
-    /// <summary>Controls emission of the <c>--verbose</c> switch.</summary>
+    /// <summary>Writes diagnostic detail beyond normal command output.</summary>
     public bool Verbose { get; init; }
-    /// <summary>Controls emission of the <c>--list</c> switch.</summary>
+    /// <summary>Lists watched files without starting the application.</summary>
     public bool List { get; init; }
-    /// <summary>Controls emission of the <c>--no-hot-reload</c> switch.</summary>
+    /// <summary>Restarts the application for changes instead of applying Hot Reload edits.</summary>
     public bool NoHotReload { get; init; }
-    /// <summary>Controls emission of the <c>--non-interactive</c> switch.</summary>
+    /// <summary>Prevents the watcher from waiting for or requesting terminal input.</summary>
     public bool NonInteractive { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--configuration</c> option.</summary>
+    /// <summary>Selects the named build configuration.</summary>
     public string? Configuration { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--framework</c> option.</summary>
+    /// <summary>Selects one target framework declared by the project.</summary>
     public string? Framework { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--runtime</c> option.</summary>
+    /// <summary>Targets the specified runtime identifier, such as <c>win-x64</c>.</summary>
     public string? Runtime { get; init; }
-    /// <summary>Controls emission of the <c>--interactive</c> switch.</summary>
+    /// <summary>Allows authentication and other operations to prompt for input.</summary>
     public bool Interactive { get; init; }
-    /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
+    /// <summary>Skips implicit restore; assets must already be current.</summary>
     public bool NoRestore { get; init; }
-    /// <summary>Controls emission of the <c>--self-contained</c> switch.</summary>
+    /// <summary>Publishes and runs a self-contained application with the .NET runtime included.</summary>
     public bool? SelfContained { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--verbosity</c> option.</summary>
+    /// <summary>Controls MSBuild output detail for watched builds.</summary>
     public string? Verbosity { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--arch</c> option.</summary>
+    /// <summary>Shorthand target architecture combined with the default runtime identifier.</summary>
     public string? Architecture { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--os</c> option.</summary>
+    /// <summary>Shorthand target operating system combined with the default runtime identifier.</summary>
     public string? OperatingSystem { get; init; }
-    /// <summary>Controls emission of the <c>--disable-build-servers</c> switch.</summary>
+    /// <summary>Prevents reuse of persistent build servers during this invocation.</summary>
     public bool DisableBuildServers { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--artifacts-path</c> option.</summary>
+    /// <summary>Places outputs for all projects beneath this artifacts root, separated by project.</summary>
     public string? ArtifactsPath { get; init; }
 
     /// <inheritdoc />
@@ -725,32 +725,32 @@ public sealed record DotNetWatch : ExecToolCommand
         ];
 }
 
-/// <summary>Builds a <c>dotnet format</c> command.</summary>
+/// <summary>Applies or verifies whitespace, style, and analyzer fixes across a project or solution.</summary>
 public sealed record DotNetFormat : DotNetTargetCommand
 {
     /// <summary>Selects which formatting category the command processes.</summary>
     public FormatCommand? Command { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--command</c> option.</summary>
+    /// <summary>Selects the workspace-loading operation used internally by the formatter.</summary>
     public string? CustomCommand { get; init; }
-    /// <summary>Supplies the values emitted by the <c>--diagnostics</c> option.</summary>
+    /// <summary>Runs only the specified diagnostic IDs.</summary>
     public IReadOnlyList<string> Diagnostics { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the values emitted by the <c>--exclude-diagnostics</c> option.</summary>
+    /// <summary>Excludes the specified diagnostic IDs from formatting.</summary>
     public IReadOnlyList<string> ExcludeDiagnostics { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the value emitted by the <c>--severity</c> option.</summary>
+    /// <summary>Applies diagnostics at or above the specified severity.</summary>
     public string? Severity { get; init; }
-    /// <summary>Controls emission of the <c>--no-restore</c> switch.</summary>
+    /// <summary>Skips implicit restore; assets must already be current.</summary>
     public bool NoRestore { get; init; }
-    /// <summary>Controls emission of the <c>--verify-no-changes</c> switch.</summary>
+    /// <summary>Checks formatting and fails when files would change, without rewriting them.</summary>
     public bool VerifyNoChanges { get; init; }
-    /// <summary>Supplies the values emitted by the <c>--include</c> option.</summary>
+    /// <summary>Formats only the specified files or folders, interpreted relative to the workspace.</summary>
     public IReadOnlyList<string> Include { get; init => field = value.ToArray(); } = [];
-    /// <summary>Supplies the values emitted by the <c>--exclude</c> option.</summary>
+    /// <summary>Excludes the specified files or folders from formatting.</summary>
     public IReadOnlyList<string> Exclude { get; init => field = value.ToArray(); } = [];
-    /// <summary>Controls emission of the <c>--include-generated</c> switch.</summary>
+    /// <summary>Includes generated-code files that formatting normally skips.</summary>
     public bool IncludeGenerated { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--binarylog</c> option.</summary>
+    /// <summary>Writes an MSBuild binary log to this path.</summary>
     public string? BinaryLog { get; init; }
-    /// <summary>Supplies the value emitted by the <c>--report</c> option.</summary>
+    /// <summary>Writes a JSON report describing files and diagnostics changed by formatting.</summary>
     public string? Report { get; init; }
 
     /// <inheritdoc />

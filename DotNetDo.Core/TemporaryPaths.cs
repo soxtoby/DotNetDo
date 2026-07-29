@@ -3,7 +3,7 @@ namespace DotNetDo;
 public static partial class Do
 {
     /// <summary>Creates a uniquely named directory under the platform's temporary directory.</summary>
-    /// <param name="prefix">An optional prefix for the generated directory name.</param>
+    /// <param name="prefix">An optional filename-safe prefix. Directory separators and invalid filename characters are rejected.</param>
     public static AbsolutePath CreateTempDirectory(string? prefix = null)
     {
         ValidateTempPrefix(prefix);
@@ -11,8 +11,8 @@ public static partial class Do
     }
 
     /// <summary>Creates a uniquely named empty file under the platform's temporary directory.</summary>
-    /// <param name="prefix">An optional prefix for the generated file name.</param>
-    /// <param name="extension">The dot-prefixed file extension.</param>
+    /// <param name="prefix">An optional filename-safe prefix. Directory separators and invalid filename characters are rejected.</param>
+    /// <param name="extension">A file extension of at least two characters, including its leading <c>.</c>; separators and invalid filename characters are rejected.</param>
     public static AbsolutePath CreateTempFile(string? prefix = null, string extension = ".tmp")
     {
         ValidateTempPrefix(prefix);

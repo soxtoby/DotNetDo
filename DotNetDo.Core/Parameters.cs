@@ -10,18 +10,26 @@ public static partial class Do
     static readonly Lazy<IConfiguration> ParameterConfiguration = new(CreateParameterConfiguration);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
+    /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
     public static OptionalParam<string> Param(string name) =>
         new(name, ReadParam<string>(name), null);
 
     /// <summary>Declares an optional typed command-line parameter without a default value.</summary>
+    /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
     public static OptionalParam<T> Param<T>(string name) where T : notnull =>
         new(name, ReadParam<T>(name), null);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
+    /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
+    /// <param name="defaultValue">The value used when command-line arguments, environment variables, and user secrets do not configure the parameter.</param>
+    /// <param name="description">Optional task help text describing the parameter to callers.</param>
     public static Param<T> Param<T>(string name, T defaultValue, string? description = null) where T : notnull =>
         new(name, ReadParam(name, defaultValue), description);
 
     /// <summary>Declares a string parameter whose resolved value is registered for log redaction.</summary>
+    /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
+    /// <param name="defaultValue">The secret used when no higher-precedence source configures the parameter; <see langword="null"/> leaves it optional.</param>
+    /// <param name="description">Optional task help text that must not reveal the secret value.</param>
     public static OptionalSecret Secret(string name, string? defaultValue = null, string? description = null) =>
         new(name, ReadSecret(name, defaultValue), description);
 
@@ -111,7 +119,7 @@ public readonly record struct Param<T> where T : notnull
         Description = description;
     }
 
-    /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
+    /// <summary>The configuration key used to resolve this parameter.</summary>
     public string Name { get; }
     /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
@@ -122,10 +130,11 @@ public readonly record struct Param<T> where T : notnull
     public string QuotedArgument() => Convert.ToString(_value.Value, CultureInfo.InvariantCulture)!.QuotedArgument();
 
     /// <summary>The resolved parameter value.</summary>
+    /// <param name="parameter">The resolved parameter wrapper.</param>
     public static implicit operator T(Param<T> parameter) => parameter.Value;
 }
 
-/// <summary>An optional string task parameter whose absence is represented by <see langword="null"/>.</summary>
+/// <summary>An optional typed task parameter whose absence is represented by <see langword="null"/>.</summary>
 public readonly record struct OptionalParam<T>
     where T : notnull
 {
@@ -155,6 +164,7 @@ public readonly record struct OptionalParam<T>
     public string? QuotedArgument() => _value.HasValue ? Convert.ToString(_value.Value, CultureInfo.InvariantCulture)?.QuotedArgument() : null;
 
     /// <summary>The resolved parameter value.</summary>
+    /// <param name="parameter">The optional parameter wrapper.</param>
     public static implicit operator T?(OptionalParam<T> parameter) => parameter.Value;
 }
 
@@ -199,6 +209,7 @@ public readonly record struct Secret
     readonly string _value;
 
     /// <summary>Wraps and registers a plaintext value for log redaction.</summary>
+    /// <param name="value">The non-null plaintext value. It is registered for redaction, but callers must still avoid writing it outside a redacting logger.</param>
     public Secret(string value)
         : this(null, value, null) { }
 
@@ -211,7 +222,7 @@ public readonly record struct Secret
         SecretRedaction.Register(value);
     }
 
-    /// <summary>The final path component, or <see langword="null"/> for a root or empty path.</summary>
+    /// <summary>The configuration key, or <see langword="null"/> when the secret was constructed directly.</summary>
     public string? Name { get; }
     /// <summary>Human-readable help text supplied by the task author.</summary>
     public string? Description { get; }
