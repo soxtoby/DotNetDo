@@ -126,7 +126,15 @@ public sealed class MetaTaskTests
         var help = await workspace.Run(":help", "test");
 
         Assert.Equal(0, list.ExitCode);
-        Assert.Equal(new[] { "build", "test", "test-csharp" }, list.OutputLines);
+        Assert.Equal(
+            [
+                "Usage: dotnet do <task> [args...]",
+                "Tasks:",
+                "  build",
+                "  test",
+                "  test-csharp"
+            ],
+            list.OutputLines);
         Assert.Equal(0, help.ExitCode);
         Assert.Contains("Invocations:", help.Output);
         Assert.Contains("  build --configuration Release", help.Output);

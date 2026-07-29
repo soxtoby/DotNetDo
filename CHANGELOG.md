@@ -8,6 +8,7 @@
 
 ### Changed
 - `Do.Secret(...)` now returns `OptionalSecret`; `.Required()` and `new Secret(value)` produce a `Secret` with a non-nullable value.
+- Bare `do` output now shows basic task invocation usage and a clearly headed task list.
 
 ## v0.5.0
 

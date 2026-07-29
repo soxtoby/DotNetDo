@@ -36,7 +36,9 @@ public sealed class ScriptConfigurationTests
         var result = await ListTasks(workspace);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Equal(["build", "ci", "pack"], result.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
+        Assert.Equal(
+            ["Usage: dotnet do <task> [args...]", "Tasks:", "  build", "  ci", "  pack"],
+            result.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
         Assert.Empty(result.Error);
     }
 
