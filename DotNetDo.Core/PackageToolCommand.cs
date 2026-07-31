@@ -105,8 +105,13 @@ static class PackageToolManifests
 
     static IEnumerable<AbsolutePath> CandidatePaths(AbsolutePath root)
     {
-        for (var directory = root; directory is not null; directory = directory.Parent)
+        AbsolutePath? directory = root;
+        do
+        {
             yield return directory / ".config/dotnet-tools.json";
+            directory = directory.IsRoot ? null : directory.Parent;
+        }
+        while (directory is not null);
     }
 
     static Manifest Read(AbsolutePath path)

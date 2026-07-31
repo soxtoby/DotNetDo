@@ -150,7 +150,7 @@ static class CompletionCommand
 
     static void WriteAtomic(AbsolutePath path, string content)
     {
-        var directory = path.Parent!.EnsureDirectoryExists();
+        var directory = path.Parent.EnsureDirectoryExists();
         var temporary = directory / $".{path.Name}.{Guid.NewGuid():N}.tmp";
         try
         {

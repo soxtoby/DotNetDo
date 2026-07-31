@@ -7,7 +7,7 @@ public sealed class ProjectInfo
     {
         SolutionPath = solutionPath;
         Path = path;
-        Directory = path.Parent!;
+        Directory = path.Parent;
     }
 
     /// <summary>The project's logical path inside the solution.</summary>

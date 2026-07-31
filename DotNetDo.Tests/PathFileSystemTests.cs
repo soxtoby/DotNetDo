@@ -209,7 +209,7 @@ public sealed class PathFileSystemTests
         var file = workspace.Path / "missing/value.txt";
 
         Assert.Throws<DirectoryNotFoundException>(() => file.WriteText("value"));
-        Assert.False(file.Parent!.Exists);
+        Assert.False(file.Parent.Exists);
     }
 
     public sealed record ContentModel

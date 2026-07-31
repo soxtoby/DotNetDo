@@ -103,7 +103,7 @@ static class InitCommand
     {
         if (directory == root || directory.IsExistingDirectory)
             return;
-        EnsureDirectories(root, directory.Parent!, created);
+        EnsureDirectories(root, directory.Parent, created);
         Directory.CreateDirectory(directory);
         created.Insert(0, directory);
     }
@@ -117,8 +117,10 @@ static class InitCommand
 
     static AbsolutePath? FindAncestorConfiguration(AbsolutePath root)
     {
-        for (var directory = root.Parent; directory is not null; directory = directory.Parent)
+        var directory = root;
+        while (!directory.IsRoot)
         {
+            directory = directory.Parent;
             var configurationFile = directory / WorkspaceConfiguration.FileName;
             if (configurationFile.IsExistingFile)
                 return configurationFile;

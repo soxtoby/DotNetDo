@@ -43,8 +43,8 @@ public sealed record RelativePath
     public string Extension => PathSegments.Extension(Name);
     /// <summary>The final component without its last extension; <see langword="null"/> for <see cref="Empty"/>.</summary>
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
-    /// <summary>The containing relative path, or <see langword="null"/> when fewer than two components remain.</summary>
-    public RelativePath? Parent => Segments.Length <= 1 ? null : new(Segments[..^1]);
+    /// <summary>The containing relative path, extending parent traversal beyond <see cref="Empty"/>.</summary>
+    public RelativePath Parent => new(PathSegments.Normalize([.. Segments, ".."], allowLeadingParents: true));
     /// <summary>Renders the value as one quoted command-line argument.</summary>
     public string QuotedArgument() => ToString().QuotedArgument();
 

@@ -22,7 +22,7 @@ public sealed class Solution
     Solution(AbsolutePath path, SolutionModel model)
     {
         Path = path;
-        Directory = path.Parent!;
+        Directory = path.Parent;
         Projects = model.SolutionProjects
             .Where(project => project.TypeId != SolutionFolderType)
             .Select(CreateProject)

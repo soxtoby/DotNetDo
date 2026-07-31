@@ -152,7 +152,7 @@ Dot segments normalize during construction and joining:
 
 Repeated and trailing separators normalize away, except the separator required by a root. `//server/share` is UNC; a Unix root uses one leading slash.
 
-An empty relative path exists as `RelativePath.Empty` and is the join identity. It renders as `.` and has no `Name` or `Parent`.
+An empty relative path exists as `RelativePath.Empty` and is the join identity. It renders as `.` and has no `Name`.
 
 `RelativePath.Raw(string segment)` creates one opaque segment without separator parsing. It rejects empty text, `.`, `..`, and NUL. Separator characters inside any other value remain literal segment content; formatting never rewrites them. `AbsolutePath` has no raw factory because its root must be parsed, but an absolute path can join a raw relative segment.
 
@@ -196,7 +196,7 @@ string? NameWithoutExtension { get; }
 
 `Name` is the final segment, regardless of whether the filesystem would treat it as a file or directory. Roots and the empty relative path have no name. Extension behavior matches `System.IO.Path`: `a.txt` has `.txt`, `archive.tar.gz` has `.gz`, while `.gitignore` and `file.` have no extension.
 
-`AbsolutePath.Parent` is `AbsolutePath?`; roots have no parent. `RelativePath.Parent` is `RelativePath?`; a single-segment or empty relative path has no parent. For example, `a/b` has parent `a`, and `../a` has parent `..`.
+Both `Parent` properties are non-nullable. Accessing `AbsolutePath.Parent` on a root throws `InvalidOperationException`. Relative parents extend lexically beyond the unspecified base: `a/b` has parent `a`, `a` has parent `.`, `.` has parent `..`, and `..` has parent `../..`.
 
 `AbsolutePath` additionally exposes:
 

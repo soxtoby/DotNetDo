@@ -10,6 +10,7 @@
 ### Changed
 - `Do.Secret(...)` now returns `OptionalSecret`; `.Required()` and `new Secret(value)` produce a `Secret` with a non-nullable value.
 - Bare `do` output now shows basic task invocation usage and a clearly headed task list.
+- `AbsolutePath.Parent` and `RelativePath.Parent` are now non-nullable. Absolute roots throw on parent access; relative parents continue with `..` segments.
 
 ## v0.5.0
 

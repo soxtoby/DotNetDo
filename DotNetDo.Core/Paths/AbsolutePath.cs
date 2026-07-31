@@ -67,12 +67,14 @@ public sealed partial record AbsolutePath
     public string Extension => PathSegments.Extension(Name);
     /// <summary>The final component without its last extension; <see langword="null"/> for a root path.</summary>
     public string? NameWithoutExtension => PathSegments.NameWithoutExtension(Name);
-    /// <summary>The containing path, or <see langword="null"/> when this value is already a root.</summary>
-    public AbsolutePath? Parent => _segments.Length == 0 ? null : new(_root, _segments[..^1]);
+    /// <summary>The containing path. Accessing this property on a root throws.</summary>
+    public AbsolutePath Parent => _segments.Length == 0
+        ? throw new InvalidOperationException("A root path has no parent.")
+        : new(_root, _segments[..^1]);
     /// <summary>The Unix, drive, or UNC root of this path.</summary>
     public AbsolutePath Root => new(_root, []);
     /// <summary>Whether this path contains only its root and no path components.</summary>
-    [MemberNotNullWhen(false, nameof(Name), nameof(Parent))]
+    [MemberNotNullWhen(false, nameof(Name))]
     public bool IsRoot => _segments.Length == 0;
     /// <summary>Renders the value as one quoted command-line argument.</summary>
     public string QuotedArgument() => ToString().QuotedArgument();

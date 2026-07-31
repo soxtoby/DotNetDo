@@ -29,9 +29,14 @@ sealed class WorkspaceRoot
         if (_configured is not null)
             return _configured;
 
-        for (var directory = workingDirectory; directory is not null; directory = directory.Parent)
+        AbsolutePath? directory = workingDirectory;
+        do
+        {
             if ((directory / WorkspaceConfiguration.FileName).IsExistingFile)
                 return _configured = directory;
+            directory = directory.IsRoot ? null : directory.Parent;
+        }
+        while (directory is not null);
 
         return workingDirectory;
     }

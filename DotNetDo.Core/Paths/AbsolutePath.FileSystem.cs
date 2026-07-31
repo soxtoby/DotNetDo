@@ -123,8 +123,8 @@ public sealed partial record AbsolutePath
         var finalPath = into ? destination / Name : destination;
         
         if (options.CreateDirectories)
-            finalPath.Parent!.EnsureDirectoryExists();
-        else if (!finalPath.Parent!.IsExistingDirectory)
+            finalPath.Parent.EnsureDirectoryExists();
+        else if (!finalPath.Parent.IsExistingDirectory)
             throw new DirectoryNotFoundException($"Destination directory '{finalPath.Parent}' does not exist.");
         
         CopyEntry(this, finalPath, options);
@@ -150,7 +150,7 @@ public sealed partial record AbsolutePath
             return CopyThenDelete(finalPath, options);
         
         if (options.CreateDirectories)
-            finalPath.Parent!.EnsureDirectoryExists();
+            finalPath.Parent.EnsureDirectoryExists();
 
         try
         {

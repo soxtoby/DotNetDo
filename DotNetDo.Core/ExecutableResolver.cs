@@ -46,7 +46,7 @@ static class ExecutableResolver
             : [""];
 
     static IEnumerable<AbsolutePath> Candidates(AbsolutePath path, IEnumerable<string> extensions) =>
-        extensions.Select(extension => path.Parent! / (path.Name + extension));
+        extensions.Select(extension => path.Parent / (path.Name + extension));
 
     static bool IsExecutable(AbsolutePath path) =>
         path.IsExistingFile
