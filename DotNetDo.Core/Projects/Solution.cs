@@ -74,30 +74,24 @@ public sealed class Solution
         }
     }
 
-    internal static Task<Solution> DiscoverAsync()
+    internal static Task<Solution> DiscoverAsync() => DiscoverAsync(Do.RootDirectory);
+
+    internal static Task<Solution> DiscoverAsync(AbsolutePath root)
     {
-        var configuredPath = WorkspaceConfiguration.Load(Do.RootDirectory).SolutionPath;
+        var configuredPath = WorkspaceConfiguration.Load(root).SolutionPath;
         if (configuredPath is not null)
-            return Load(Do.RootDirectory / configuredPath);
+            return Load(root / configuredPath);
 
-        for (var directory = new DirectoryInfo(Do.RootDirectory); directory is not null; directory = directory.Parent)
-        {
-            var matches = directory.EnumerateFiles("*.sln", SearchOption.TopDirectoryOnly)
-                .Concat(directory.EnumerateFiles("*.slnx", SearchOption.TopDirectoryOnly))
-                .OrderBy(file => file.Name, StringComparer.Ordinal)
-                .ToArray();
-            switch (matches.Length)
+        var matches = root.GlobFiles(["*.sln", "*.slnx"])
+            .OrderBy(path => path.Name, StringComparer.Ordinal)
+            .ToArray();
+        
+        return matches.Length switch
             {
-                case 0:
-                    continue;
-                case > 1:
-                    throw new InvalidOperationException($"Multiple solutions were found in '{directory.FullName}': {string.Join(", ", matches.Select(file => file.Name))}.");
-                default:
-                    return Load(AbsolutePath.Parse(matches[0].FullName));
-            }
-        }
-
-        throw new FileNotFoundException($"No .sln or .slnx file was found in '{Do.RootDirectory}' or its ancestors.");
+                1 => Load(matches[0]),
+                > 1 => throw new InvalidOperationException($"Multiple solutions were found in '{root}': {string.Join(", ", matches.Select(path => path.Name))}."),
+                _ => throw new FileNotFoundException($"No .sln or .slnx file was found in '{root}'.")
+            };
     }
 
     ProjectInfo CreateProject(SolutionProjectModel project)

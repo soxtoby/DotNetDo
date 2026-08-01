@@ -10,6 +10,7 @@
 - `Do.CreateTempDirectory()` and `Do.CreateTempFile()` for creating uniquely named temporary artifacts with optional prefixes and file extensions.
 
 ### Changed
+- Default solution discovery now considers only `.sln` and `.slnx` files directly in the DotNetDo root; it no longer searches ancestor directories.
 - `Do.Secret(...)` now returns `OptionalSecret`; `.Required()` and `new Secret(value)` produce a `Secret` with a non-nullable value.
 - Bare `do` output now shows basic task invocation usage and a clearly headed task list.
 - `AbsolutePath.Parent` and `RelativePath.Parent` are now non-nullable. Absolute roots throw on parent access; relative parents continue with `..` segments.

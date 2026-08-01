@@ -5,6 +5,44 @@ namespace DotNetDo.Tests;
 
 public sealed class SolutionTests
 {
+    [Fact]
+    public async Task Discovers_the_only_solution_in_the_workspace_root()
+    {
+        using var workspace = Workspace.Create("slnx");
+
+        var solution = await Solution.DiscoverAsync(AbsolutePath.Parse(workspace.Directory));
+
+        Assert.Equal(AbsolutePath.Parse(workspace.SolutionPath), solution.Path);
+    }
+
+    [Fact]
+    public async Task Does_not_discover_solutions_above_the_workspace_root()
+    {
+        using var workspace = Workspace.Create("slnx");
+        var root = AbsolutePath.Parse(workspace.Directory) / "nested";
+        root.EnsureDirectoryExists();
+
+        var exception = await Assert.ThrowsAsync<FileNotFoundException>(() => Solution.DiscoverAsync(root));
+
+        Assert.Equal($"No .sln or .slnx file was found in '{root}'.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Configured_solution_is_authoritative()
+    {
+        using var workspace = Workspace.Create("slnx");
+        var root = AbsolutePath.Parse(workspace.Directory);
+        var configuredDirectory = root / "src";
+        configuredDirectory.EnsureDirectoryExists();
+        var configuredSolution = configuredDirectory / "Configured.slnx";
+        File.WriteAllText(configuredSolution, "<Solution />");
+        File.WriteAllText(root / "dotnetdo.toml", "solution-path = \"src/Configured.slnx\"");
+
+        var solution = await Solution.DiscoverAsync(root);
+
+        Assert.Equal(configuredSolution, solution.Path);
+    }
+
     [Theory]
     [InlineData("sln")]
     [InlineData("slnx")]
