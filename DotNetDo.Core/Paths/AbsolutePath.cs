@@ -126,6 +126,10 @@ public sealed partial record AbsolutePath
     /// <param name="left">The absolute base path.</param>
     /// <param name="right">Relative path text; rooted, drive-relative, NUL-containing, and root-escaping values are rejected.</param>
     public static AbsolutePath operator /(AbsolutePath left, string right) => left / RelativePath.Parse(right);
+    /// <summary>Prevents joining two absolute paths.</summary>
+    [Obsolete("The right operand must be relative.", error: true)]
+    public static AbsolutePath operator /(AbsolutePath left, AbsolutePath right) =>
+        throw new NotSupportedException("The right operand must be relative.");
     /// <summary>Renders the path using the current operating system's directory separator.</summary>
     public static implicit operator string(AbsolutePath path) => path.Render(Path.DirectorySeparatorChar);
     /// <inheritdoc />
