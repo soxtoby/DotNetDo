@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.6.0
+
 ### Added
 - Non-generic `AbsolutePath` and `ExecResult` structured readers return native JSON, TOML, YAML, and XML document models; `AbsolutePath` can also write YAML and XML document models.
 - `:init` can add recursively discovered task sources to a configured solution folder, synchronizing individual file entries for `.sln` and `.slnx`.
