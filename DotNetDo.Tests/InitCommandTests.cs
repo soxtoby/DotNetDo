@@ -50,7 +50,7 @@ public sealed class InitCommandTests
         Assert.Equal(
             "scripts-path = \"scripts\"\nsolution-path = \"src/Product.slnx\"\nsolution-folder = \"scripts\"\n",
             File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
-        Assert.Contains("../scripts/**/*.cs", File.ReadAllText(Path.Combine(workspace.Directory, "src", "Product.slnx")));
+        Assert.Contains("../scripts/build.cs", File.ReadAllText(Path.Combine(workspace.Directory, "src", "Product.slnx")));
     }
 
     [Fact]
@@ -145,7 +145,9 @@ public sealed class InitCommandTests
         Assert.True(File.Exists(Path.Combine(workspace.Directory, "do.cmd")));
         Assert.Equal(configuration, File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")));
         var solution = File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx"));
-        Assert.Contains("scripts/**/*.cs", solution);
+        Assert.Contains("scripts/build.cs", solution);
+        Assert.Contains("scripts/helpers/shared.cs", solution);
+        Assert.DoesNotContain("**", solution);
         Assert.Contains("README.md", solution);
         Assert.DoesNotContain("old.cs", solution);
     }
@@ -185,7 +187,7 @@ public sealed class InitCommandTests
         Assert.Equal(
             "scripts-path = \"automation\"\nsolution-path = \"Product.slnx\"\nsolution-folder = \"scripts\"\n",
             File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
-        Assert.Contains("automation/**/*.cs", File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx")));
+        Assert.Contains("automation/build.cs", File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx")));
         Assert.True(File.Exists(Path.Combine(workspace.Directory, "automation", "build.cs")));
     }
 

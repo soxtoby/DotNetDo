@@ -33,9 +33,9 @@ A configured `solution-path` is authoritative. It must be a root-contained relat
 
 Solution integration includes `.cs` files recursively below `scripts-path`. This is intentionally broader than runnable-task discovery, which remains limited to direct `.cs` children.
 
-Within the configured root solution folder, initialization owns only `.cs` file entries. For `.sln`, it replaces those entries with the current recursive filesystem set. For `.slnx`, it replaces them with one recursive glob. Non-C# files, child folders, and projects are preserved.
+Within the configured root solution folder, initialization owns only `.cs` file entries. It replaces those entries with the current recursive filesystem set. Non-C# files, child folders, and projects are preserved.
 
-Solution item paths are relative to the solution directory, not the workspace root, and use `/` separators. A solution below the workspace may therefore use a glob such as `../scripts/**/*.cs`; a root scripts path uses `**/*.cs`.
+Solution item paths are relative to the solution directory, not the workspace root, and use `/` separators. A solution below the workspace may therefore contain an entry such as `../scripts/build.cs`.
 
 ## Failure and output
 

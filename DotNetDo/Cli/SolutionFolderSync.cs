@@ -24,15 +24,8 @@ static class SolutionFolderSync
         foreach (var file in (folder.Files ?? []).Where(IsCSharp).ToArray())
             folder.RemoveFile(file);
 
-        if (scriptsDirectory.IsExistingDirectory)
-        {
-            foreach (var file in scriptsDirectory.GlobFiles("**/*.cs")
-                .Select(path => solutionPath.Parent.RelativePathTo(path).UnixPath)
-                .Order(StringComparer.Ordinal))
-            {
-                folder.AddFile(file);
-            }
-        }
+        foreach (var file in Files(solutionPath.Parent, scriptsDirectory))
+            folder.AddFile(file);
 
         await serializer.SaveAsync(solutionPath, model, CancellationToken.None);
     }
@@ -51,18 +44,19 @@ static class SolutionFolderSync
         folder.Elements("File")
             .Where(element => IsCSharp((string?)element.Attribute("Path") ?? ""))
             .Remove();
-        folder.Add(new XElement("File", new XAttribute("Path", RelativeGlob(solutionPath.Parent, scriptsDirectory))));
+        foreach (var file in Files(solutionPath.Parent, scriptsDirectory))
+            folder.Add(new XElement("File", new XAttribute("Path", file)));
+
         solutionPath.WriteText(document.ToString());
         return Task.CompletedTask;
     }
 
     static bool IsCSharp(string path) => path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
 
-    static string RelativeGlob(AbsolutePath solutionDirectory, AbsolutePath scriptsDirectory)
-    {
-        var path = solutionDirectory.RelativePathTo(scriptsDirectory).UnixPath;
-        return path == "."
-            ? "**/*.cs"
-            : $"{path}/**/*.cs";
-    }
+    static IEnumerable<string> Files(AbsolutePath solutionDirectory, AbsolutePath scriptsDirectory) =>
+        scriptsDirectory.IsExistingDirectory
+            ? scriptsDirectory.GlobFiles("**/*.cs")
+                .Select(path => solutionDirectory.RelativePathTo(path).UnixPath)
+                .Order(StringComparer.Ordinal)
+            : [];
 }
