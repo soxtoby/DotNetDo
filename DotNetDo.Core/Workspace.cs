@@ -7,39 +7,15 @@ namespace DotNetDo;
 
 public static partial class Do
 {
-    static readonly WorkspaceRoot WorkspaceRoot = new();
-
     /// <summary>The process working directory used by relative execution and workspace discovery; setting it changes the process-wide current directory.</summary>
     public static AbsolutePath WorkingDirectory { get => AbsolutePath.Parse(Environment.CurrentDirectory); set => Directory.SetCurrentDirectory(value); }
 
     /// <summary>The nearest ancestor containing <c>dotnetdo.toml</c>, or the working directory when no marker exists; resolved once per process.</summary>
-    public static AbsolutePath RootDirectory => WorkspaceRoot.Resolve(WorkingDirectory);
+    public static AbsolutePath RootDirectory => field ??= WorkspaceConfiguration.FindClosest(WorkingDirectory)?.Parent ?? WorkingDirectory;
 
     internal static RelativePath ScriptsPath => WorkspaceConfiguration.Load(RootDirectory).ScriptsPath;
 
     internal static AbsolutePath ScriptsDirectory => RootDirectory / ScriptsPath;
-}
-
-sealed class WorkspaceRoot
-{
-    AbsolutePath? _configured;
-
-    public AbsolutePath Resolve(AbsolutePath workingDirectory)
-    {
-        if (_configured is not null)
-            return _configured;
-
-        AbsolutePath? directory = workingDirectory;
-        do
-        {
-            if ((directory / WorkspaceConfiguration.FileName).IsExistingFile)
-                return _configured = directory;
-            directory = directory.IsRoot ? null : directory.Parent;
-        }
-        while (directory is not null);
-
-        return workingDirectory;
-    }
 }
 
 sealed record WorkspaceConfiguration
@@ -48,6 +24,7 @@ sealed record WorkspaceConfiguration
 
     public required RelativePath ScriptsPath { get; init; }
     public RelativePath? SolutionPath { get; init; }
+    public string? SolutionFolder { get; init; }
     public required IReadOnlyList<ToolInstall> Tools { get; init; }
     public required IReadOnlyDictionary<string, string[]> MetaTasks { get; init; }
 
@@ -75,6 +52,7 @@ sealed record WorkspaceConfiguration
                 {
                     ScriptsPath = ReadRelativePath(document.ScriptsPath, configurationFile, "scripts-path") ?? RelativePath.Parse("scripts"),
                     SolutionPath = ReadRelativePath(document.SolutionPath, configurationFile, "solution-path"),
+                    SolutionFolder = ReadSolutionFolder(document.SolutionFolder, configurationFile),
                     Tools = ReadTools(document.Tools, configurationFile),
                     MetaTasks = ReadMetaTasks(document.Tasks, configurationFile)
                 };
@@ -159,6 +137,15 @@ sealed record WorkspaceConfiguration
         }
     }
 
+    static string? ReadSolutionFolder(string? name, AbsolutePath configurationFile)
+    {
+        if (name is null)
+            return null;
+        if (string.IsNullOrWhiteSpace(name) || name.Contains('/') || name.Contains('\\'))
+            throw new DotNetDoConfigurationException($"DotNetDo setting 'solution-folder' in '{configurationFile}' must be a non-empty root solution-folder name without path separators.");
+        return name;
+    }
+
     public static RelativePath ParseRootRelativePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -169,10 +156,18 @@ sealed record WorkspaceConfiguration
             : relativePath;
     }
 
+    internal static AbsolutePath? FindClosest(AbsolutePath directory)
+    {
+        return directory.GetAncestry()
+            .Select(path => path / FileName)
+            .FirstOrDefault(c => c.IsExistingFile);
+    }
+
     internal sealed class WorkspaceConfigurationDocument
     {
         public string? ScriptsPath { get; init; }
         public string? SolutionPath { get; init; }
+        public string? SolutionFolder { get; init; }
         public string[]? Tools { get; init; }
         public Dictionary<string, object?> Tasks { get; init; } = [];
         [TomlExtensionData]

@@ -11,7 +11,7 @@ public sealed class InitCommandTests
     {
         using var workspace = Workspace.Create();
 
-        var result = await RunInit(workspace.Directory, "\n\n");
+        var result = await RunInit(workspace.Directory, "\n\n\n");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Scripts path (default: scripts):", result.Output);
@@ -23,13 +23,13 @@ public sealed class InitCommandTests
             .InformationalVersion
             .Split('+', 2)[0];
         Assert.Contains($"#:package DotNetDo.Core@{version}", task);
-        Assert.Contains("""[assembly: TaskDescription("Say hello from build")]""", task);
+        Assert.Contains("""[assembly: TaskDescription("Says hello")]""", task);
         Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
         Assert.Equal("@dnx DotNetDo %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
         Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
-        Assert.Contains("Created scripts path: scripts", result.Output);
-        Assert.Contains("Created do.cmd", result.Output);
-        Assert.Contains("Created do", result.Output);
+        Assert.Contains("Created scripts", result.Output);
+        Assert.Contains("Created do.cmd launcher", result.Output);
+        Assert.Contains("Created do launcher", result.Output);
         if (OperatingSystem.IsWindows())
             Assert.Contains("Before committing, run: git add --chmod=+x do", result.Output);
         else
@@ -44,13 +44,13 @@ public sealed class InitCommandTests
         Directory.CreateDirectory(Path.Combine(workspace.Directory, "src"));
         File.WriteAllText(Path.Combine(workspace.Directory, "src", "Product.slnx"), "<Solution />");
 
-        var result = await RunInit(workspace.Directory, "\n\n");
+        var result = await RunInit(workspace.Directory, "\n\n\n");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(
-            "scripts-path = \"scripts\"\nsolution-path = \"src/Product.slnx\"\n",
+            "scripts-path = \"scripts\"\nsolution-path = \"src/Product.slnx\"\nsolution-folder = \"scripts\"\n",
             File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
-        Assert.Contains("Selected solution: src/Product.slnx", result.Output);
+        Assert.Contains("../scripts/**/*.cs", File.ReadAllText(Path.Combine(workspace.Directory, "src", "Product.slnx")));
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class InitCommandTests
         File.WriteAllText(Path.Combine(workspace.Directory, "Alpha.sln"), "");
         File.WriteAllText(Path.Combine(workspace.Directory, "src", "Nested.slnx"), "<Solution />");
 
-        var result = await RunInit(workspace.Directory, "\n\n2\n");
+        var result = await RunInit(workspace.Directory, "\n\n2\n\n");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("1. Alpha.sln", result.Output);
@@ -81,7 +81,8 @@ public sealed class InitCommandTests
 
         var result = await RunInit(child, "\n");
 
-        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Initialization cancelled.", result.Error);
         Assert.Contains("The current directory is inside an existing DotNetDo workspace.", result.Output);
         Assert.Contains($"Existing workspace root: {workspace.Directory}", result.Output);
         Assert.Contains($"Create a nested DotNetDo workspace in '{child}'? [y/N]:", result.Output);
@@ -104,7 +105,7 @@ public sealed class InitCommandTests
     }
 
     [Fact]
-    public async Task Existing_initial_script_fails_without_configuration()
+    public async Task Existing_initial_script_is_reused_when_creating_configuration()
     {
         using var workspace = Workspace.Create();
         Directory.CreateDirectory(Path.Combine(workspace.Directory, "scripts"));
@@ -112,38 +113,115 @@ public sealed class InitCommandTests
 
         var result = await RunInit(workspace.Directory, "\n\n");
 
-        Assert.Equal(1, result.ExitCode);
-        Assert.False(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
         Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs")));
     }
 
     [Fact]
-    public async Task Existing_configuration_fails_without_prompting()
+    public async Task Existing_configuration_repairs_launchers_and_syncs_slnx_folder()
     {
         using var workspace = Workspace.Create();
-        File.WriteAllText(Path.Combine(workspace.Directory, "dotnetdo.toml"), "existing");
+        Directory.CreateDirectory(Path.Combine(workspace.Directory, "scripts", "helpers"));
+        File.WriteAllText(Path.Combine(workspace.Directory, "scripts", "build.cs"), "");
+        File.WriteAllText(Path.Combine(workspace.Directory, "scripts", "helpers", "shared.cs"), "");
+        File.WriteAllText(
+            Path.Combine(workspace.Directory, "Product.slnx"),
+            """
+            <Solution>
+              <Folder Name="/Tasks/">
+                <File Path="README.md" />
+                <File Path="old.cs" />
+              </Folder>
+            </Solution>
+            """);
+        const string configuration = "scripts-path = \"scripts\"\nsolution-path = \"Product.slnx\"\nsolution-folder = \"Tasks\"\n";
+        File.WriteAllText(Path.Combine(workspace.Directory, "dotnetdo.toml"), configuration);
 
-        var result = await RunInit(workspace.Directory, "");
+        var result = await RunInit(workspace.Directory, "\n\n");
 
-        Assert.Equal(1, result.ExitCode);
-        Assert.Contains("already exists", result.Error);
-        Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "do")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal(configuration, File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        var solution = File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx"));
+        Assert.Contains("scripts/**/*.cs", solution);
+        Assert.Contains("README.md", solution);
+        Assert.DoesNotContain("old.cs", solution);
+    }
+
+    [Fact]
+    public async Task Existing_configuration_syncs_recursive_sln_files()
+    {
+        using var workspace = Workspace.Create();
+        Directory.CreateDirectory(Path.Combine(workspace.Directory, "scripts", "helpers"));
+        File.WriteAllText(Path.Combine(workspace.Directory, "scripts", "build.cs"), "");
+        File.WriteAllText(Path.Combine(workspace.Directory, "scripts", "helpers", "shared.cs"), "");
+        File.WriteAllText(Path.Combine(workspace.Directory, "Product.sln"), SlnWithTasks);
+        File.WriteAllText(
+            Path.Combine(workspace.Directory, "dotnetdo.toml"),
+            "scripts-path = \"scripts\"\nsolution-path = \"Product.sln\"\nsolution-folder = \"Tasks\"\n");
+
+        var result = await RunInit(workspace.Directory, "\n\n");
+
+        Assert.Equal(0, result.ExitCode);
+        var solution = File.ReadAllText(Path.Combine(workspace.Directory, "Product.sln"));
+        Assert.Contains("scripts/build.cs", solution);
+        Assert.Contains("scripts/helpers/shared.cs", solution);
+        Assert.Contains("README.md", solution);
+        Assert.DoesNotContain("old.cs", solution);
+    }
+
+    [Fact]
+    public async Task Existing_configuration_discovers_solution_and_records_default_folder()
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(Path.Combine(workspace.Directory, "Product.slnx"), "<Solution />");
+        File.WriteAllText(Path.Combine(workspace.Directory, "dotnetdo.toml"), "scripts-path = \"automation\"");
+
+        var result = await RunInit(workspace.Directory, "\n\n");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(
+            "scripts-path = \"automation\"\nsolution-path = \"Product.slnx\"\nsolution-folder = \"scripts\"\n",
+            File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
+        Assert.Contains("automation/**/*.cs", File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "automation", "build.cs")));
+    }
+
+    [Fact]
+    public async Task Existing_configuration_can_decline_solution_changes()
+    {
+        using var workspace = Workspace.Create();
+        const string solution = "<Solution />";
+        File.WriteAllText(Path.Combine(workspace.Directory, "Product.slnx"), solution);
+        File.WriteAllText(
+            Path.Combine(workspace.Directory, "dotnetdo.toml"),
+            "scripts-path = \"scripts\"\nsolution-path = \"Product.slnx\"\n");
+
+        var result = await RunInit(workspace.Directory, "\nn\n");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(solution, File.ReadAllText(Path.Combine(workspace.Directory, "Product.slnx")));
+        Assert.DoesNotContain("solution-folder", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "do")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
     }
 
     [Theory]
     [InlineData("do")]
     [InlineData("do.cmd")]
-    public async Task Existing_launcher_fails_without_writing(string launcher)
+    public async Task Existing_launcher_is_preserved_while_initialization_continues(string launcher)
     {
         using var workspace = Workspace.Create();
         File.WriteAllText(Path.Combine(workspace.Directory, launcher), "existing");
 
         var result = await RunInit(workspace.Directory, "\n\n");
 
-        Assert.Equal(1, result.ExitCode);
-        Assert.Contains("already exists", result.Error);
-        Assert.False(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
-        Assert.False(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
+        Assert.True(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
         Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, launcher)));
     }
 
@@ -170,6 +248,21 @@ public sealed class InitCommandTests
     }
 
     sealed record Result(int ExitCode, string Output, string Error);
+
+    const string SlnWithTasks = """
+        Microsoft Visual Studio Solution File, Format Version 12.00
+        # Visual Studio Version 17
+        VisualStudioVersion = 17.0.31903.59
+        MinimumVisualStudioVersion = 10.0.40219.1
+        Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tasks", "Tasks", "{71D8C17B-F42F-44DD-B370-96C31C70D64F}"
+            ProjectSection(SolutionItems) = preProject
+                README.md = README.md
+                old.cs = old.cs
+            EndProjectSection
+        EndProject
+        Global
+        EndGlobal
+        """;
 
     sealed class Workspace : IDisposable
     {

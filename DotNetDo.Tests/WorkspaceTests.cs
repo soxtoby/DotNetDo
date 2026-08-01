@@ -100,24 +100,22 @@ public sealed class WorkspaceTests
     }
 
     [Fact]
-    public void Root_directory_falls_back_until_configured_then_remains_stable()
+    public void Configuration_lookup_finds_the_nearest_marker()
     {
         using var workspace = Workspace.Create();
         var outer = workspace.Path / "outer";
         var inner = outer / "inner";
         var child = inner / "child";
         child.EnsureDirectoryExists();
-        var rootDirectory = new WorkspaceRoot();
-
-        Assert.Equal(child, rootDirectory.Resolve(child));
+        Assert.Null(WorkspaceConfiguration.FindClosest(child));
 
         File.WriteAllText(outer / "dotnetdo.toml", "invalid TOML still marks the root");
         File.WriteAllText(inner / "dotnetdo.toml", "");
 
-        Assert.Equal(inner, rootDirectory.Resolve(child));
+        Assert.Equal(inner / "dotnetdo.toml", WorkspaceConfiguration.FindClosest(child));
 
         File.Delete(inner / "dotnetdo.toml");
-        Assert.Equal(inner, rootDirectory.Resolve(outer));
+        Assert.Equal(outer / "dotnetdo.toml", WorkspaceConfiguration.FindClosest(outer));
     }
 
     [Fact]
@@ -149,6 +147,7 @@ public sealed class WorkspaceTests
             """
             scripts-path = "automation"
             solution-path = "Product.slnx"
+            solution-folder = "Tasks"
 
             [tasks]
             test = ["build", "test-csharp --no-build"]
@@ -161,6 +160,7 @@ public sealed class WorkspaceTests
 
         Assert.Equal(RelativePath.Parse("automation"), configuration.ScriptsPath);
         Assert.Equal(RelativePath.Parse("Product.slnx"), configuration.SolutionPath);
+        Assert.Equal("Tasks", configuration.SolutionFolder);
         Assert.Equal(new[] { "build", "test-csharp --no-build" }, configuration.MetaTasks["test"]);
     }
 
@@ -202,6 +202,8 @@ public sealed class WorkspaceTests
     [InlineData("scripts-path = \"../scripts\"")]
     [InlineData("scripts-path = \"C:\\\\scripts\"")]
     [InlineData("not valid TOML")]
+    [InlineData("solution-folder = \"\"")]
+    [InlineData("solution-folder = \"nested/tasks\"")]
     public void Invalid_scripts_configuration_fails(string configuration)
     {
         using var workspace = Workspace.Create();

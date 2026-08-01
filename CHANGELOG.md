@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- `:init` can add recursively discovered task sources to a configured solution folder, using an automatic glob for `.slnx` and synchronized file entries for `.sln`.
+- `AbsolutePath.GetAncestry()` for traversing a path from itself through its root.
 - C# tasks can declare an assembly-level `TaskDescription` shown in task lists, task help, and shell completion.
 - `AbsolutePath` helpers for user profile, documents, application data, local application data, Program Files, and 32-bit Program Files directories.
 - `Do.CreateTempDirectory()` and `Do.CreateTempFile()` for creating uniquely named temporary artifacts with optional prefixes and file extensions.

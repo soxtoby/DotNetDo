@@ -79,6 +79,13 @@ public sealed partial record AbsolutePath
     /// <summary>Renders the value as one quoted command-line argument.</summary>
     public string QuotedArgument() => ToString().QuotedArgument();
 
+    /// <summary>Returns the path and its parents up to and including the root.</summary>
+    public IEnumerable<AbsolutePath> GetAncestry()
+    {
+        for (var count = _segments.Length; count >= 0; count--)
+            yield return new(_root, _segments[..count]);
+    }
+
     /// <summary>Computes the lexical path from this location to another path on the same root.</summary>
     /// <param name="path">The destination path. It must use the same Unix, drive, or UNC root as this path.</param>
     public RelativePath RelativePathTo(AbsolutePath path)

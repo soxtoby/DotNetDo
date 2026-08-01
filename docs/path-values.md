@@ -203,6 +203,9 @@ Both `Parent` properties are non-nullable. Accessing `AbsolutePath.Parent` on a 
 ```csharp
 AbsolutePath Root { get; }
 bool IsRoot { get; }
+IEnumerable<AbsolutePath> GetAncestry();
 ```
 
 `Root` preserves its root model: `/a/b` returns `/`, `C:\a` returns `C:\`, and `\\server\share\a` returns `\\server\share\`. No public root-kind, drive, server, or share API is initially provided.
+
+`GetAncestry()` lazily returns the receiver followed by each parent through its root. A root returns a sequence containing only itself. Traversal is lexical and does not access the filesystem.

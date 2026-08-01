@@ -1,153 +1,181 @@
-using Tomlyn;
+using System.Diagnostics.CodeAnalysis;
 using Tomlyn.Model;
 
 namespace DotNetDo.Cli;
 
 static class InitCommand
 {
-    public static int Run(string[] args)
+    const string DefaultSolutionFolder = "scripts";
+
+    public static async Task<int> Run(string[] args)
     {
         if (args.Length != 1)
-            return Fail("Usage: dotnet do :init");
+        {
+            await Console.Error.WriteLineAsync("Usage: dotnet do :init");
+            return 1;
+        }
 
-        var root = AbsolutePath.Parse(Environment.CurrentDirectory);
-        var configurationFile = root / WorkspaceConfiguration.FileName;
-        if (configurationFile.IsExistingFile)
-            return Fail($"{configurationFile} already exists.");
+        var root = Do.WorkingDirectory;
 
-        RelativePath scriptsPath;
-        string taskName;
-        RelativePath? solutionPath;
+        if (TryCollectInitialization(root, out var initialization))
+        {
+            await ApplyInitialization(root, initialization);
+            return 0;
+        }
+        else
+        {
+            await Console.Error.WriteLineAsync("Initialization cancelled.");
+            return 1;
+        }
+    }
+
+    static bool TryCollectInitialization(AbsolutePath root, [NotNullWhen(true)] out Initialization? initialization)
+    {
+        initialization = null;
+
         try
         {
-            var ancestorConfiguration = FindAncestorConfiguration(root);
-            if (ancestorConfiguration is not null && !PromptCreateNestedWorkspace(root, ancestorConfiguration))
-                return 0;
+            if (ShouldAvoidCreatingNestedWorkspace(root))
+                return false;
 
-            scriptsPath = PromptScriptsPath();
-            taskName = PromptTaskName();
-            solutionPath = SelectSolution(root);
+            initialization = (root / WorkspaceConfiguration.FileName).IsExistingFile
+                ? InitializeFromExistingConfig(root)
+                : new Initialization();
+
+            if (initialization.ScriptsPath is null)
+                initialization = initialization with { ScriptsPath = PromptScriptsPath(root) };
+
+            if ((root / initialization.ScriptsPath).GlobFiles("*.cs").Length == 0)
+                initialization = initialization with { TaskName = PromptTaskName() };
+
+            if (initialization.SolutionPath is null)
+                initialization = initialization with { SolutionPath = SelectSolution(root) };
+
+            if (initialization.SolutionPath is not null && PromptAddScriptsToSolution(initialization.SolutionPath!))
+                initialization = initialization with { AddScriptsToSolution = true };
+
+            return true;
         }
         catch (InitializationCancelledException)
         {
-            return Fail("Initialization cancelled.");
+            return false;
+        }
+    }
+
+    static bool ShouldAvoidCreatingNestedWorkspace(AbsolutePath root)
+    {
+        return WorkspaceConfiguration.FindClosest(root) is { } existingConfig
+            && existingConfig.Parent != root
+            && !PromptCreateNestedWorkspace(root, existingConfig);
+    }
+
+    static async Task ApplyInitialization(AbsolutePath root, Initialization initialization)
+    {
+        if (UpdateConfigFile(root, initialization))
+            Console.WriteLine($"Updated {root / WorkspaceConfiguration.FileName}");
+
+        var scriptsPath = root / initialization.ScriptsPath!;
+        if (!scriptsPath.Exists)
+        {
+            scriptsPath.EnsureDirectoryExists();
+            Console.WriteLine($"Created {initialization.ScriptsPath}");
         }
 
-        var scriptsDirectory = root / scriptsPath;
-        var scriptFile = scriptsDirectory / $"{taskName}.cs";
-        if (scriptFile.Exists)
-            return Fail($"{scriptsPath.UnixPath}/{taskName}.cs already exists.");
-        var windowsLauncher = root / "do.cmd";
-        var unixLauncher = root / "do";
-        if (windowsLauncher.Exists)
-            return Fail("do.cmd already exists.");
-        if (unixLauncher.Exists)
-            return Fail("do already exists.");
-
-        var createdDirectories = new List<AbsolutePath>();
-        var scriptCreated = false;
-        var configurationCreated = false;
-        var windowsLauncherCreated = false;
-        var unixLauncherCreated = false;
-        try
+        if (initialization.TaskName is not null)
         {
-            EnsureDirectories(root, scriptsDirectory, createdDirectories);
-            TaskScaffolding.Create(scriptFile, taskName);
-            scriptCreated = true;
-            File.WriteAllText(windowsLauncher, "@dnx DotNetDo %*\r\n");
-            windowsLauncherCreated = true;
-            File.WriteAllText(unixLauncher, "#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n");
-            unixLauncherCreated = true;
-            FileScaffolding.MakeExecutableIfUnix(unixLauncher);
+            var taskFile = scriptsPath / $"{initialization.TaskName}.cs";
+            TaskScaffolding.Create(taskFile, initialization.TaskName);
+            Console.WriteLine($"Created {initialization.ScriptsPath! / $"{initialization.TaskName}.cs"}");
+        }
 
-            var configuration = new TomlTable { ["scripts-path"] = scriptsPath.UnixPath };
-            if (solutionPath is not null)
-                configuration["solution-path"] = solutionPath.UnixPath;
-            using (var stream = new FileStream(configurationFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        if (initialization.SolutionPath is not null && initialization.AddScriptsToSolution)
+        {
+            await SolutionFolderSync.Run(root / initialization.SolutionPath!, scriptsPath, initialization.SolutionFolder);
+            Console.WriteLine($"Added scripts to {initialization.SolutionFolder} solution folder");
+        }
+
+        if (CreateWindowsLauncher(root))
+            Console.WriteLine("Created do.cmd launcher");
+
+        if (CreateUnixLauncher(root))
+        {
+            Console.WriteLine("Created do launcher");
+            if (OperatingSystem.IsWindows())
+                Console.WriteLine("Before committing, run: git add --chmod=+x do");
+        }
+
+        if (initialization.TaskName is not null)
+            Console.WriteLine(OperatingSystem.IsWindows()
+                ? $"Run with: .\\do {initialization.TaskName}"
+                : $"Run with: ./do {initialization.TaskName}");
+    }
+
+    static bool UpdateConfigFile(AbsolutePath root, Initialization initialization)
+    {
+        var configFile = root / WorkspaceConfiguration.FileName;
+
+        var config = configFile.IsExistingFile ? configFile.ReadToml<TomlTable>() : null;
+        config ??= new TomlTable();
+
+        var initialKeys = config.Keys.ToArray();
+
+        if (!config.ContainsKey("scripts-path"))
+            config["scripts-path"] = initialization.ScriptsPath!.UnixPath;
+
+        if (!config.ContainsKey("solution-path") && initialization.SolutionPath is { } solutionPath)
+            config["solution-path"] = solutionPath.UnixPath;
+
+        if (initialization.AddScriptsToSolution)
+            config["solution-folder"] = initialization.SolutionFolder;
+
+        var write = !config.Keys.SequenceEqual(initialKeys);
+        if (write)
+            configFile.WriteToml(config);
+
+        return write;
+    }
+
+    static Initialization InitializeFromExistingConfig(AbsolutePath root)
+    {
+        var config = WorkspaceConfiguration.Load(root);
+        return new Initialization
             {
-                configurationCreated = true;
-                TomlSerializer.Serialize(stream, configuration);
-            }
-        }
-        catch
+                ScriptsPath = config.ScriptsPath,
+                SolutionFolder = config.SolutionFolder ?? DefaultSolutionFolder,
+                SolutionPath = config.SolutionPath
+            };
+    }
+
+    static bool CreateWindowsLauncher(AbsolutePath root)
+    {
+        var windowsLauncher = root / "do.cmd";
+        var create = !windowsLauncher.Exists;
+        if (create)
+            windowsLauncher.WriteText("@dnx DotNetDo %*\r\n");
+        return create;
+    }
+
+    static bool CreateUnixLauncher(AbsolutePath root)
+    {
+        var unixLauncher = root / "do";
+        var create = !unixLauncher.Exists;
+        if (create)
         {
-            if (configurationCreated)
-                configurationFile.Delete();
-            if (unixLauncherCreated)
-                unixLauncher.Delete();
-            if (windowsLauncherCreated)
-                windowsLauncher.Delete();
-            if (scriptCreated)
-                scriptFile.Delete();
-            foreach (var directory in createdDirectories)
-                TryDeleteEmpty(directory);
-            throw;
+            unixLauncher.WriteText("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n");
+            FileScaffolding.MakeExecutableIfUnix(unixLauncher);
         }
 
-        Console.WriteLine($"Created {WorkspaceConfiguration.FileName}");
-        Console.WriteLine($"{(createdDirectories.Count != 0 ? "Created" : "Reused")} scripts path: {scriptsPath.UnixPath}");
-        Console.WriteLine($"Created {scriptsPath.UnixPath}/{taskName}.cs");
-        Console.WriteLine("Created do.cmd");
-        Console.WriteLine("Created do");
-        if (solutionPath is not null)
-            Console.WriteLine($"Selected solution: {solutionPath.UnixPath}");
-        if (OperatingSystem.IsWindows())
-            Console.WriteLine("Before committing, run: git add --chmod=+x do");
-        Console.WriteLine(OperatingSystem.IsWindows()
-            ? $"Run with: .\\do {taskName}"
-            : $"Run with: ./do {taskName}");
-        return 0;
-    }
-
-    static void EnsureDirectories(AbsolutePath root, AbsolutePath directory, List<AbsolutePath> created)
-    {
-        if (directory == root || directory.IsExistingDirectory)
-            return;
-        EnsureDirectories(root, directory.Parent, created);
-        Directory.CreateDirectory(directory);
-        created.Insert(0, directory);
-    }
-
-    static void TryDeleteEmpty(AbsolutePath directory)
-    {
-        try { Directory.Delete(directory); }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
-    }
-
-    static AbsolutePath? FindAncestorConfiguration(AbsolutePath root)
-    {
-        var directory = root;
-        while (!directory.IsRoot)
-        {
-            directory = directory.Parent;
-            var configurationFile = directory / WorkspaceConfiguration.FileName;
-            if (configurationFile.IsExistingFile)
-                return configurationFile;
-        }
-        return null;
+        return create;
     }
 
     static bool PromptCreateNestedWorkspace(AbsolutePath root, AbsolutePath ancestorConfiguration)
     {
         Console.WriteLine("The current directory is inside an existing DotNetDo workspace.");
         Console.WriteLine($"Existing workspace root: {ancestorConfiguration.Parent}");
-
-        while (true)
-        {
-            Console.Write($"Create a nested DotNetDo workspace in '{root}'? [y/N]: ");
-            var input = Console.ReadLine();
-            if (input is null)
-                throw new InitializationCancelledException();
-            if (input.Length == 0 || input.Equals("n", StringComparison.OrdinalIgnoreCase) || input.Equals("no", StringComparison.OrdinalIgnoreCase))
-                return false;
-            if (input.Equals("y", StringComparison.OrdinalIgnoreCase) || input.Equals("yes", StringComparison.OrdinalIgnoreCase))
-                return true;
-            Console.Error.WriteLine("Enter y or n.");
-        }
+        return PromptYesNo($"Create a nested DotNetDo workspace in '{root}'?", defaultValue: false);
     }
 
-    static RelativePath PromptScriptsPath()
+    static RelativePath PromptScriptsPath(AbsolutePath root)
     {
         while (true)
         {
@@ -155,10 +183,14 @@ static class InitCommand
             var input = Console.ReadLine();
             if (input is null)
                 throw new InitializationCancelledException();
-            
+
             try
             {
-                return WorkspaceConfiguration.ParseRootRelativePath(input.Length == 0 ? "scripts" : input);
+                var path = WorkspaceConfiguration.ParseRootRelativePath(input.Length == 0 ? DefaultSolutionFolder : input);
+                if ((root / path).IsExistingFile)
+                    Console.Error.WriteLine("Specified path conflicts with an existing file.");
+                else
+                    return path;
             }
             catch (ArgumentException)
             {
@@ -208,11 +240,33 @@ static class InitCommand
         }
     }
 
-    sealed class InitializationCancelledException : Exception { }
+    static bool PromptAddScriptsToSolution(RelativePath solutionPath)
+        => PromptYesNo($"Add scripts to '{solutionPath.UnixPath}'?", defaultValue: true);
 
-    static int Fail(string message)
+    static bool PromptYesNo(string prompt, bool defaultValue)
     {
-        Console.Error.WriteLine(message);
-        return 1;
+        while (true)
+        {
+            Console.Write($"{prompt} {(defaultValue ? "[Y/n]" : "[y/N]")}: ");
+            var input = Console.ReadLine() ?? throw new InitializationCancelledException();
+            if (input.Length == 0)
+                return defaultValue;
+            if (input.Equals("y", StringComparison.OrdinalIgnoreCase) || input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (input.Equals("n", StringComparison.OrdinalIgnoreCase) || input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                return false;
+            Console.Error.WriteLine("Enter y or n.");
+        }
     }
+
+    sealed record Initialization
+    {
+        public RelativePath? ScriptsPath { get; init; }
+        public string? TaskName { get; init; }
+        public RelativePath? SolutionPath { get; init; }
+        public bool AddScriptsToSolution { get; init; }
+        public string SolutionFolder { get; init; } = DefaultSolutionFolder;
+    }
+
+    sealed class InitializationCancelledException : Exception;
 }

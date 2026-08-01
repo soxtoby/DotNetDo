@@ -4,7 +4,7 @@ namespace DotNetDo.Cli;
 
 static class CliCommands
 {
-    public static readonly CliCommand Init = new(":init", "Initialize a workspace", args => Task.FromResult(InitCommand.Run(args)));
+    public static readonly CliCommand Init = new(":init", "Initialize a workspace", InitCommand.Run);
     public static readonly CliCommand New = new(":new", "Create a task", args => Task.FromResult(NewCommand.Run(args)));
     public static readonly CliCommand Install = new(":install", "Install workspace tool requirements", InstallCommand.Run);
     public static readonly CliCommand Update = new(":update", "Update DotNetDo and task package pins", UpdateCommand.Run);

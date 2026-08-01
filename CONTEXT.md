@@ -8,7 +8,7 @@ A committed `dotnetdo.toml` file containing shared configuration for tasks. Its 
 
 ### Root directory
 
-The nearest ancestor of the current working directory containing DotNetDo configuration. Without configuration, the current working directory is the root directory and discovery is retried whenever requested; once configuration is found, that root remains stable.
+The nearest ancestor of the initial working directory containing DotNetDo configuration, or that working directory when none exists. The resolved root remains stable for the process.
 
 ### Working directory
 
@@ -43,6 +43,10 @@ _Avoid_: Project path, disk path
 ### Solution project
 
 A file-backed project entry in a solution. Solution items are not projects; projects unsupported by the available MSBuild toolset remain navigable but may not be evaluable.
+
+### Scripts solution folder
+
+The configured root solution folder presenting every C# source beneath the scripts path. Its virtual name is independent of the scripts path and changing it does not remove an older solution folder.
 
 ## Task
 
