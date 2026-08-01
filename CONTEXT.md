@@ -1,5 +1,9 @@
 # Glossary
 
+## Document model
+
+A format-native, navigable representation of a structured document that does not require a caller-defined value type. A document-model reader complements, rather than replaces, typed deserialization.
+
 ## Workspace
 
 ### DotNetDo configuration

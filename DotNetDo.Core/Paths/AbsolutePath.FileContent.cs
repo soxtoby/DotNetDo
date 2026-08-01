@@ -1,7 +1,12 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Tomlyn;
+using Tomlyn.Model;
+using YamlDotNet.Core;
+using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
 namespace DotNetDo;
@@ -48,6 +53,9 @@ public sealed partial record AbsolutePath
         return JsonSerializer.Deserialize<T>(stream, options);
     }
 
+    /// <summary>Reads the file as a JSON document model.</summary>
+    public JsonNode? ReadJson(JsonSerializerOptions? options = null) => ReadJson<JsonNode>(options);
+
     /// <summary>Serializes the value to this file.</summary>
     /// <param name="value">The value serialized as JSON. Missing parent directories are not created.</param>
     /// <param name="options">JSON serializer behavior; <see langword="null"/> uses <see cref="JsonSerializerOptions.Default"/>.</param>
@@ -64,6 +72,9 @@ public sealed partial record AbsolutePath
         using var stream = File.OpenRead(this);
         return TomlSerializer.Deserialize<T>(stream, options);
     }
+
+    /// <summary>Reads the file as a TOML document model.</summary>
+    public TomlTable ReadToml(TomlSerializerOptions? options = null) => ReadToml<TomlTable>(options)!;
 
     /// <summary>Serializes the value to this file.</summary>
     /// <param name="value">The value serialized as TOML. Missing parent directories are not created.</param>
@@ -82,6 +93,13 @@ public sealed partial record AbsolutePath
         return (deserializer ?? YamlSerialization.Deserializer).Deserialize<T>(reader);
     }
 
+    /// <summary>Reads the root node of one YAML document from the file.</summary>
+    public YamlNode? ReadYaml()
+    {
+        using var reader = File.OpenText(this);
+        return YamlSerialization.ReadNode(reader);
+    }
+
     /// <summary>Serializes the value as one YAML document to this file.</summary>
     /// <param name="value">The value serialized as YAML. Missing parent directories are not created.</param>
     /// <param name="serializer">The YAML serializer; <see langword="null"/> uses DotNetDo's default instance.</param>
@@ -91,11 +109,25 @@ public sealed partial record AbsolutePath
         (serializer ?? YamlSerialization.Serializer).Serialize(writer, value);
     }
 
+    /// <summary>Writes one YAML document-model root node to this file.</summary>
+    public void WriteYaml(YamlNode value)
+    {
+        using var writer = File.CreateText(this);
+        new YamlStream(new YamlDocument(value)).Save(writer);
+    }
+
     /// <summary>Deserializes the file into the requested value type.</summary>
     public T? ReadXml<T>()
     {
         using var stream = File.OpenRead(this);
         return (T?)new XmlSerializer(typeof(T)).Deserialize(stream);
+    }
+
+    /// <summary>Reads the file as an XML document model.</summary>
+    public XDocument ReadXml()
+    {
+        using var stream = File.OpenRead(this);
+        return XDocument.Load(stream);
     }
 
     /// <summary>Serializes the value to this file.</summary>
@@ -105,10 +137,29 @@ public sealed partial record AbsolutePath
         using var stream = File.Create(this);
         new XmlSerializer(typeof(T)).Serialize(stream, value);
     }
+
+    /// <summary>Writes an XML document model to this file.</summary>
+    public void WriteXml(XDocument value)
+    {
+        using var stream = File.Create(this);
+        value.Save(stream);
+    }
 }
 
 static class YamlSerialization
 {
     public static IDeserializer Deserializer { get; } = new DeserializerBuilder().Build();
     public static ISerializer Serializer { get; } = new SerializerBuilder().Build();
+
+    public static YamlNode? ReadNode(TextReader reader)
+    {
+        var stream = new YamlStream();
+        stream.Load(reader);
+        return stream.Documents.Count switch
+        {
+            0 => null,
+            1 => stream.Documents[0].RootNode,
+            _ => throw new YamlException("Expected one YAML document."),
+        };
+    }
 }

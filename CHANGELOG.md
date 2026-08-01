@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Non-generic `AbsolutePath` and `ExecResult` structured readers return native JSON, TOML, YAML, and XML document models; `AbsolutePath` can also write YAML and XML document models.
 - `:init` can add recursively discovered task sources to a configured solution folder, using an automatic glob for `.slnx` and synchronized file entries for `.sln`.
 - `AbsolutePath.GetAncestry()` for traversing a path from itself through its root.
 - C# tasks can declare an assembly-level `TaskDescription` shown in task lists, task help, and shell completion.

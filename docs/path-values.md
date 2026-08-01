@@ -49,16 +49,24 @@ void WriteText(string text, Encoding? encoding = null);
 void WriteLines(IEnumerable<string> lines, Encoding? encoding = null);
 
 T? ReadJson<T>(JsonSerializerOptions? options = null);
+JsonNode? ReadJson(JsonSerializerOptions? options = null);
 void WriteJson<T>(T value, JsonSerializerOptions? options = null);
 T? ReadToml<T>(TomlSerializerOptions? options = null);
+TomlTable ReadToml(TomlSerializerOptions? options = null);
 void WriteToml<T>(T value, TomlSerializerOptions? options = null);
 T? ReadYaml<T>(IDeserializer? deserializer = null);
+YamlNode? ReadYaml();
 void WriteYaml<T>(T value, ISerializer? serializer = null);
+void WriteYaml(YamlNode value);
 T? ReadXml<T>();
+XDocument ReadXml();
 void WriteXml<T>(T value);
+void WriteXml(XDocument value);
 ```
 
-Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, YamlDotNet, and `XmlSerializer` respectively. JSON and TOML expose their native options objects. YAML accepts native YamlDotNet `IDeserializer` and `ISerializer` instances; null uses cached plain builder-created instances with no DotNetDo naming, converter, or tolerance policy. Supplied instances remain caller-owned. YAML uses UTF-8, exposes no encoding parameter, and reads or writes one typed document. Reads retain the `T?` shape and writes pass nullable values through to YamlDotNet. Output is not normalized after serialization. XML initially uses serializer defaults.
+Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, YamlDotNet, and `XmlSerializer` respectively. JSON and TOML expose their native options objects. YAML accepts native YamlDotNet `IDeserializer` and `ISerializer` instances; null uses cached plain builder-created instances with no DotNetDo naming, converter, or tolerance policy. Supplied instances remain caller-owned. YAML uses UTF-8 and exposes no encoding parameter. Typed reads retain the `T?` shape and typed writes pass nullable values through to YamlDotNet. XML typed helpers use serializer defaults.
+
+Non-generic readers return each format's native document model: `JsonNode?`, `TomlTable`, `YamlNode?`, or `XDocument`. JSON `null` and an empty YAML stream return `null`; empty TOML returns an empty table; empty XML is invalid. YAML accepts at most one document and throws `YamlException` for multiple documents. The YAML and XML document-model writers use their model-native emitters. Document-model reads and writes preserve document semantics, not lexical formatting.
 
 The structured helpers map arbitrary task types through reflection-based serialization. File-based apps build with Native AOT publishing defaults, which switch that off for both Tomlyn and `System.Text.Json`, so the DotNetDo.Core package restores it for consuming apps unless they set `TomlynIsReflectionEnabledByDefault` or `JsonSerializerIsReflectionEnabledByDefault` themselves. DotNetDo's own configuration loading does not depend on that setting.
 

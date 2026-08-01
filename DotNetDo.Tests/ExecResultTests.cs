@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using YamlDotNet.Core;
+using YamlDotNet.RepresentationModel;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -34,6 +36,26 @@ public sealed class ExecResultTests
             .ReadYaml<Content>()!.Value);
         Assert.Equal("xml", Result(new ExecOutput(OutputType.Out, "<Content><Value>xml</Value></Content>"))
             .ReadXml<Content>()!.Value);
+    }
+
+    [Fact]
+    public void Reads_document_models_from_standard_output()
+    {
+        Assert.Equal("json", Result(new ExecOutput(OutputType.Out, "{\"Value\":\"json\"}"))
+            .ReadJson()!["Value"]!.GetValue<string>());
+        Assert.Equal("toml", Result(new ExecOutput(OutputType.Out, "Value = \"toml\""))
+            .ReadToml()["Value"]);
+        Assert.Equal("yaml", ((YamlMappingNode)Result(new ExecOutput(OutputType.Out, "Value: yaml"))
+            .ReadYaml()!).Children[new YamlScalarNode("Value")].ToString());
+        Assert.Equal("xml", Result(new ExecOutput(OutputType.Out, "<Content><Value>xml</Value></Content>"))
+            .ReadXml().Root!.Element("Value")!.Value);
+    }
+
+    [Fact]
+    public void Yaml_document_model_reader_requires_at_most_one_document()
+    {
+        Assert.Null(Result().ReadYaml());
+        Assert.Throws<YamlException>(() => Result(new ExecOutput(OutputType.Out, "one\n---\ntwo")).ReadYaml());
     }
 
     [Fact]

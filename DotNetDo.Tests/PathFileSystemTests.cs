@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.RepresentationModel;
+using System.Xml.Linq;
 
 namespace DotNetDo.Tests;
 
@@ -200,6 +202,34 @@ public sealed class PathFileSystemTests
         Assert.Contains("name: test", yaml.ReadText());
         Assert.Equal(value, yaml.ReadYaml<ContentModel>(yamlDeserializer));
         Assert.Equal(value, xml.ReadXml<ContentModel>());
+    }
+
+    [Fact]
+    public void Reads_and_writes_document_models()
+    {
+        using var workspace = Workspace.Create();
+        var json = workspace.Path / "document.json";
+        var toml = workspace.Path / "document.toml";
+        var yaml = workspace.Path / "document.yaml";
+        var xml = workspace.Path / "document.xml";
+
+        json.WriteText("{\"value\":\"json\"}");
+        toml.WriteText("value = \"toml\"");
+        yaml.WriteText("value: yaml");
+        xml.WriteText("<content><value>xml</value></content>");
+
+        Assert.Equal("json", json.ReadJson()!["value"]!.GetValue<string>());
+        Assert.Equal("toml", toml.ReadToml()["value"]);
+        var yamlNode = (YamlMappingNode)yaml.ReadYaml()!;
+        Assert.Equal("yaml", yamlNode.Children[new YamlScalarNode("value")].ToString());
+        Assert.Equal("xml", xml.ReadXml().Root!.Element("value")!.Value);
+
+        yaml.WriteYaml(yamlNode);
+        xml.WriteXml(new XDocument(new XElement("content", new XElement("value", "changed"))));
+
+        Assert.Equal("yaml", ((YamlMappingNode)yaml.ReadYaml()!)
+            .Children[new YamlScalarNode("value")].ToString());
+        Assert.Equal("changed", xml.ReadXml().Root!.Element("value")!.Value);
     }
 
     [Fact]
