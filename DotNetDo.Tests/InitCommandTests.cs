@@ -168,8 +168,8 @@ public sealed class InitCommandTests
 
         Assert.Equal(0, result.ExitCode);
         var solution = File.ReadAllText(Path.Combine(workspace.Directory, "Product.sln"));
-        Assert.Contains("scripts/build.cs", solution);
-        Assert.Contains("scripts/helpers/shared.cs", solution);
+        Assert.Contains("scripts\\build.cs", solution);
+        Assert.Contains("scripts\\helpers\\shared.cs", solution);
         Assert.Contains("README.md", solution);
         Assert.DoesNotContain("old.cs", solution);
     }
