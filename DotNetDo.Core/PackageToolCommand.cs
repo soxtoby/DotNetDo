@@ -83,35 +83,25 @@ static class PackageToolManifests
 
     public static void Require<TResult>(PackageToolCommand<TResult> command, AbsolutePath root)
     {
-        foreach (var path in CandidatePaths(root))
+        var manifestsInPath = root.GetAncestry()
+            .Select(path => path / ".config" / "dotnet-tools.json")
+            .Where(manifest => manifest.IsExistingFile)
+            .Select(Read);
+        
+        foreach (var manifest in manifestsInPath)
         {
-            if (!path.IsExistingFile)
-                continue;
-
-            var manifest = Read(path);
             if (manifest.Packages.Contains(command.PackageId))
                 return;
             if (manifest.IsRoot)
                 break;
         }
 
-        var manifestPath = root / ".config/dotnet-tools.json";
-        var instructions = manifestPath.IsExistingFile
+        var localManifest = root / ".config" / "dotnet-tools.json";
+        var instructions = localManifest.IsExistingFile
             ? $"Run 'dotnet tool install {command.PackageId}' from '{root}'."
             : $"Run 'dotnet new tool-manifest' and 'dotnet tool install {command.PackageId}' from '{root}'.";
         Log.Error("Package tool {PackageId} is not declared. {Instructions}", command.PackageId, instructions);
         throw new PackageToolNotDeclaredException(command.PackageId, root, instructions);
-    }
-
-    static IEnumerable<AbsolutePath> CandidatePaths(AbsolutePath root)
-    {
-        AbsolutePath? directory = root;
-        do
-        {
-            yield return directory / ".config/dotnet-tools.json";
-            directory = directory.IsRoot ? null : directory.Parent;
-        }
-        while (directory is not null);
     }
 
     static Manifest Read(AbsolutePath path)
