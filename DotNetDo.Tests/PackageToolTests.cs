@@ -46,6 +46,51 @@ public sealed class PackageToolTests
         Assert.Equal("dotnet tool restore --verbosity minimal --add-source private --add-source mirror --disable-parallel --interactive", command.ToString());
     }
 
+    [Theory]
+    [InlineData("dotnet-tools.json")]
+    [InlineData(".config/dotnet-tools.json")]
+    public void Finds_package_in_supported_tool_manifest_location(string manifestPath)
+    {
+        var root = Do.CreateTempDirectory("dotnetdo-package-tool-");
+        try
+        {
+            var manifest = root / manifestPath;
+            Directory.CreateDirectory(manifest.Parent);
+            File.WriteAllText(
+                manifest,
+                """{"version":1,"isRoot":true,"tools":{"Example.Tool":{"version":"1.0.0","commands":["example"]}}}""");
+
+            PackageToolManifests.Require(new PackageToolCommand("Example.Tool", "example"), root);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Checks_both_manifest_locations_before_stopping_at_root_boundary()
+    {
+        var root = Do.CreateTempDirectory("dotnetdo-package-tool-");
+        try
+        {
+            File.WriteAllText(
+                root / "dotnet-tools.json",
+                """{"version":1,"isRoot":true,"tools":{}}""");
+            var legacyManifest = root / ".config/dotnet-tools.json";
+            Directory.CreateDirectory(legacyManifest.Parent);
+            File.WriteAllText(
+                legacyManifest,
+                """{"version":1,"isRoot":false,"tools":{"Example.Tool":{"version":"1.0.0","commands":["example"]}}}""");
+
+            PackageToolManifests.Require(new PackageToolCommand("Example.Tool", "example"), root);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [Fact]
     public void GitVersion_forces_json_and_round_trip_dates()
     {

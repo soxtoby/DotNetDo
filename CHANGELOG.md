@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Package tools recognize root-level `dotnet-tools.json` manifests created by current .NET SDKs, while retaining `.config/dotnet-tools.json` support.
+
 ## v0.6.0
 
 ### Added
