@@ -25,8 +25,8 @@ public sealed class InitCommandTests
         Assert.Contains($"#:package DotNetDo.Core@{version}", task);
         Assert.Contains("""[assembly: TaskDescription("Says hello")]""", task);
         Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
-        Assert.Equal("@dnx DotNetDo %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
-        Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
+        Assert.Equal("@dnx DotNetDo -- %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
         Assert.Contains("Created scripts", result.Output);
         Assert.Contains("Created do.cmd launcher", result.Output);
         Assert.Contains("Created do launcher", result.Output);

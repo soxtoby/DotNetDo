@@ -1,1 +1,1 @@
-@dnx DotNetDo %*
+@dnx DotNetDo -- %*

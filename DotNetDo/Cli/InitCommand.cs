@@ -151,7 +151,7 @@ static class InitCommand
         var windowsLauncher = root / "do.cmd";
         var create = !windowsLauncher.Exists;
         if (create)
-            windowsLauncher.WriteText("@dnx DotNetDo %*\r\n");
+            windowsLauncher.WriteText("@dnx DotNetDo -- %*\r\n");
         return create;
     }
 
@@ -161,7 +161,7 @@ static class InitCommand
         var create = !unixLauncher.Exists;
         if (create)
         {
-            unixLauncher.WriteText("#!/usr/bin/env sh\nexec dnx DotNetDo \"$@\"\n");
+            unixLauncher.WriteText("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n");
             FileScaffolding.MakeExecutableIfUnix(unixLauncher);
         }
 

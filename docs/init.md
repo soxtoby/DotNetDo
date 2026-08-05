@@ -41,6 +41,6 @@ Solution item paths are relative to the solution directory, not the workspace ro
 
 Initialization is not transactional. It writes configuration before applying filesystem and solution changes; a later failure leaves earlier successful changes for the next `:init` run to continue.
 
-The generated `do.cmd` runs `dnx DotNetDo %*`. The generated executable `do` script runs `exec dnx DotNetDo "$@"`. Invoke them by path: `.\do <task-name>` in PowerShell or `./do <task-name>` in a Unix shell.
+The generated `do.cmd` runs `dnx DotNetDo -- %*`. The generated executable `do` script runs `exec dnx DotNetDo -- "$@"`. The separator forwards arguments to DotNetDo instead of `dnx`. Invoke them by path: `.\do <task-name>` in PowerShell or `./do <task-name>` in a Unix shell.
 
 On success, report updated configuration and each created directory, task, launcher, or solution integration. Do not run the task.

@@ -190,6 +190,40 @@ public sealed class CompletionTests
         Assert.False((data / adapterName).IsExistingFile);
     }
 
+    [Fact]
+    public void PowerShell_adapter_completes_the_local_do_launcher()
+    {
+        using var workspace = Workspace.Create();
+        var root = AbsolutePath.Parse(workspace.Directory);
+        var data = root / "data";
+
+        Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data));
+
+        var adapter = (data / "dotnetdo-completion.ps1").ReadText();
+        Assert.Contains("-CommandName dotnet-do, do", adapter);
+        Assert.Contains("& $tokens[0] :complete", adapter);
+    }
+
+    [Theory]
+    [InlineData("bash", "dotnetdo-completion.bash", "\"${COMP_WORDS[0]}\" :complete", "dotnet-do do")]
+    [InlineData("zsh", "dotnetdo-completion.zsh", "\"${words[1]}\" :complete", "dotnet-do do")]
+    public void Unix_adapter_completes_the_local_do_launcher(
+        string shell,
+        string adapterName,
+        string invocation,
+        string registrations)
+    {
+        using var workspace = Workspace.Create();
+        var root = AbsolutePath.Parse(workspace.Directory);
+        var data = root / "data";
+
+        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data));
+
+        var adapter = (data / adapterName).ReadText();
+        Assert.Contains(invocation, adapter);
+        Assert.Contains(registrations, adapter);
+    }
+
     [Theory]
     [InlineData("# >>> DotNetDo completion >>>")]
     [InlineData("# <<< DotNetDo completion <<<")]
