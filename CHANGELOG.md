@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
+
 ### Fixed
 - Package tools recognize root-level `dotnet-tools.json` manifests created by current .NET SDKs, while retaining `.config/dotnet-tools.json` support.
 - PowerShell, Bash, and Zsh completion works with workspace-local launchers invoked as `.\do` or `./do`.

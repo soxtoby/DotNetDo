@@ -47,6 +47,7 @@ string ReadText(Encoding? encoding = null);
 string[] ReadLines(Encoding? encoding = null);
 void WriteText(string text, Encoding? encoding = null);
 void WriteLines(IEnumerable<string> lines, Encoding? encoding = null);
+IDisposable TemporaryFileContents(Action<AbsolutePath> replace);
 
 T? ReadJson<T>(JsonSerializerOptions? options = null);
 JsonNode? ReadJson(JsonSerializerOptions? options = null);
@@ -71,6 +72,8 @@ Non-generic readers return each format's native document model: `JsonNode?`, `To
 The structured helpers map arbitrary task types through reflection-based serialization. File-based apps build with Native AOT publishing defaults, which switch that off for both Tomlyn and `System.Text.Json`, so the DotNetDo.Core package restores it for consuming apps unless they set `TomlynIsReflectionEnabledByDefault` or `JsonSerializerIsReflectionEnabledByDefault` themselves. DotNetDo's own configuration loading does not depend on that setting.
 
 Reads preserve serializer nullability and propagate native missing-file, malformed-content, and type errors without DotNetDo exception wrapping. Writes create or overwrite the file directly, return no value, and propagate native errors. They do not create missing parent directories, validate filename extensions, append, write atomically, create backups, or add formatting policy. Structured output uses each serializer's defaults.
+
+`TemporaryFileContents` captures an existing file's exact bytes in memory, then invokes the replacement operation. Disposing the returned scope unconditionally restores those bytes, including over intervening content changes. Restoration changes only the primary contents, not metadata or file identity. Scopes naturally nest when disposed in reverse order. Successful disposal is idempotent; failed restoration may be retried. If replacement throws, restoration is attempted immediately and the original exception is rethrown; if both fail, an `AggregateException` reports both failures. Abrupt process termination is not recoverable.
 
 `AbsolutePath` also owns uniform copy, move, and delete operations for files and directories. Missing paths and symbolic links follow the underlying `System.IO` behavior. The same method names apply to both filesystem kinds rather than exposing parallel file and directory families.
 

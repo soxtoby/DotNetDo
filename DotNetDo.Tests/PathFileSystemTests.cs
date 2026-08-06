@@ -177,6 +177,75 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Temporarily_replaces_and_restores_exact_file_contents()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.bin";
+        byte[] original = [0, 1, 2, 255];
+        File.WriteAllBytes(file, original);
+
+        using (file.TemporaryFileContents(path => File.WriteAllBytes(path, [3, 4, 5])))
+            Assert.Equal([3, 4, 5], File.ReadAllBytes(file));
+
+        Assert.Equal(original, File.ReadAllBytes(file));
+    }
+
+    [Fact]
+    public void Restores_file_contents_when_replacement_fails()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.txt";
+        file.WriteText("original");
+
+        var error = Assert.Throws<InvalidOperationException>(() => file.TemporaryFileContents(path =>
+        {
+            path.WriteText("replacement");
+            throw new InvalidOperationException("failed");
+        }));
+
+        Assert.Equal("failed", error.Message);
+        Assert.Equal("original", file.ReadText());
+    }
+
+    [Fact]
+    public void Reports_both_replacement_and_restoration_failures()
+    {
+        using var workspace = Workspace.Create();
+        var directory = workspace.Path / "nested";
+        directory.EnsureDirectoryExists();
+        var file = directory / "value.txt";
+        file.WriteText("original");
+
+        var error = Assert.Throws<AggregateException>(() => file.TemporaryFileContents(_ =>
+        {
+            directory.Delete();
+            throw new InvalidOperationException("replacement failed");
+        }));
+
+        Assert.Collection(error.InnerExceptions,
+            replacement => Assert.IsType<InvalidOperationException>(replacement),
+            restoration => Assert.IsType<DirectoryNotFoundException>(restoration));
+    }
+
+    [Fact]
+    public void Failed_disposal_can_retry_restoration()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.txt";
+        file.WriteText("original");
+        var restoration = file.TemporaryFileContents(path => path.WriteText("replacement"));
+        file.Delete();
+        file.EnsureDirectoryExists();
+
+        Assert.ThrowsAny<Exception>(restoration.Dispose);
+
+        file.Delete();
+        restoration.Dispose();
+        restoration.Dispose();
+        Assert.Equal("original", file.ReadText());
+    }
+
+    [Fact]
     public void Reads_and_writes_structured_values()
     {
         using var workspace = Workspace.Create();

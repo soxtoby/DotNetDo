@@ -13,6 +13,34 @@ namespace DotNetDo;
 
 public sealed partial record AbsolutePath
 {
+    /// <summary>Temporarily replaces this file's contents and restores its original bytes when disposed.</summary>
+    /// <param name="replace">The operation that replaces this file's contents.</param>
+    public IDisposable TemporaryFileContents(Action<AbsolutePath> replace)
+    {
+        ArgumentNullException.ThrowIfNull(replace);
+
+        var originalContents = File.ReadAllBytes(this);
+        try
+        {
+            replace(this);
+        }
+        catch (Exception replacementError)
+        {
+            try
+            {
+                File.WriteAllBytes(this, originalContents);
+            }
+            catch (Exception restorationError)
+            {
+                throw new AggregateException(replacementError, restorationError);
+            }
+
+            throw;
+        }
+
+        return new FileContentsRestoration(this, originalContents);
+    }
+
     /// <summary>Reads the entire file as text using the supplied encoding or UTF-8.</summary>
     /// <param name="encoding">The text encoding; <see langword="null"/> uses UTF-8.</param>
     public string ReadText(Encoding? encoding = null) =>
@@ -143,6 +171,24 @@ public sealed partial record AbsolutePath
     {
         using var stream = File.Create(this);
         value.Save(stream);
+    }
+
+    sealed class FileContentsRestoration(AbsolutePath path, byte[] contents) : IDisposable
+    {
+        readonly Lock sync = new();
+        bool restored;
+
+        public void Dispose()
+        {
+            lock (sync)
+            {
+                if (restored)
+                    return;
+
+                File.WriteAllBytes(path, contents);
+                restored = true;
+            }
+        }
     }
 }
 
