@@ -19,7 +19,7 @@ static class SolutionFolderSync
             ?? throw new NotSupportedException($"No solution serializer supports '{solutionPath}'.");
         var model = await serializer.OpenAsync(solutionPath, CancellationToken.None);
         var folder = model.SolutionFolders.SingleOrDefault(candidate => candidate.Parent is null && candidate.Name == folderName)
-            ?? model.AddFolder(folderName);
+            ?? model.AddFolder($"/{folderName}/");
 
         foreach (var file in (folder.Files ?? []).Where(IsCSharp).ToArray())
             folder.RemoveFile(file);

@@ -175,6 +175,24 @@ public sealed class InitCommandTests
     }
 
     [Fact]
+    public async Task Existing_configuration_adds_missing_sln_folder()
+    {
+        using var workspace = Workspace.Create();
+        Directory.CreateDirectory(Path.Combine(workspace.Directory, "scripts"));
+        File.WriteAllText(Path.Combine(workspace.Directory, "scripts", "build.cs"), "");
+        File.WriteAllText(Path.Combine(workspace.Directory, "Product.sln"), SlnWithTasks);
+        File.WriteAllText(
+            Path.Combine(workspace.Directory, "dotnetdo.toml"),
+            "scripts-path = \"scripts\"\nsolution-path = \"Product.sln\"\nsolution-folder = \"scripts\"\n");
+
+        var result = await RunInit(workspace.Directory, "\n\n");
+
+        Assert.Equal(0, result.ExitCode);
+        var solution = File.ReadAllText(Path.Combine(workspace.Directory, "Product.sln"));
+        Assert.Contains("scripts\\build.cs", solution);
+    }
+
+    [Fact]
     public async Task Existing_configuration_discovers_solution_and_records_default_folder()
     {
         using var workspace = Workspace.Create();

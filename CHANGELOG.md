@@ -9,6 +9,7 @@
 - Package tools recognize root-level `dotnet-tools.json` manifests created by current .NET SDKs, while retaining `.config/dotnet-tools.json` support.
 - PowerShell, Bash, and Zsh completion works with workspace-local launchers invoked as `.\do` or `./do`.
 - Workspace-local launchers forward colon-prefixed management commands to DotNetDo instead of consuming them as `dnx` options.
+- Fixed `:init` failing when adding a new scripts folder to a `.sln` solution.
 
 ## v0.6.0
 
