@@ -48,6 +48,15 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Refuses_to_delete_or_recreate_root_directories()
+    {
+        var root = AbsolutePath.Parse(Path.GetPathRoot(Path.GetTempPath())!);
+
+        Assert.Equal($"Cannot delete the root directory '{root}'.", Assert.Throws<InvalidOperationException>(root.Delete).Message);
+        Assert.Equal($"Cannot recreate the root directory '{root}'.", Assert.Throws<InvalidOperationException>(root.RecreateDirectory).Message);
+    }
+
+    [Fact]
     public void Gets_relative_path_to_another_absolute_path()
     {
         using var workspace = Workspace.Create();
@@ -113,6 +122,45 @@ public sealed class PathFileSystemTests
         moved.Delete();
         moved.Delete();
         Assert.False(moved.Exists);
+    }
+
+    [Fact]
+    public void Deletes_distinct_top_level_paths_from_a_collection()
+    {
+        using var workspace = Workspace.Create();
+        var first = workspace.Path / "first";
+        var child = first / "child.txt";
+        var second = workspace.Path / "second.txt";
+        first.EnsureDirectoryExists();
+        child.WriteText("child");
+        second.WriteText("second");
+
+        IReadOnlyCollection<AbsolutePath> paths = [child, second, first, second];
+        paths.DeleteAll();
+
+        Assert.False(first.Exists);
+        Assert.False(second.Exists);
+        Array.Empty<AbsolutePath>().DeleteAll();
+    }
+
+    [Fact]
+    public void DeleteAll_validates_every_path_before_deleting()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "file.txt";
+        file.WriteText("content");
+        var root = AbsolutePath.Parse(Path.GetPathRoot(Path.GetTempPath())!);
+
+        IReadOnlyCollection<AbsolutePath> withRoot = [file, root];
+        Assert.Throws<InvalidOperationException>(withRoot.DeleteAll);
+        Assert.True(file.Exists);
+
+        IReadOnlyCollection<AbsolutePath> withNull = [file, null!];
+        Assert.Throws<ArgumentException>(withNull.DeleteAll);
+        Assert.True(file.Exists);
+
+        IReadOnlyCollection<AbsolutePath> nullPaths = null!;
+        Assert.Throws<ArgumentNullException>(nullPaths.DeleteAll);
     }
 
     [Fact]

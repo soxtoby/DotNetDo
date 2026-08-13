@@ -3,9 +3,11 @@
 ## Unreleased
 
 ### Added
+- `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
 
 ### Fixed
+- `AbsolutePath.Delete()` and `RecreateDirectory()` reject filesystem roots.
 - Package tools recognize root-level `dotnet-tools.json` manifests created by current .NET SDKs, while retaining `.config/dotnet-tools.json` support.
 - PowerShell, Bash, and Zsh completion works with workspace-local launchers invoked as `.\do` or `./do`.
 - Workspace-local launchers forward colon-prefixed management commands to DotNetDo instead of consuming them as `dnx` options.

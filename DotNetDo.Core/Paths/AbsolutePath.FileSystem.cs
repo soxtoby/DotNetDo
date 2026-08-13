@@ -21,6 +21,9 @@ public sealed partial record AbsolutePath
     /// <summary>Delete and recreate this directory.</summary>
     public AbsolutePath RecreateDirectory()
     {
+        if (IsRoot)
+            throw new InvalidOperationException($"Cannot recreate the root directory '{this}'.");
+
         if (IsExistingDirectory)
             Directory.Delete(this, recursive: true);
 
@@ -105,6 +108,9 @@ public sealed partial record AbsolutePath
     /// <summary>Deletes the file or directory.</summary>
     public void Delete()
     {
+        if (IsRoot)
+            throw new InvalidOperationException($"Cannot delete the root directory '{this}'.");
+
         if (IsExistingDirectory)
             Directory.Delete(this, recursive: true);
         else

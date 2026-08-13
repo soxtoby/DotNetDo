@@ -3,6 +3,29 @@ namespace DotNetDo;
 /// <summary>Adds scripting-oriented enumerable helpers.</summary>
 public static class EnumerableExtensions
 {
+    extension(IReadOnlyCollection<AbsolutePath> paths)
+    {
+        /// <summary>Deletes the supplied files and directories, omitting duplicates and paths beneath another supplied path.</summary>
+        public void DeleteAll()
+        {
+            ArgumentNullException.ThrowIfNull(paths);
+
+            var snapshot = paths.ToArray();
+            if (snapshot.Any(path => path is null))
+                throw new ArgumentException("The collection cannot contain null paths.", nameof(paths));
+            var root = snapshot.FirstOrDefault(path => path.IsRoot);
+            if (root is not null)
+                throw new InvalidOperationException($"Cannot delete the root directory '{root}'.");
+
+            foreach (var path in snapshot
+                .Distinct()
+                .Where(path => snapshot.None(other => other != path && path.IsWithin(other))))
+            {
+                path.Delete();
+            }
+        }
+    }
+
     extension<T>(IEnumerable<T> enumerable)
     {
         /// <summary>Joins the string representation of each value using the supplied separator.</summary>
