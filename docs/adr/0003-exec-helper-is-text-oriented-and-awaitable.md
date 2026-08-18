@@ -8,6 +8,14 @@ The structured readers mirror the corresponding `AbsolutePath` reader options: J
 
 Readers do not inspect `ExitCode`; they parse any captured result. Success enforcement belongs to choosing `Succeeded` or `Completed` when obtaining the result, not to reading that result.
 
+Each execution derives a complete child environment from the current process environment at launch time. `ExecOptions.Environment` transforms an immutable snapshot into the complete child environment, so omitted variables are removed and an empty result creates an empty environment. Environment-name comparison retains the operating system's native semantics: case-insensitive on Windows and case-sensitive on Unix.
+
+The transformation runs once per launch attempt and may therefore run concurrently or more than once for command values that retry. Executable and batch-host lookup remains parent-scoped; changing `PATH`, `PATHEXT`, or `COMSPEC` changes only the environment received by the launched process.
+
+Transform exceptions propagate unchanged. A null result, null value, or environment-name collision under native comparison fails before process launch; empty values remain valid. Exec does not log environment names or values. Assigning a new transformation replaces the old transformation rather than composing them implicitly.
+
+The same option applies to raw Exec calls, repository-bound Exec calls, and typed tool commands. It does not flow into hidden package-tool restore operations. The transformation is synchronous, and completed results do not retain the child environment. When no transformation is configured, Exec leaves .NET's ordinary environment inheritance untouched.
+
 `OutputLines()` and `ErrorLines()` preserve observed order within the selected stream and allocate a fresh string array on every call. Mutating that array does not mutate `AllOutput`.
 
 Structured readers expose the underlying serializer's normal result and exceptions, including for empty or malformed standard output. They add no Exec-specific parse wrapper.

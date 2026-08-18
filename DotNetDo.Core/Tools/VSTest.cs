@@ -22,7 +22,7 @@ public sealed record VSTestCommand : ExecToolCommand
     /// <summary>Target process architecture used for test execution.</summary>
     public VSTestPlatform? Platform { get; init; }
     /// <summary>Environment variables set for the test run; specifying any variable implies isolation.</summary>
-    public IReadOnlyDictionary<string, string> Environment { get; init => field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase).AsReadOnly(); } = ReadOnlyDictionary<string, string>.Empty;
+    public IReadOnlyDictionary<string, string> TestEnvironment { get; init => field = new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase).AsReadOnly(); } = ReadOnlyDictionary<string, string>.Empty;
     /// <summary>Run-settings file used for test execution.</summary>
     public string? Settings { get; init; }
     /// <summary>Whether discovered tests are listed instead of run.</summary>
@@ -66,7 +66,7 @@ public sealed record VSTestCommand : ExecToolCommand
                     Arg("--TestCaseFilter:", TestCaseFilter),
                     Arg("--Framework:", Framework),
                     Arg("--Platform:", Platform),
-                    Args("-e:", Environment.Select(pair => $"{pair.Key}={pair.Value}"), " -e:"),
+                    Args("-e:", TestEnvironment.Select(pair => $"{pair.Key}={pair.Value}"), " -e:"),
                     Arg("--Settings:", Settings),
                     Arg("--ListTests", ListTests),
                     Arg("--Parallel", Parallel),

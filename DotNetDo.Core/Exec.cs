@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Serilog;
@@ -18,7 +19,7 @@ public static partial class Do
 
     /// <summary>Starts the command in the configured working directory, using the native batch host when required.</summary>
     /// <param name="command">One executable and its arguments. The first token may be quoted; shell operators and expansion are not interpreted.</param>
-    /// <param name="options">Optional working-directory and per-line logging behavior.</param>
+    /// <param name="options">Optional working-directory, child-environment, and per-line logging behavior.</param>
     public static ExecProcess Exec(string command, ExecOptions? options = null)
     {
         options ??= new ExecOptions();
@@ -30,6 +31,9 @@ public static partial class Do
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
         startInfo.WorkingDirectory = workingDirectory;
+
+        if (options.Environment is { } transformEnvironment)
+            ApplyEnvironment(startInfo, transformEnvironment);
 
         Log.Debug("Executing {Command} in {WorkingDirectory}", command, workingDirectory);
 
@@ -57,13 +61,45 @@ public static partial class Do
             command += " " + arguments;
         return new(Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe", $"/d /s /c \"{command}\"");
     }
+
+    static void ApplyEnvironment(
+        ProcessStartInfo startInfo,
+        Func<ImmutableDictionary<string, string>, ImmutableDictionary<string, string>> transform)
+    {
+        var comparer = OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        var current = startInfo.Environment.ToImmutableDictionary(
+            pair => pair.Key,
+            pair => pair.Value ?? throw InvalidProcessEnvironment("The inherited process environment contains a null value."),
+            comparer);
+        var transformed = transform(current)
+            ?? throw InvalidProcessEnvironment("The process environment transformation returned null.");
+        var environment = new Dictionary<string, string>(comparer);
+
+        foreach (var pair in transformed)
+        {
+            if (pair.Value is null)
+                throw InvalidProcessEnvironment("The process environment transformation returned a null value.");
+            if (!environment.TryAdd(pair.Key, pair.Value))
+                throw InvalidProcessEnvironment("The process environment transformation returned duplicate variable names under the current operating system's comparison rules.");
+        }
+
+        startInfo.Environment.Clear();
+        foreach (var pair in environment)
+            startInfo.Environment.Add(pair.Key, pair.Value);
+    }
+
+    static InvalidOperationException InvalidProcessEnvironment(string message) => new(message);
 }
 
-/// <summary>Controls process working directory and output logging.</summary>
+/// <summary>Controls process working directory, environment, and output logging.</summary>
 public record ExecOptions
 {
     /// <summary>The directory in which the operation executes.</summary>
     public AbsolutePath? WorkingDirectory { get; init; }
+    /// <summary>Transforms an immutable snapshot of the current process environment into the complete child environment for each launch attempt.</summary>
+    public Func<ImmutableDictionary<string, string>, ImmutableDictionary<string, string>>? Environment { get; init; }
     /// <summary>Receives each standard-output and standard-error line; when omitted, the default logger is used.</summary>
     public Action<OutputType, string>? Log { get; init; }
 

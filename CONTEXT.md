@@ -274,7 +274,7 @@ Command parts include the executable, subcommand, execution context, and propert
 
 Tool commands use public `init` properties as their primary authored shape. Tool namespaces may expose default command instances as static fields so scripts can customize them with record `with` expressions.
 
-Tool commands carry their own process working directory and output logging configuration. Raw command strings use separate Exec options because no command value exists to own that configuration.
+Tool commands carry their own process working directory, child-environment transformation, and output logging configuration. Raw command strings use separate Exec options because no command value exists to own that configuration.
 
 Fresh tool commands snapshot `Logging.Level` into dedicated native output-volume controls. Explicit typed values override or clear only their own control; raw additional arguments remain opaque.
 

@@ -5,6 +5,10 @@
 ### Added
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
+- `ExecOptions.Environment` for transforming the complete environment supplied to raw and typed child processes.
+
+### Changed
+- `DotNetTest.Environment` and `VSTestCommand.Environment` are renamed to `TestEnvironment`, distinguishing test-host variables from the child-process environment.
 
 ### Fixed
 - `AbsolutePath.Delete()` and `RecreateDirectory()` reject filesystem roots.

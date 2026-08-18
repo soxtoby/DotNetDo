@@ -383,7 +383,7 @@ public sealed record DotNetTest : DotNetTargetCommand
     /// <summary>Discovers and lists tests without executing them.</summary>
     public bool ListTests { get; init; }
     /// <summary>Sets test-host environment variables as <c>NAME=VALUE</c>; specifying any value runs tests in an isolated process.</summary>
-    public IReadOnlyList<string> Environment { get; init => field = value.ToArray(); } = [];
+    public IReadOnlyList<string> TestEnvironment { get; init => field = value.ToArray(); } = [];
     /// <summary>Runs only tests matching the VSTest filter expression.</summary>
     public string? Filter { get; init; }
     /// <summary>Searches this directory for additional test adapters.</summary>
@@ -442,7 +442,7 @@ public sealed record DotNetTest : DotNetTargetCommand
             ..TargetParts,
             Arg("--settings", Settings),
             Arg("--list-tests", ListTests),
-            Args("--environment", Environment, " --environment "),
+            Args("--environment", TestEnvironment, " --environment "),
             Arg("--filter", Filter),
             Arg("--test-adapter-path", TestAdapterPath),
             Args("--logger", Loggers, " --logger "),

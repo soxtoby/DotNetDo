@@ -1,6 +1,7 @@
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using System.Collections.Immutable;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -52,6 +53,40 @@ public sealed class ExecLoggingTests
             Assert.Equal("Built {{Project}}", @event.MessageTemplate.Text);
             Assert.Equal("Built {Project}", @event.RenderMessage());
             Assert.Empty(@event.Properties);
+        }
+        finally
+        {
+            Log.Logger = previous;
+        }
+    }
+
+    [Fact]
+    public async Task Process_environment_is_not_logged()
+    {
+        const string name = "DOTNETDO_TEST_LOG_ENVIRONMENT";
+        const string value = "environment-secret-value";
+        var previous = Log.Logger;
+        var sink = new CapturingSink();
+        using var logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        try
+        {
+            Log.Logger = logger;
+
+            await Do.Exec(
+                "dotnet --version",
+                new ExecOptions
+                    {
+                        Environment = environment => environment.SetItem(name, value),
+                        Log = (_, _) => { },
+                    });
+
+            Assert.DoesNotContain(sink.Events, @event =>
+                @event.RenderMessage().Contains(name, StringComparison.Ordinal)
+                || @event.RenderMessage().Contains(value, StringComparison.Ordinal));
         }
         finally
         {

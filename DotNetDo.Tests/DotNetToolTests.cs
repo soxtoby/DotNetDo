@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -70,6 +71,23 @@ public sealed class DotNetToolTests
 
         var preQuoted = command with { Value = "scalar value".QuotedArgument() };
         Assert.Equal("example --value \"\\\"scalar value\\\"\" --values \"one value\" --entries first=key=first=value --raw --first second", preQuoted.ToString());
+    }
+
+    [Fact]
+    public void Dotnet_test_distinguishes_process_and_test_environments()
+    {
+        Func<ImmutableDictionary<string, string>, ImmutableDictionary<string, string>> processEnvironment = environment => environment;
+        var command = Tools.DotNet.Test with
+            {
+                Targets = [],
+                Configuration = null,
+                Environment = processEnvironment,
+                TestEnvironment = ["DEPLOYMENT_SLOT=Release Candidate"],
+            };
+
+        Assert.Same(processEnvironment, command.Environment);
+        Assert.Equal(["DEPLOYMENT_SLOT=Release Candidate"], command.TestEnvironment);
+        Assert.Contains("--environment \"DEPLOYMENT_SLOT=Release Candidate\"", command.ToString());
     }
 
     [Fact]
@@ -226,7 +244,7 @@ public sealed class DotNetToolTests
                 Tests = ["Product.Tests.Can ship", "Product.Tests.CanRetry"],
                 Framework = ".NETCoreApp,Version=v10.0",
                 Platform = VSTestPlatform.X64,
-                Environment = new Dictionary<string, string> { ["DEPLOYMENT_SLOT"] = "Release Candidate" },
+                TestEnvironment = new Dictionary<string, string> { ["DEPLOYMENT_SLOT"] = "Release Candidate" },
                 Settings = "config/CI Tests.runsettings",
                 Parallel = true,
                 TestAdapterPath = "test adapters",
@@ -240,7 +258,7 @@ public sealed class DotNetToolTests
 
         Assert.Equal(["tests/My Tests.dll", "tests/Other.Tests.dll"], command.TestFiles);
         Assert.Equal(["Product.Tests.Can ship", "Product.Tests.CanRetry"], command.Tests);
-        Assert.Equal("Release Candidate", command.Environment["deployment_slot"]);
+        Assert.Equal("Release Candidate", command.TestEnvironment["deployment_slot"]);
         Assert.Matches("^(?:\"[^\"]*vstest\\.console\\.exe\"|\\S*vstest\\.console\\.exe|dotnet (?:\"[^\"]*vstest\\.console\\.dll\"|\\S*vstest\\.console\\.dll)) ", command.ToString());
         Assert.EndsWith(
             "\"tests/My Tests.dll\" tests/Other.Tests.dll --Tests:\"Product.Tests.Can ship\",Product.Tests.CanRetry --Framework:.NETCoreApp,Version=v10.0 --Platform:x64 -e:\"DEPLOYMENT_SLOT=Release Candidate\" --Settings:\"config/CI Tests.runsettings\" --Parallel --TestAdapterPath:\"test adapters\" --Blame --Diag:\"logs/vstest log.txt;tracelevel=info\" --Logger:\"trx;LogFileName=CI Results.trx\" --Logger:console;verbosity=detailed --ResultsDirectory:\"test results\" --Collect:\"Code Coverage\" --Collect:\"XPlat Code Coverage\" --InIsolation",
