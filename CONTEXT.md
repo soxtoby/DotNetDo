@@ -36,7 +36,7 @@ A repository bound to a discovered working-tree root. Repository operations rema
 
 ### Solution
 
-A `.sln` or `.slnx` file and its logical hierarchy. The default solution is the sole solution found in the nearest ancestor of the DotNetDo root directory containing solution files; callers may instead identify one explicitly.
+A `.sln` or `.slnx` file and its logical hierarchy. The default solution is the sole solution found directly in the DotNetDo root directory; callers may instead identify one explicitly.
 
 ### Solution path
 
@@ -47,6 +47,18 @@ _Avoid_: Project path, disk path
 ### Solution project
 
 A file-backed project entry in a solution. Solution items are not projects; projects unsupported by the available MSBuild toolset remain navigable but may not be evaluable.
+
+### Evaluated project
+
+A live, mutable MSBuild representation of a solution project's file for a particular set of global properties.
+
+_Avoid_: Loaded project
+
+### Project name
+
+The name assigned to a solution project. It is the final segment of the solution path and may differ from the project filename or assembly name.
+
+_Avoid_: Project display name
 
 ### Scripts solution folder
 

@@ -6,9 +6,11 @@
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
 - `ExecOptions.Environment` for transforming the complete environment supplied to raw and typed child processes.
+- `ProjectInfo.Name` and lazy `ProjectInfo.Project` access to the default evaluated MSBuild project.
 
 ### Changed
 - `DotNetTest.Environment` and `VSTestCommand.Environment` are renamed to `TestEnvironment`, distinguishing test-host variables from the child-process environment.
+- `ProjectInfo.Load(globalProperties)` now returns a process-owned MSBuild `Project`; `LoadedProject` and caller-owned disposal are removed.
 
 ### Fixed
 - `AbsolutePath.Delete()` and `RecreateDirectory()` reject filesystem roots.

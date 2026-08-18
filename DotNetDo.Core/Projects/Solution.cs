@@ -96,12 +96,13 @@ public sealed class Solution
 
     ProjectInfo CreateProject(SolutionProjectModel project)
     {
+        var name = project.DisplayName ?? project.ActualDisplayName;
         var parentPath = project.Parent?.Path.Trim('/');
         var solutionPath = string.IsNullOrEmpty(parentPath)
-            ? project.ActualDisplayName
-            : $"{parentPath}/{project.ActualDisplayName}";
+            ? name
+            : $"{parentPath}/{name}";
         var projectPath = AbsolutePath.Parse(System.IO.Path.GetFullPath(project.FilePath, Directory));
-        return new ProjectInfo(solutionPath.Replace('\\', '/'), projectPath);
+        return new ProjectInfo(name, solutionPath.Replace('\\', '/'), projectPath);
     }
 
     static AbsolutePath Resolve(string path)

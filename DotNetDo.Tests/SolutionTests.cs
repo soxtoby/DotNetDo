@@ -53,6 +53,7 @@ public sealed class SolutionTests
         var solution = await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken);
         var project = solution["src/App"];
 
+        Assert.Equal("App", project.Name);
         Assert.Equal("src/App", project.SolutionPath);
         Assert.Equal(AbsolutePath.Parse(workspace.ProjectPath), project.Path);
         Assert.Equal(project.Path.Parent, project.Directory);
@@ -64,18 +65,34 @@ public sealed class SolutionTests
     }
 
     [Fact]
+    public async Task Uses_the_solution_project_name_instead_of_the_file_name()
+    {
+        using var workspace = Workspace.Create("sln");
+        var contents = File.ReadAllText(workspace.SolutionPath)
+            .Replace("= \"App\", \"src\\App\\App.csproj\"", "= \"Server\", \"src\\App\\App.csproj\"");
+        File.WriteAllText(workspace.SolutionPath, contents);
+
+        var project = (await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken))["src/Server"];
+
+        Assert.Equal("Server", project.Name);
+        Assert.Equal("App.csproj", project.Path.Name);
+    }
+
+    [Fact]
     public async Task Loads_sdk_style_projects_with_global_properties()
     {
         using var workspace = Workspace.Create("sln");
         var project = (await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken))["src/App"];
 
-        using var loaded = project.Load(new Dictionary<string, string>
+        var properties = new Dictionary<string, string>
         {
             ["Configuration"] = "Release"
-        });
+        };
+        var loaded = project.Load(properties);
 
-        Assert.Equal("net10.0", loaded.Project.GetPropertyValue("TargetFramework"));
-        Assert.Equal("Release", loaded.Project.GetPropertyValue("Configuration"));
+        Assert.Equal("net10.0", loaded.GetPropertyValue("TargetFramework"));
+        Assert.Equal("Release", loaded.GetPropertyValue("Configuration"));
+        Assert.Same(loaded, project.Load(properties));
     }
 
     [Fact]
@@ -84,10 +101,39 @@ public sealed class SolutionTests
         using var workspace = Workspace.Create("sln", oldStyle: true);
         var project = (await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken))["src/App"];
 
-        using var loaded = project.Load();
+        var loaded = project.Project;
 
-        Assert.Equal("v4.8", loaded.Project.GetPropertyValue("TargetFrameworkVersion"));
-        Assert.Equal("Library", loaded.Project.GetPropertyValue("OutputType"));
+        Assert.Equal("v4.8", loaded.GetPropertyValue("TargetFrameworkVersion"));
+        Assert.Equal("Library", loaded.GetPropertyValue("OutputType"));
+        Assert.Same(loaded, project.Project);
+    }
+
+    [Fact]
+    public async Task Returns_the_same_default_project_across_concurrent_access()
+    {
+        using var workspace = Workspace.Create("sln");
+        var project = (await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken))["src/App"];
+
+        var loaded = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => project.Project)));
+
+        Assert.All(loaded, candidate => Assert.Same(loaded[0], candidate));
+    }
+
+    [Fact]
+    public async Task Retries_default_evaluation_after_a_failure()
+    {
+        using var workspace = Workspace.Create("sln");
+        var project = (await Solution.Load(workspace.SolutionPath, TestContext.Current.CancellationToken))["src/App"];
+        var contents = File.ReadAllText(workspace.ProjectPath);
+        File.Delete(workspace.ProjectPath);
+
+        Assert.Throws<InvalidOperationException>(() => project.Project);
+
+        File.WriteAllText(workspace.ProjectPath, contents, Encoding.UTF8);
+        var loaded = project.Project;
+
+        Assert.Equal("net10.0", loaded.GetPropertyValue("TargetFramework"));
+        Assert.Same(loaded, project.Project);
     }
 
     sealed class Workspace : IDisposable

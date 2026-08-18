@@ -4,13 +4,11 @@ namespace DotNetDo;
 
 static class MSBuildLoader
 {
-    public static LoadedProject Load(string path, IReadOnlyDictionary<string, string>? globalProperties)
+    public static Project Load(string path) => ProjectCollection.GlobalProjectCollection.LoadProject(path);
+
+    public static Project Load(string path, IReadOnlyDictionary<string, string> globalProperties)
     {
-        var properties = globalProperties is null
-            ? null
-            : new Dictionary<string, string>(globalProperties, StringComparer.OrdinalIgnoreCase);
-        var projects = new ProjectCollection(properties);
-        var project = projects.LoadProject(path);
-        return new LoadedProject(project, projects);
+        var properties = new Dictionary<string, string>(globalProperties, StringComparer.OrdinalIgnoreCase);
+        return ProjectCollection.GlobalProjectCollection.LoadProject(path, properties, toolsVersion: null);
     }
 }
