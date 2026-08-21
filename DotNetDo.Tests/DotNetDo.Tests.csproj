@@ -11,8 +11,13 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)\Roslyn\bincore\Microsoft.CodeAnalysis.dll" />
+    <Reference Include="Microsoft.CodeAnalysis.CSharp" HintPath="$(MSBuildBinPath)\Roslyn\bincore\Microsoft.CodeAnalysis.CSharp.dll" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DotNetDo.Core\DotNetDo.Core.csproj" />
     <ProjectReference Include="..\DotNetDo\DotNetDo.csproj" />
-    <ProjectReference Include="..\DotNetDo.Generators\DotNetDo.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\DotNetDo.Generators\DotNetDo.Generators.csproj" />
+    <Analyzer Include="..\DotNetDo.Generators\bin\$(Configuration)\$(TargetFramework)\DotNetDo.Generators.dll" />
   </ItemGroup>
 </Project>

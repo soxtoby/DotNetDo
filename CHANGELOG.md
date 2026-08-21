@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- A compiler warning when a task invokes DotNetDo through a compile-time-known `Do.Exec(...)` command; use a configured meta-task or shared C# method instead.
 - `AbsolutePath.ZipTo(...)` and `UnzipTo(...)` for creating ZIP archives from files or directories and extracting them with .NET's native collision behavior.
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
