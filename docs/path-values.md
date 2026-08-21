@@ -119,6 +119,34 @@ public sealed record TransferOptions
 }
 ```
 
+`AbsolutePath` creates and extracts ZIP archives synchronously:
+
+```csharp
+AbsolutePath ZipTo(AbsolutePath destination, ZipOptions? options = null);
+AbsolutePath UnzipTo(AbsolutePath destination, UnzipOptions? options = null);
+```
+
+Both methods use an exact destination path, require its parent directory to exist, return the destination, and do not validate filename extensions. A file source becomes one archive entry under its filename. A directory source contributes its contents directly at the archive root, recursively preserving relative paths, file last-write timestamps, and empty directories without adding the source directory name. Archive creation does not promise deterministic bytes, symbolic-link preservation, or portable permission preservation.
+
+`ZipTo` rejects filesystem-root sources, equal source and destination paths, and destinations inside source directories. It creates the complete archive in a temporary file, then moves that file to the destination. Failures during archive creation remove the temporary file and leave an existing destination unchanged. The final transfer uses `MoveTo`, including its cross-filesystem copy/delete fallback, and is not transactional.
+
+`UnzipTo` delegates archive-entry validation, path-escape protection, collision ordering, and extraction to `ZipFile.ExtractToDirectory`. Existing directories merge. Without overwrite, an existing destination file causes extraction to fail; with overwrite, existing files are replaced. Any entries extracted before a later failure remain. Extraction is intended for trusted build artifacts: DotNetDo adds no expanded-size or entry-count limits.
+
+```csharp
+public sealed record ZipOptions
+{
+    public bool Overwrite { get; init; }
+    public CompressionLevel? CompressionLevel { get; init; }
+}
+
+public sealed record UnzipOptions
+{
+    public bool Overwrite { get; init; }
+}
+```
+
+A null compression level uses the underlying .NET implementation's default. Neither operation exposes legacy entry-name encoding.
+
 A **search root** is the absolute directory that explicitly bounds a glob search. It is the receiver for type-specific glob operations:
 
 ```csharp
