@@ -1,10 +1,12 @@
-using System.Reflection;
+using NuGet.Versioning;
 
 namespace DotNetDo.Cli;
 
 static class TaskScaffolding
 {
-    public static void Create(AbsolutePath file, string name)
+    public const string Package = "DotNetDo.Core";
+
+    public static void Create(AbsolutePath file, string name, NuGetVersion packageVersion)
     {
         var created = false;
         try
@@ -13,7 +15,7 @@ static class TaskScaffolding
             using (var writer = new StreamWriter(stream))
             {
                 created = true;
-                writer.Write(Template(name));
+                writer.Write(Template(name, packageVersion));
             }
             FileScaffolding.MakeExecutableIfUnix(file);
         }
@@ -25,10 +27,10 @@ static class TaskScaffolding
         }
     }
 
-    static string Template(string name) =>
+    static string Template(string name, NuGetVersion packageVersion) =>
         $$"""
         #!/usr/bin/env dotnet
-        #:package DotNetDo.Core@{{PackageVersion}}
+        #:package DotNetDo.Core@{{packageVersion.ToNormalizedString()}}
         using DotNetDo;
         using Serilog;
 
@@ -36,10 +38,4 @@ static class TaskScaffolding
 
         Log.Information("Hello from {Task}", "{{name}}");
         """;
-
-    static string PackageVersion =>
-        typeof(TaskScaffolding).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
-            .InformationalVersion
-            .Split('+', 2)[0];
 }

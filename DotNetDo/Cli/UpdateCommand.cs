@@ -9,7 +9,6 @@ namespace DotNetDo.Cli;
 static partial class UpdateCommand
 {
     const string DotNetDoPackage = "DotNetDo";
-    const string CorePackage = "DotNetDo.Core";
     const string Usage = "Usage: dotnet do :update [<package> | --all] [--prerelease]";
 
     public static Task<int> Run(string[] args) => Run(args, Do.RootDirectory, Do.ScriptsDirectory, new DotNetClient());
@@ -38,6 +37,7 @@ static partial class UpdateCommand
         }
         catch (Exception exception) when (exception
             is UpdateException
+            or PackageLookupException
             or IOException
             or UnauthorizedAccessException
             or JsonException
@@ -70,7 +70,7 @@ static partial class UpdateCommand
     {
         var pins = ReadPins(scripts)
             .Where(pin => options.All
-                || string.Equals(pin.Package, options.Package ?? CorePackage, StringComparison.OrdinalIgnoreCase))
+                || string.Equals(pin.Package, options.Package ?? TaskScaffolding.Package, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
         return options.Package is not null && pins.None()
@@ -202,9 +202,13 @@ static partial class UpdateCommand
         int Length);
 }
 
-interface IUpdateClient
+interface IPackageVersionResolver
 {
     Task<NuGetVersion> FindLatest(string package, bool prerelease, AbsolutePath root);
+}
+
+interface IUpdateClient : IPackageVersionResolver
+{
     Task<ToolChange?> UpdateTool(string package, AbsolutePath manifest, bool prerelease, AbsolutePath root);
 }
 
@@ -214,7 +218,9 @@ sealed class DotNetClient : IUpdateClient
 {
     public async Task<NuGetVersion> FindLatest(string package, bool prerelease, AbsolutePath root)
     {
-        var result = await Execute(DotNet.PackageSearch with
+        try
+        {
+            var result = await Execute(DotNet.PackageSearch with
             {
                 SearchTerm = package,
                 ExactMatch = true,
@@ -222,17 +228,22 @@ sealed class DotNetClient : IUpdateClient
                 WorkingDirectory = root,
                 Log = IgnoreOutput,
             });
-        var versions = result.Sources
-            .SelectMany(source => source.Packages)
-            .Where(item => string.Equals(item.Id, package, StringComparison.OrdinalIgnoreCase))
-            .Select(item => item.Version ?? item.LatestVersion)
-            .WhereNotNull()
-            .Select(NuGetVersion.Parse)
-            .ToArray();
+            var versions = result.Sources
+                .SelectMany(source => source.Packages)
+                .Where(item => string.Equals(item.Id, package, StringComparison.OrdinalIgnoreCase))
+                .Select(item => item.Version ?? item.LatestVersion)
+                .WhereNotNull()
+                .Select(NuGetVersion.Parse)
+                .ToArray();
 
-        return versions.None()
-            ? throw new UpdateException($"Package '{package}' was not found in the configured sources.")
-            : versions.Max()!;
+            return versions.None()
+                ? throw new PackageLookupException($"Package '{package}' was not found in the configured sources.")
+                : versions.Max()!;
+        }
+        catch (UpdateException exception)
+        {
+            throw new PackageLookupException(exception.Message, exception);
+        }
     }
 
     public async Task<ToolChange?> UpdateTool(string package, AbsolutePath manifest, bool prerelease, AbsolutePath root)
@@ -311,4 +322,7 @@ sealed record ToolManifestEntry
 }
 
 sealed class UpdateException(string message, Exception? innerException = null)
+    : Exception(message, innerException);
+
+sealed class PackageLookupException(string message, Exception? innerException = null)
     : Exception(message, innerException);

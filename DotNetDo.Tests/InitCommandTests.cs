@@ -1,9 +1,9 @@
-using System.Diagnostics;
-using System.Reflection;
+using NuGet.Versioning;
 using Xunit;
 
 namespace DotNetDo.Tests;
 
+[Collection("Console")]
 public sealed class InitCommandTests
 {
     [Fact]
@@ -11,18 +11,18 @@ public sealed class InitCommandTests
     {
         using var workspace = Workspace.Create();
 
-        var result = await RunInit(workspace.Directory, "\n\n\n");
+        var client = new Client();
+
+        var result = await RunInit(workspace.Directory, "\n\n\n", client);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Scripts path (default: scripts):", result.Output);
         Assert.Contains("Initial task name (default: build):", result.Output);
         Assert.Equal("scripts-path = \"scripts\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "dotnetdo.toml")).ReplaceLineEndings("\n"));
         var task = File.ReadAllText(Path.Combine(workspace.Directory, "scripts", "build.cs"));
-        var version = typeof(Cli.TaskScaffolding).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
-            .InformationalVersion
-            .Split('+', 2)[0];
-        Assert.Contains($"#:package DotNetDo.Core@{version}", task);
+        Assert.Contains("#:package DotNetDo.Core@9.8.7", task);
+        Assert.Equal(["DotNetDo.Core"], client.Searches);
+        Assert.All(client.PrereleaseSearches, Assert.False);
         Assert.Contains("""[assembly: TaskDescription("Says hello")]""", task);
         Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
         Assert.Equal("@dnx DotNetDo -- %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
@@ -245,29 +245,60 @@ public sealed class InitCommandTests
         Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, launcher)));
     }
 
-    static async Task<Result> RunInit(string directory, string input)
+    [Fact]
+    public async Task Package_search_failure_leaves_initial_task_uncreated()
     {
-        var startInfo = new ProcessStartInfo("dotnet")
-        {
-            WorkingDirectory = directory,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "DotNetDo.dll"));
-        startInfo.ArgumentList.Add(":init");
+        using var workspace = Workspace.Create();
 
-        using var process = Process.Start(startInfo)!;
-        await process.StandardInput.WriteAsync(input);
-        process.StandardInput.Close();
-        var output = await process.StandardOutput.ReadToEndAsync();
-        var error = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync(TestContext.Current.CancellationToken);
-        return new(process.ExitCode, output, error);
+        var result = await RunInit(workspace.Directory, "\n\n\n", new Client(error: "Package lookup failed."));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Package lookup failed.", result.Error);
+        Assert.False(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
+    }
+
+    static async Task<Result> RunInit(string directory, string input, Client? client = null)
+    {
+        var originalInput = Console.In;
+        var originalOutput = Console.Out;
+        var originalError = Console.Error;
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        try
+        {
+            Console.SetIn(new StringReader(input));
+            Console.SetOut(output);
+            Console.SetError(error);
+            var exitCode = await Cli.InitCommand.Run(
+                [":init"],
+                AbsolutePath.Parse(directory),
+                client ?? new Client());
+            return new(exitCode, output.ToString(), error.ToString());
+        }
+        finally
+        {
+            Console.SetIn(originalInput);
+            Console.SetOut(originalOutput);
+            Console.SetError(originalError);
+        }
     }
 
     sealed record Result(int ExitCode, string Output, string Error);
+
+    sealed class Client(string version = "9.8.7", string? error = null) : Cli.IPackageVersionResolver
+    {
+        public List<string> Searches { get; } = [];
+        public List<bool> PrereleaseSearches { get; } = [];
+
+        public Task<NuGetVersion> FindLatest(string package, bool prerelease, AbsolutePath root)
+        {
+            Searches.Add(package);
+            PrereleaseSearches.Add(prerelease);
+            return error is null
+                ? Task.FromResult(NuGetVersion.Parse(version))
+                : Task.FromException<NuGetVersion>(new Cli.PackageLookupException(error));
+        }
+    }
 
     const string SlnWithTasks = """
         Microsoft Visual Studio Solution File, Format Version 12.00
@@ -300,3 +331,6 @@ public sealed class InitCommandTests
         public void Dispose() => System.IO.Directory.Delete(Directory, recursive: true);
     }
 }
+
+[CollectionDefinition("Console", DisableParallelization = true)]
+public sealed class ConsoleCollectionDefinition;

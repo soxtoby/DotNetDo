@@ -1,8 +1,15 @@
+using NuGet.Versioning;
+
 namespace DotNetDo.Cli;
 
 static class NewCommand
 {
-    public static async Task<int> Run(string[] args)
+    public static Task<int> Run(string[] args) => Run(args, Do.RootDirectory, new DotNetClient());
+
+    internal static async Task<int> Run(
+        string[] args,
+        AbsolutePath root,
+        IPackageVersionResolver packageVersions)
     {
         if (args.Length != 2)
             return Fail("Usage: dotnet do :new <name>");
@@ -11,7 +18,6 @@ static class NewCommand
         if (!TaskName.IsValid(taskName))
             return Fail(TaskName.InvalidMessage);
 
-        var root = Do.RootDirectory;
         var configuration = WorkspaceConfiguration.Load(root);
         var relativeFile = configuration.ScriptsPath / $"{taskName}.cs";
         var scriptsDirectory = root / configuration.ScriptsPath;
@@ -19,8 +25,18 @@ static class NewCommand
         if (file.IsExistingFile)
             return Fail($"{relativeFile} already exists.");
 
+        NuGetVersion packageVersion;
+        try
+        {
+            packageVersion = await packageVersions.FindLatest(TaskScaffolding.Package, prerelease: false, root);
+        }
+        catch (PackageLookupException exception)
+        {
+            return Fail(exception.Message);
+        }
+
         scriptsDirectory.EnsureDirectoryExists();
-        TaskScaffolding.Create(file, taskName);
+        TaskScaffolding.Create(file, taskName, packageVersion);
         try
         {
             if (configuration is { SolutionPath: { } solutionPath, SolutionFolder: { } solutionFolder })

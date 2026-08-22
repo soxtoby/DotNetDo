@@ -68,7 +68,7 @@ The configured root solution folder presenting every C# source beneath the scrip
 
 A named runnable unit discovered by DotNetDo. A task is either implemented as a single C# source file or defined as a meta-task in DotNetDo configuration.
 
-Generated tasks reference the DotNetDo.Core package and import the `DotNetDo` namespace by default.
+Generated tasks pin the latest stable DotNetDo.Core version available from configured NuGet sources and import the `DotNetDo` namespace by default.
 
 The initial DotNetDo API surface is intentionally tiny. Generated tasks reference it to establish a stable import path for future helpers.
 

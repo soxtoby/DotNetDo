@@ -9,7 +9,7 @@
 3. When the scripts path contains no direct `.cs` files, prompt for the extensionless initial task name, defaulting to `build`. Task-name validation matches `:new`.
 4. Find solutions with `GlobFiles(["**/*.sln", "**/*.slnx"])`. Order them by relative-path depth, then alphabetically. Select the only result automatically; require an explicit numbered choice when several exist.
 5. When a solution is selected, ask whether to add the scripts to it; yes is the default.
-6. Update configuration first, then create a missing scripts directory and initial task, synchronize accepted solution integration, and create either missing root-local launcher.
+6. Update configuration first, then query configured NuGet sources for the latest stable `DotNetDo.Core` version and pin it in the initial task. Synchronize accepted solution integration and create either missing root-local launcher.
 
 Initialization is resumable. Re-entering an existing workspace fills missing setup: it may create the scripts directory and initial task when no direct task files exist, discover and persist a solution path, synchronize the solution folder, and create missing launchers. Existing task and launcher files are preserved.
 
@@ -40,6 +40,8 @@ Solution item paths are relative to the solution directory, not the workspace ro
 ## Failure and output
 
 Initialization is not transactional. It writes configuration before applying filesystem and solution changes; a later failure leaves earlier successful changes for the next `:init` run to continue.
+
+Creating an initial task requires a successful package lookup against configured NuGet sources. A failed lookup exits nonzero without creating the task. `:new` uses the same behavior.
 
 The generated `do.cmd` runs `dnx DotNetDo -- %*`. The generated executable `do` script runs `exec dnx DotNetDo -- "$@"`. The separator forwards arguments to DotNetDo instead of `dnx`. Invoke them by path: `.\do <task-name>` in PowerShell or `./do <task-name>` in a Unix shell.
 

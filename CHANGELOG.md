@@ -17,6 +17,7 @@
 - `ProjectInfo.Load(globalProperties)` now returns a process-owned MSBuild `Project`; `LoadedProject` and caller-owned disposal are removed.
 
 ### Fixed
+- `:init` and `:new` now pin generated tasks to the latest stable `DotNetDo.Core` version available from configured NuGet sources instead of the CLI's version.
 - `AbsolutePath.Delete()` and `RecreateDirectory()` reject filesystem roots.
 - Package tools recognize root-level `dotnet-tools.json` manifests created by current .NET SDKs, while retaining `.config/dotnet-tools.json` support.
 - PowerShell, Bash, and Zsh completion works with workspace-local launchers invoked as `.\do` or `./do`.

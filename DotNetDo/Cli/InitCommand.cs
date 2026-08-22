@@ -7,7 +7,9 @@ static class InitCommand
 {
     const string DefaultSolutionFolder = "scripts";
 
-    public static async Task<int> Run(string[] args)
+    public static Task<int> Run(string[] args) => Run(args, Do.WorkingDirectory, new DotNetClient());
+
+    internal static async Task<int> Run(string[] args, AbsolutePath root, IPackageVersionResolver packageVersions)
     {
         if (args.Length != 1)
         {
@@ -15,12 +17,18 @@ static class InitCommand
             return 1;
         }
 
-        var root = Do.WorkingDirectory;
-
         if (TryCollectInitialization(root, out var initialization))
         {
-            await ApplyInitialization(root, initialization);
-            return 0;
+            try
+            {
+                await ApplyInitialization(root, initialization, packageVersions);
+                return 0;
+            }
+            catch (PackageLookupException exception)
+            {
+                await Console.Error.WriteLineAsync(exception.Message);
+                return 1;
+            }
         }
         else
         {
@@ -69,7 +77,7 @@ static class InitCommand
             && !PromptCreateNestedWorkspace(root, existingConfig);
     }
 
-    static async Task ApplyInitialization(AbsolutePath root, Initialization initialization)
+    static async Task ApplyInitialization(AbsolutePath root, Initialization initialization, IPackageVersionResolver packageVersions)
     {
         if (UpdateConfigFile(root, initialization))
             Console.WriteLine($"Updated {root / WorkspaceConfiguration.FileName}");
@@ -84,7 +92,8 @@ static class InitCommand
         if (initialization.TaskName is not null)
         {
             var taskFile = scriptsPath / $"{initialization.TaskName}.cs";
-            TaskScaffolding.Create(taskFile, initialization.TaskName);
+            var packageVersion = await packageVersions.FindLatest(TaskScaffolding.Package, prerelease: false, root);
+            TaskScaffolding.Create(taskFile, initialization.TaskName, packageVersion);
             Console.WriteLine($"Created {initialization.ScriptsPath! / $"{initialization.TaskName}.cs"}");
         }
 

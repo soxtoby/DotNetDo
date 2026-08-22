@@ -1,4 +1,5 @@
-using System.Diagnostics;
+using DotNetDo.Cli;
+using NuGet.Versioning;
 using Xunit;
 
 namespace DotNetDo.Tests;
@@ -20,10 +21,15 @@ public sealed class NewCommandTests
             </Solution>
             """);
 
-        var result = await workspace.Run(":new", "build");
+        var client = new Client();
 
-        Assert.Equal(0, result.ExitCode);
+        var result = await workspace.Run(client, ":new", "build");
+
+        Assert.Equal(0, result);
         Assert.True(workspace.TaskExists("build"));
+        Assert.Contains("#:package DotNetDo.Core@9.8.7", workspace.Read("scripts/build.cs"));
+        Assert.Equal(["DotNetDo.Core"], client.Searches);
+        Assert.All(client.PrereleaseSearches, Assert.False);
         var solution = workspace.Read("Product.slnx");
         Assert.Contains("scripts/build.cs", solution);
         Assert.Contains("README.md", solution);
@@ -36,10 +42,35 @@ public sealed class NewCommandTests
             "scripts-path = \"scripts\"\nsolution-path = \"Product.slnx\"\nsolution-folder = \"Tasks\"\n");
         workspace.Write("Product.slnx", "not XML");
 
-        var result = await workspace.Run(":new", "build");
+        await Assert.ThrowsAnyAsync<Exception>(() => workspace.Run(new Client(), ":new", "build"));
 
-        Assert.NotEqual(0, result.ExitCode);
         Assert.False(workspace.TaskExists("build"));
+    }
+
+    [Fact]
+    public async Task Package_search_failure_leaves_task_uncreated()
+    {
+        using var workspace = Workspace.Create("scripts-path = \"scripts\"\n");
+
+        var result = await workspace.Run(new Client(error: "Package lookup failed."), ":new", "build");
+
+        Assert.Equal(1, result);
+        Assert.False(workspace.TaskExists("build"));
+    }
+
+    sealed class Client(string version = "9.8.7", string? error = null) : IPackageVersionResolver
+    {
+        public List<string> Searches { get; } = [];
+        public List<bool> PrereleaseSearches { get; } = [];
+
+        public Task<NuGetVersion> FindLatest(string package, bool prerelease, AbsolutePath root)
+        {
+            Searches.Add(package);
+            PrereleaseSearches.Add(prerelease);
+            return error is null
+                ? Task.FromResult(NuGetVersion.Parse(version))
+                : Task.FromException<NuGetVersion>(new PackageLookupException(error));
+        }
     }
 
     sealed class Workspace : IDisposable
@@ -52,6 +83,7 @@ public sealed class NewCommandTests
         }
 
         public string Directory { get; }
+        public AbsolutePath Root => AbsolutePath.Parse(Directory);
 
         public static Workspace Create(string configuration)
         {
@@ -69,28 +101,9 @@ public sealed class NewCommandTests
             File.WriteAllText(fullPath, contents);
         }
 
-        public async Task<Result> Run(params string[] arguments)
-        {
-            var startInfo = new ProcessStartInfo("dotnet")
-            {
-                WorkingDirectory = Directory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-            startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "DotNetDo.dll"));
-            foreach (var argument in arguments)
-                startInfo.ArgumentList.Add(argument);
-
-            using var process = Process.Start(startInfo)!;
-            var output = await process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
-            var error = await process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
-            await process.WaitForExitAsync(TestContext.Current.CancellationToken);
-            return new(process.ExitCode, output, error);
-        }
+        public Task<int> Run(IPackageVersionResolver packageVersions, params string[] arguments) =>
+            NewCommand.Run(arguments, Root, packageVersions);
 
         public void Dispose() => System.IO.Directory.Delete(Directory, recursive: true);
     }
-
-    sealed record Result(int ExitCode, string Output, string Error);
 }
