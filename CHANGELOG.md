@@ -2,13 +2,15 @@
 
 ## Unreleased
 
+## v0.7.0
+
 ### Added
-- `GitRepository.VerifyUnchanged(...)` for failing generation or formatting operations that alter Git-visible repository state while allowing pre-existing changes.
+- `GitRepository.VerifyUnchanged(...)` for failing generation or formatting operations that alter the Git-visible repository state while allowing pre-existing changes.
 - `:rename <old-name> <new-name>` for renaming task files and synchronizing configured solution folders.
 - A compiler warning when a task invokes DotNetDo through a compile-time-known `Do.Exec(...)` command; use a configured meta-task or shared C# method instead.
-- `AbsolutePath.ZipTo(...)` and `UnzipTo(...)` for creating ZIP archives from files or directories and extracting them with .NET's native collision behavior.
+- `AbsolutePath.ZipTo(...)` and `UnzipTo(...)` for creating ZIP archives from files or directories and extracting them.
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
-- `RecreateAll()` for recreating a collection of directories while retaining supplied descendants.
+- `RecreateAll()` for recreating a collection of directories.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
 - `ExecOptions.Environment` for transforming the complete environment supplied to raw and typed child processes.
 - `ProjectInfo.Name` and lazy `ProjectInfo.Project` access to the default evaluated MSBuild project.
