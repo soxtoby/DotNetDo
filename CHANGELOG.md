@@ -8,6 +8,7 @@
 - A compiler warning when a task invokes DotNetDo through a compile-time-known `Do.Exec(...)` command; use a configured meta-task or shared C# method instead.
 - `AbsolutePath.ZipTo(...)` and `UnzipTo(...)` for creating ZIP archives from files or directories and extracting them with .NET's native collision behavior.
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.
+- `RecreateAll()` for recreating a collection of directories while retaining supplied descendants.
 - `AbsolutePath.TemporaryFileContents(...)` for scoped file-content replacement that restores the original bytes on disposal and replacement failure.
 - `ExecOptions.Environment` for transforming the complete environment supplied to raw and typed child processes.
 - `ProjectInfo.Name` and lazy `ProjectInfo.Project` access to the default evaluated MSBuild project.

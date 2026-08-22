@@ -48,6 +48,54 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Recreates_distinct_directories_from_a_collection_parent_first()
+    {
+        using var workspace = Workspace.Create();
+        var parent = workspace.Path / "parent";
+        var child = parent / "child";
+        var sibling = workspace.Path / "sibling";
+        child.EnsureDirectoryExists();
+        sibling.EnsureDirectoryExists();
+        (parent / "parent.txt").WriteText("parent");
+        (child / "child.txt").WriteText("child");
+        (sibling / "sibling.txt").WriteText("sibling");
+
+        IReadOnlyCollection<AbsolutePath> paths = [child, sibling, parent, parent];
+        paths.RecreateAll();
+
+        Assert.Equal([child.ToString()], Directory.EnumerateFileSystemEntries(parent));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(child));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(sibling));
+        Array.Empty<AbsolutePath>().RecreateAll();
+
+        var missing = workspace.Path / "missing";
+        workspace.Path.GlobDirectories("missing").RecreateAll();
+        Assert.False(missing.Exists);
+    }
+
+    [Fact]
+    public void RecreateAll_validates_every_path_before_recreating()
+    {
+        using var workspace = Workspace.Create();
+        var directory = workspace.Path / "directory";
+        var file = directory / "file.txt";
+        directory.EnsureDirectoryExists();
+        file.WriteText("content");
+        var root = AbsolutePath.Parse(Path.GetPathRoot(Path.GetTempPath())!);
+
+        IReadOnlyCollection<AbsolutePath> withRoot = [directory, root];
+        Assert.Throws<InvalidOperationException>(withRoot.RecreateAll);
+        Assert.True(file.Exists);
+
+        IReadOnlyCollection<AbsolutePath> withNull = [directory, null!];
+        Assert.Throws<ArgumentException>(withNull.RecreateAll);
+        Assert.True(file.Exists);
+
+        IReadOnlyCollection<AbsolutePath> nullPaths = null!;
+        Assert.Throws<ArgumentNullException>(nullPaths.RecreateAll);
+    }
+
+    [Fact]
     public void Refuses_to_delete_or_recreate_root_directories()
     {
         var root = AbsolutePath.Parse(Path.GetPathRoot(Path.GetTempPath())!);

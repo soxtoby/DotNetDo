@@ -38,6 +38,8 @@ These properties directly use `File.Exists` and `Directory.Exists`, including th
 
 `AbsolutePath.RecreateDirectory()` recursively deletes an existing directory and recreates it empty, or creates it when missing. It returns the same path value for chaining and propagates native deletion and creation errors.
 
+`IReadOnlyCollection<AbsolutePath>.RecreateAll()` snapshots and deduplicates the supplied paths, validates every path before mutation, then recreates ancestors before matched descendants so every supplied directory remains present. Empty collections do nothing. Failures stop the operation without rollback. When used after `GlobDirectories`, literal and wildcard patterns recreate only directories that existed when globbing ran; unmatched literal patterns create nothing.
+
 `Do.CreateTempDirectory(prefix)` and `Do.CreateTempFile(prefix, extension)` create uniquely named temporary artifacts and return their `AbsolutePath`. The optional prefix must be a file-name prefix. File extensions are dot-prefixed and default to `.tmp`. Callers own cleanup.
 
 `AbsolutePath` exposes synchronous, typed file-content helpers:

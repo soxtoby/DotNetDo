@@ -24,6 +24,26 @@ public static class EnumerableExtensions
                 path.Delete();
             }
         }
+
+        /// <summary>Recreates the supplied directories, processing ancestors before descendants.</summary>
+        public void RecreateAll()
+        {
+            ArgumentNullException.ThrowIfNull(paths);
+
+            var snapshot = paths.ToArray();
+            if (snapshot.Any(path => path is null))
+                throw new ArgumentException("The collection cannot contain null paths.", nameof(paths));
+            var root = snapshot.FirstOrDefault(path => path.IsRoot);
+            if (root is not null)
+                throw new InvalidOperationException($"Cannot recreate the root directory '{root}'.");
+
+            foreach (var path in snapshot
+                .Distinct()
+                .OrderBy(path => path.GetAncestry().Count()))
+            {
+                path.RecreateDirectory();
+            }
+        }
     }
 
     extension<T>(IEnumerable<T> enumerable)
