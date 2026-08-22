@@ -21,7 +21,7 @@ public static partial class Do
 }
 
 /// <summary>Owns a LibGit2Sharp repository and exposes bound Git command definitions.</summary>
-public sealed class GitRepository : IDisposable
+public sealed partial class GitRepository : IDisposable
 {
     /// <summary>Opens the repository containing the supplied directory and binds command values to its root.</summary>
     public GitRepository(AbsolutePath directory)

@@ -1,8 +1,12 @@
 using LibGit2Sharp;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Xunit;
 
 namespace DotNetDo.Tests;
 
+[Collection("Global logger")]
 public sealed class GitRepositoryTests : IDisposable
 {
     readonly string _directory = Path.Combine(Do.WorkingDirectory, ".test-workspaces", $"git-{Guid.NewGuid():N}");
@@ -114,6 +118,209 @@ public sealed class GitRepositoryTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => (git.Add with { All = true, Paths = [RelativePath.Parse("file")] }).ToString());
     }
 
+    [Fact]
+    public async Task VerifyUnchangedAllowsExistingChanges()
+    {
+        Commit("first");
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), "existing staged change");
+        Commands.Stage(_repository, "tracked.txt");
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), "existing unstaged change");
+        File.WriteAllText(Path.Combine(_directory, "untracked.txt"), "existing untracked change");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(() => { });
+        await git.VerifyUnchanged(() => Task.CompletedTask);
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedDetectsFurtherChangesToDirtyFilesWithoutRestoringThem()
+    {
+        Commit("first");
+        var tracked = Path.Combine(_directory, "tracked.txt");
+        var untracked = Path.Combine(_directory, "untracked.txt");
+        File.WriteAllText(tracked, "before tracked");
+        File.WriteAllText(untracked, "before untracked");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        var exception = await Assert.ThrowsAsync<RepositoryChangedException>(() => git.VerifyUnchanged(() =>
+            {
+                File.WriteAllText(tracked, "after tracked");
+                File.WriteAllText(untracked, "after untracked");
+            }));
+
+        Assert.Equal(
+            [RelativePath.Parse("tracked.txt"), RelativePath.Parse("untracked.txt")],
+            exception.ChangedPaths);
+        Assert.Contains("tracked.txt", exception.Message);
+        Assert.Contains("untracked.txt", exception.Message);
+        Assert.Equal("after tracked", File.ReadAllText(tracked));
+        Assert.Equal("after untracked", File.ReadAllText(untracked));
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedDetectsIndexOnlyChanges()
+    {
+        Commit("first");
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), "dirty");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        var exception = await Assert.ThrowsAsync<RepositoryChangedException>(() => git.VerifyUnchanged(() =>
+            Commands.Stage(_repository, "tracked.txt")));
+
+        Assert.Equal([RelativePath.Parse("tracked.txt")], exception.ChangedPaths);
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedDetectsAddedDeletedAndStagedChanges()
+    {
+        Commit("first");
+        var tracked = Path.Combine(_directory, "tracked.txt");
+        File.WriteAllText(tracked, "staged before");
+        Commands.Stage(_repository, "tracked.txt");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        var exception = await Assert.ThrowsAsync<RepositoryChangedException>(() => git.VerifyUnchanged(() =>
+            {
+                File.WriteAllText(tracked, "staged after");
+                Commands.Stage(_repository, "tracked.txt");
+                File.WriteAllText(Path.Combine(_directory, "added.txt"), "added");
+                File.Delete(Path.Combine(_directory, "tracked.txt"));
+            }));
+
+        Assert.Equal(
+            [RelativePath.Parse("added.txt"), RelativePath.Parse("tracked.txt")],
+            exception.ChangedPaths);
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedDetectsFurtherChangesToDirtyBinaryFiles()
+    {
+        File.WriteAllBytes(Path.Combine(_directory, "binary.dat"), [0, 1, 2]);
+        Commands.Stage(_repository, "binary.dat");
+        _repository.Commit("binary", _signature, _signature);
+        File.WriteAllBytes(Path.Combine(_directory, "binary.dat"), [0, 3, 4]);
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        var exception = await Assert.ThrowsAsync<RepositoryChangedException>(() => git.VerifyUnchanged(() =>
+            File.WriteAllBytes(Path.Combine(_directory, "binary.dat"), [0, 5, 6])));
+
+        Assert.Equal([RelativePath.Parse("binary.dat")], exception.ChangedPaths);
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedAllowsTemporaryChangesRestoredToTheBaseline()
+    {
+        Commit("first");
+        var path = Path.Combine(_directory, "tracked.txt");
+        File.WriteAllText(path, "baseline");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(() =>
+            {
+                File.WriteAllText(path, "temporary");
+                File.WriteAllText(path, "baseline");
+            });
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedUsesGitTextNormalization()
+    {
+        File.WriteAllText(Path.Combine(_directory, ".gitattributes"), "*.txt text eol=lf\n");
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), "committed\n");
+        Commands.Stage(_repository, [".gitattributes", "tracked.txt"]);
+        _repository.Commit("first", _signature, _signature);
+        var path = Path.Combine(_directory, "tracked.txt");
+        File.WriteAllText(path, "dirty\n");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(() => File.WriteAllText(path, "dirty\r\n"));
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedPropagatesOperationFailure()
+    {
+        Commit("first");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+        var expected = new TestException();
+
+        var actual = await Assert.ThrowsAsync<TestException>(() => git.VerifyUnchanged((Action)(() =>
+            {
+                File.WriteAllText(Path.Combine(_directory, "new.txt"), "new");
+                throw expected;
+            })));
+
+        Assert.Same(expected, actual);
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedIgnoresIgnoredFiles()
+    {
+        File.WriteAllText(Path.Combine(_directory, ".gitignore"), "ignored.txt\n");
+        Commands.Stage(_repository, ".gitignore");
+        _repository.Commit("ignore file", _signature, _signature);
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(() => File.WriteAllText(Path.Combine(_directory, "ignored.txt"), "ignored"));
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedIgnoresIndexImplementationFlags()
+    {
+        Commit("first");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(async () =>
+            await git.Exec("update-index --assume-unchanged tracked.txt"));
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedIgnoresRefChangesWhenTreesMatch()
+    {
+        Commit("first");
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), "committed during operation");
+        Commands.Stage(_repository, "tracked.txt");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        await git.VerifyUnchanged(() => _repository.Commit("second", _signature, _signature));
+    }
+
+    [Fact]
+    public async Task VerifyUnchangedLogsShortRedactedSnippets()
+    {
+        File.WriteAllText(Path.Combine(_directory, "tracked.txt"), string.Join('\n', Enumerable.Range(1, 20).Select(i => $"before {i}")));
+        Commands.Stage(_repository, "tracked.txt");
+        _repository.Commit("first", _signature, _signature);
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+        var previous = Log.Logger;
+        var sink = new CapturingSink();
+        var logger = new LoggerConfiguration()
+            .WriteTo.Sink(sink)
+            .CreateRedactingLogger();
+        var secret = $"secret-{Guid.NewGuid():N}";
+        _ = new Secret(secret);
+
+        try
+        {
+            Log.Logger = logger;
+
+            await Assert.ThrowsAsync<RepositoryChangedException>(() => git.VerifyUnchanged(() =>
+                File.WriteAllText(
+                    Path.Combine(_directory, "tracked.txt"),
+                    string.Join('\n', Enumerable.Range(1, 20).Select(i => i == 10 ? secret : $"before {i}")))));
+
+            var message = Assert.Single(sink.Events, logEvent => logEvent.Level == LogEventLevel.Error).RenderMessage();
+            Assert.Contains("tracked.txt", message);
+            Assert.Contains("***", message);
+            Assert.DoesNotContain(secret, message);
+            Assert.InRange(message.SplitLines().Count(line => line.StartsWith(" ") || line.StartsWith("+") || line.StartsWith("-")), 1, 12);
+        }
+        finally
+        {
+            Log.Logger = previous;
+            (logger as IDisposable)?.Dispose();
+        }
+    }
+
     Commit Commit(string message)
     {
         var path = Path.Combine(_directory, "tracked.txt");
@@ -129,4 +336,13 @@ public sealed class GitRepositoryTests : IDisposable
             File.SetAttributes(file, FileAttributes.Normal);
         Directory.Delete(_directory, recursive: true);
     }
+
+    sealed class CapturingSink : ILogEventSink
+    {
+        public List<LogEvent> Events { get; } = [];
+
+        public void Emit(LogEvent logEvent) => Events.Add(logEvent);
+    }
+
+    sealed class TestException : Exception;
 }

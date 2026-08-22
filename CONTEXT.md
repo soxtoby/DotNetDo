@@ -32,6 +32,12 @@ The root-relative path of the solution used by default. When `solution-path` is 
 
 A repository bound to a discovered working-tree root. Repository operations remain rooted there even if the process working directory later changes; construction from a path discovers its containing repository and fails when none exists. The default repository is discovered from the DotNetDo root directory. Its root is stable, while branch, commit, and working-tree information always reflects current repository state.
 
+### Repository verification
+
+An operation guarded by a before-and-after comparison of Git-visible file state. It passes when the final state equals the captured baseline; pre-existing changes are allowed.
+
+_Avoid_: Clean repository check, generated-code check
+
 ## Solution navigation
 
 ### Solution

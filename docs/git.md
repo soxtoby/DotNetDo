@@ -22,6 +22,16 @@ Only `Root` is stable. Every other read reflects current repository state.
 
 `CommitsSince(Branch base)` finds the merge base of `HEAD` and `base`, then walks first parents from `HEAD`, newest first, excluding the merge base. It excludes commits reachable only through merged side branches. `CommitsSince(string base)` resolves only an exact local branch such as `main` or exact remote-tracking branch such as `origin/main`; it does not search remotes by short name. Missing branches, unrelated histories, and an unborn `HEAD` fail.
 
+## Repository verification
+
+`GitRepository.VerifyUnchanged(Action operation)` and `VerifyUnchanged(Func<Task> operation)` asynchronously capture the repository's Git-visible file state, run the operation, then compare the final state with that baseline. Both overloads return `Task` and must be awaited. Existing staged, unstaged, and untracked changes are allowed, but altering any of them fails verification. Returning to the same Git-visible state passes. The overloads do not forward an operation result.
+
+The comparison follows Git's tree representation of working-tree contents, index contents, file modes, symbolic links, and the parent repository's gitlink and reported working-tree submodule state. It does not recurse into submodule repositories; callers verify those separately. Ignored files, index bookkeeping flags such as `assume-unchanged`, timestamps, ACLs, refs, and repository configuration are outside its scope. Concurrent differences present in the final snapshot are indistinguishable from operation changes and therefore fail verification.
+
+Verification requires Git and a fully merged index. It builds working-tree snapshots through a temporary index and leaves their unreferenced objects available for Git's normal pruning.
+
+On drift, `RepositoryChangedException.ChangedPaths` exposes every changed path as a path-sorted `IReadOnlyList<RelativePath>`, and its message summarizes those paths. Verification logs the first changed text region with two context lines, capped at 12 diff lines per file, through Serilog; DotNetDo's default redacting logger masks registered secrets. There is no repository-wide output cap. Binary and other non-text changes receive a descriptive marker. Verification leaves the changed files intact. If the operation itself fails, its original exception propagates instead of being replaced by a verification failure.
+
 ## Commands
 
 Repository command values are awaitable and invoke Git through `Do.Exec` as `git -C <root> ...`. Concrete helpers apply `QuotedArgument()` to values; raw Git syntax remains raw. All path inputs are repository-root-relative `RelativePath` values and must not escape the root. Git owns Git-specific configuration, hooks, signing, credentials, validation, and failures.
