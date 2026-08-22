@@ -2,7 +2,7 @@ namespace DotNetDo.Cli;
 
 static class NewCommand
 {
-    public static int Run(string[] args)
+    public static async Task<int> Run(string[] args)
     {
         if (args.Length != 2)
             return Fail("Usage: dotnet do :new <name>");
@@ -11,13 +11,28 @@ static class NewCommand
         if (!TaskName.IsValid(taskName))
             return Fail(TaskName.InvalidMessage);
 
-        var relativeFile = Do.ScriptsPath / $"{taskName}.cs";
-        var file = Do.RootDirectory / relativeFile;
+        var root = Do.RootDirectory;
+        var configuration = WorkspaceConfiguration.Load(root);
+        var relativeFile = configuration.ScriptsPath / $"{taskName}.cs";
+        var scriptsDirectory = root / configuration.ScriptsPath;
+        var file = root / relativeFile;
         if (file.IsExistingFile)
             return Fail($"{relativeFile} already exists.");
 
-        Do.ScriptsDirectory.EnsureDirectoryExists();
+        scriptsDirectory.EnsureDirectoryExists();
         TaskScaffolding.Create(file, taskName);
+        try
+        {
+            if (configuration is { SolutionPath: { } solutionPath, SolutionFolder: { } solutionFolder })
+                await SolutionFolderSync.Run(root / solutionPath, scriptsDirectory, solutionFolder);
+        }
+        catch
+        {
+            if (file.IsExistingFile)
+                file.Delete();
+            throw;
+        }
+
         Console.WriteLine($"Created {relativeFile}");
         return 0;
     }

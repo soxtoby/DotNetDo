@@ -148,7 +148,7 @@ Running `dotnet do` with no arguments shows basic task invocation usage followed
 
 ## New command
 
-The `:new` command creates a task directly inside the scripts path and fails if the target file already exists. It creates a missing scripts path.
+The `:new` command creates a task directly inside the scripts path and fails if the target file already exists. It creates a missing scripts path. When both `solution-path` and `solution-folder` are configured, it resynchronizes the owned solution folder.
 
 On Unix-like systems, `:new` makes the generated file executable on a best-effort basis. Windows does not need executable bits for DotNetDo usage.
 

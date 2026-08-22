@@ -12,6 +12,7 @@
 - `ProjectInfo.Name` and lazy `ProjectInfo.Project` access to the default evaluated MSBuild project.
 
 ### Changed
+- `:new` now synchronizes configured solution folders after creating a task.
 - `DotNetTest.Environment` and `VSTestCommand.Environment` are renamed to `TestEnvironment`, distinguishing test-host variables from the child-process environment.
 - `ProjectInfo.Load(globalProperties)` now returns a process-owned MSBuild `Project`; `LoadedProject` and caller-owned disposal are removed.
 
