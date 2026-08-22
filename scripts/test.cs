@@ -1,5 +1,8 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.5.0
+#:package DotNetDo.Core@0.6.0
+using DotNetDo;
 using static DotNetDo.Tools;
+
+[assembly: TaskDescription("Run the test suite.")]
 
 await DotNet.Test;

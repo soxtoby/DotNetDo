@@ -1,8 +1,12 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.5.0
+#:package DotNetDo.Core@0.6.0
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using DotNetDo;
 using Serilog;
+
+[assembly: TaskDescription("Prepare the next release version and changelog.")]
 
 if (Do.GitRepo.IsDirty)
     throw new InvalidOperationException("prepare-release requires a clean Git worktree.");
@@ -13,7 +17,7 @@ var manifestFile = Do.RootDirectory / ".config" / "dotnet-tools.json";
 var project = projectFile.ReadText();
 var changelog = changelogFile.ReadText().Replace("\r\n", "\n");
 
-var current = ParseProjectVersion(project);
+var current = ParseProjectVersion(projectFile);
 var latest = ParseLatestRelease(changelog);
 if (current != new Version(0, 0, 0) && latest != current)
     throw new InvalidOperationException($"Project version {current} does not match latest changelog release {latest?.ToString() ?? "<none>"}.");
@@ -42,10 +46,13 @@ changelogFile.WriteText(before + released + (after.Length == 0 ? "" : "\n" + aft
 
 Log.Information("Next version: {Next}", next);
 
-static Version ParseProjectVersion(string project)
+static Version ParseProjectVersion(AbsolutePath projectFile)
 {
-    var match = project.RegexMatch("<VersionPrefix>(?<version>[^<]+)</VersionPrefix>");
-    return match.Success && Version.TryParse(match.Groups["version"].Value, out var version)
+    var versionPrefix = projectFile.ReadXml()
+        .Descendants("VersionPrefix")
+        .Select(element => element.Value)
+        .SingleOrDefault();
+    return Version.TryParse(versionPrefix, out var version)
         ? version
         : throw new InvalidOperationException("Directory.Build.props has no valid VersionPrefix.");
 }
@@ -83,11 +90,14 @@ static Bump InferBump(string notes)
 
 static void UpdatePins(string version, AbsolutePath manifestFile)
 {
-    var manifest = manifestFile.ReadText();
-    var manifestVersion = new Regex("""(?m)("version"\s*:\s*")[^"]+(")""");
-    if (!manifestVersion.IsMatch(manifest))
-        throw new InvalidOperationException("Tool manifest has no package version.");
-    manifestFile.WriteText(manifestVersion.Replace(manifest, $"${{1}}{version}${{2}}", 1));
+    var manifest = manifestFile.ReadJson() as JsonObject
+        ?? throw new InvalidOperationException("Tool manifest has no JSON object.");
+    var tool = manifest["tools"]?["dotnetdo"] as JsonObject
+        ?? throw new InvalidOperationException("Tool manifest has no DotNetDo entry.");
+    if (tool["version"] is null)
+        throw new InvalidOperationException("Tool manifest has no DotNetDo package version.");
+    tool["version"] = version;
+    manifestFile.WriteText(manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
 
     foreach (var script in (Do.RootDirectory / "scripts").GlobFiles("*.cs"))
     {

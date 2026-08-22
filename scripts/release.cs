@@ -1,20 +1,24 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.5.0
+#:package DotNetDo.Core@0.6.0
 using System.Text.RegularExpressions;
 using DotNetDo;
 using static DotNetDo.Tools;
+
+[assembly: TaskDescription("Publish the NuGet packages and GitHub release.")]
 
 var tag = Do.GitHubActions?.Workflow.ReferenceName is { } defaultTag
     ? Do.Param("tag", defaultTag, "Release tag.").Value
     : Do.Param("tag").Required().Value;
 var apiKey = Do.Secret("nuget_api_key", null, "Temporary NuGet API key.").Required();
 
-var project = (Do.RootDirectory / "Directory.Build.props").ReadText();
-var versionMatch = project.RegexMatch("<VersionPrefix>(?<version>[^<]+)</VersionPrefix>");
-if (!versionMatch.Success)
+var version = (Do.RootDirectory / "Directory.Build.props").ReadXml()
+    .Descendants("VersionPrefix")
+    .Select(element => element.Value)
+    .SingleOrDefault();
+if (version is null)
     throw new InvalidOperationException("Directory.Build.props has no VersionPrefix.");
 
-var expectedTag = "v" + versionMatch.Groups["version"].Value;
+var expectedTag = "v" + version;
 if (tag != expectedTag)
     throw new InvalidOperationException($"Tag '{tag}' does not match project version '{expectedTag}'.");
 
@@ -41,7 +45,7 @@ foreach (var package in packageFiles)
         });
 }
 
-var notesFile = Do.RootDirectory / "artifacts" / "release-notes.md";
+var notesFile = Do.CreateTempFile("dotnetdo-release-notes-", ".md");
 notesFile.WriteText(notesMatch.Groups["notes"].Value.Trim() + Environment.NewLine);
 var assets = releaseFiles.Select(path => path.QuotedArgument()).JoinWith(" ");
 await Do.Exec($"gh release create {tag.QuotedArgument()} {assets} --title {tag.QuotedArgument()} --notes-file {notesFile.QuotedArgument()}");
