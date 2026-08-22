@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `:rename <old-name> <new-name>` for renaming task files and synchronizing configured solution folders.
 - A compiler warning when a task invokes DotNetDo through a compile-time-known `Do.Exec(...)` command; use a configured meta-task or shared C# method instead.
 - `AbsolutePath.ZipTo(...)` and `UnzipTo(...)` for creating ZIP archives from files or directories and extracting them with .NET's native collision behavior.
 - `DeleteAll()` for deleting a collection of absolute paths while omitting duplicates and paths beneath another supplied path.

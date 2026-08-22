@@ -14,6 +14,7 @@ static class HelpCommand
               dotnet do
               dotnet do {{CliCommands.Init.Name}}
               dotnet do {{CliCommands.New.Name}} <name>
+              dotnet do {{CliCommands.Rename.Name}} <old-name> <new-name>
               dotnet do {{CliCommands.Install.Name}}
               dotnet do {{CliCommands.Completion.Name}} [pwsh|bash|zsh]
               dotnet do {{CliCommands.Completion.Name}} uninstall [pwsh|bash|zsh]

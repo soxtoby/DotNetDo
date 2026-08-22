@@ -13,8 +13,10 @@ sealed class TaskCatalog
     }
 
     public RelativePath ScriptsPath { get; }
+    public IEnumerable<TaskDefinition> FileTasks =>
+        _csharpTasks.Values.OrderBy(task => task.Name, StringComparer.OrdinalIgnoreCase);
     public IEnumerable<TaskDefinition> Tasks =>
-        _csharpTasks.Values
+        FileTasks
             .Concat(_metaTasks.Keys.Select(name => new TaskDefinition(name, null)))
             .OrderBy(task => task.Name, StringComparer.OrdinalIgnoreCase);
 

@@ -152,6 +152,10 @@ The `:new` command creates a task directly inside the scripts path and fails if 
 
 On Unix-like systems, `:new` makes the generated file executable on a best-effort basis. Windows does not need executable bits for DotNetDo usage.
 
+## Rename command
+
+The `:rename` command renames a C# task directly inside the scripts path without changing its contents. It fails when the source does not exist or the target file or meta-task name is occupied. When both `solution-path` and `solution-folder` are configured, it resynchronizes the owned solution folder.
+
 ## Init command
 
 The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial task. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
@@ -170,7 +174,7 @@ The `:update` command updates the root-local manifest's DotNetDo tool and pinned
 
 A command whose name starts with `:` is owned by DotNetDo. Task names cannot start with `:`.
 
-DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, help with `:help`, shell completion setup with `:completion`, tool requirement installation with `:install`, and task execution by name.
+DotNetDo v1 includes workspace initialization with `:init`, task listing, task creation with `:new`, task renaming with `:rename`, help with `:help`, shell completion setup with `:completion`, tool requirement installation with `:install`, and task execution by name.
 
 ## Shell completion
 

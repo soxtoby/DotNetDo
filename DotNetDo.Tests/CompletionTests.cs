@@ -37,6 +37,18 @@ public sealed class CompletionTests
     }
 
     [Fact]
+    public void Completes_file_tasks_for_rename()
+    {
+        using var workspace = Workspace.Create("[tasks]\nall = \"build\"");
+        workspace.WriteTask("build", "");
+        var catalog = workspace.Catalog();
+
+        var candidates = Complete(catalog, workspace.Root, 2, "dotnet-do", ":rename", "");
+
+        Assert.Equal(["build"], candidates.Select(candidate => candidate.Value));
+    }
+
+    [Fact]
     public void Completes_parameter_names_boolean_values_and_local_enum_members()
     {
         using var workspace = Workspace.Create();

@@ -23,6 +23,7 @@ dnx DotNetDo build
 dotnet do :new build
 dotnet do
 dotnet do build
+dotnet do :rename build compile
 ```
 
 `:init` creates workspace-local `do.cmd` and `do` launchers. Use `.\do` from PowerShell or `./do` from a Unix shell.

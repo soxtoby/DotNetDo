@@ -18,6 +18,7 @@ static class CompletionEngine
         return command switch
             {
                 _ when command == CliCommands.Help.Name => CompleteTaskNames(catalog, arguments[activeIndex]),
+                _ when command == CliCommands.Rename.Name && activeIndex == 1 => CompleteTaskNames(catalog.FileTasks, arguments[activeIndex]),
                 _ when command == CliCommands.Update.Name => CompleteUpdate(catalog, root, arguments, activeIndex),
                 _ when command == CliCommands.Completion.Name => CompleteCompletion(arguments, activeIndex),
                 _ when command.StartsWith(':') => [],
@@ -40,7 +41,10 @@ static class CompletionEngine
         ];
 
     static CompletionCandidate[] CompleteTaskNames(TaskCatalog catalog, string prefix) =>
-        Match(catalog.Tasks.Select(task => new CompletionCandidate(task.Name, task.Description ?? "Task")), prefix);
+        CompleteTaskNames(catalog.Tasks, prefix);
+
+    static CompletionCandidate[] CompleteTaskNames(IEnumerable<TaskDefinition> tasks, string prefix) =>
+        Match(tasks.Select(task => new CompletionCandidate(task.Name, task.Description ?? "Task")), prefix);
 
     static CompletionCandidate[] CompleteUpdate(TaskCatalog catalog, AbsolutePath root, IReadOnlyList<string> tokens, int activeIndex)
     {
