@@ -3,6 +3,7 @@ using Xunit;
 
 namespace DotNetDo.Tests;
 
+[Collection("Console")]
 public sealed class CIProviderTests
 {
     static readonly Lock ConsoleGate = new();

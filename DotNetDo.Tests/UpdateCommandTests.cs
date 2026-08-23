@@ -4,6 +4,7 @@ using Xunit;
 
 namespace DotNetDo.Tests;
 
+[Collection("Console")]
 public sealed class UpdateCommandTests
 {
     [Fact]
