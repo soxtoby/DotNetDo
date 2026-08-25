@@ -18,6 +18,6 @@
     <ProjectReference Include="..\DotNetDo.Core\DotNetDo.Core.csproj" />
     <ProjectReference Include="..\DotNetDo\DotNetDo.csproj" />
     <ProjectReference Include="..\DotNetDo.Generators\DotNetDo.Generators.csproj" />
-    <Analyzer Include="..\DotNetDo.Generators\bin\$(Configuration)\$(TargetFramework)\DotNetDo.Generators.dll" />
+    <Analyzer Include="..\DotNetDo.Generators\bin\$(Configuration)\netstandard2.0\DotNetDo.Generators.dll" />
   </ItemGroup>
 </Project>

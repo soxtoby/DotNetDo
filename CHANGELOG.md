@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- The bundled source generator and analyzer now target .NET Standard 2.0 so scripts do not require the .NET SDK used to publish DotNetDo.
+
 ## v0.7.0
 
 ### Added
