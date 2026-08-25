@@ -64,6 +64,18 @@ public sealed class StringExtensionsTests
     }
 
     [Fact]
+    public void Null_checks_narrow_nullable_strings()
+    {
+        string? value = "value";
+
+        if (!value.IsNullOrWhiteSpace())
+            Assert.Equal(5, value.Length);
+
+        if (!value.IsNullOrEmpty())
+            Assert.Equal('v', value[0]);
+    }
+
+    [Fact]
     public void Quotes_path_values_for_command_interpolation()
     {
         var absolute = AbsolutePath.Parse(OperatingSystem.IsWindows() ? @"C:\directory\file name.txt" : "/directory/file name.txt");

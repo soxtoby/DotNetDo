@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DotNetDo;
 
 public static partial class StringExtensions
@@ -16,7 +18,7 @@ public static partial class StringExtensions
         return [..lines];
     }
 
-    extension(string? value)
+    extension([NotNullWhen(false)] string? value)
     {
         /// <summary>Returns whether the value is null or empty.</summary>
         public bool IsNullOrEmpty() => string.IsNullOrEmpty(value);
