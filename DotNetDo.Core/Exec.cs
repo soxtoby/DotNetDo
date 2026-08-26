@@ -34,7 +34,8 @@ public static partial class Do
         if (options.Environment is { } transformEnvironment)
             ApplyEnvironment(startInfo, transformEnvironment);
 
-        Log.Debug("Executing {Command} in {WorkingDirectory}", command, workingDirectory);
+        if (options.LogCommand)
+            Log.Debug("Executing {Command} in {WorkingDirectory}", command, workingDirectory);
 
         try
         {
@@ -99,6 +100,8 @@ public record ExecOptions
     public AbsolutePath? WorkingDirectory { get; init; }
     /// <summary>Transforms an immutable snapshot of the current process environment into the complete child environment for each launch attempt.</summary>
     public Func<ImmutableDictionary<string, string>, ImmutableDictionary<string, string>>? Environment { get; init; }
+    /// <summary>Whether to log the command and working directory before execution.</summary>
+    public bool LogCommand { get; init; } = true;
     /// <summary>Controls standard-output and standard-error logging; when omitted, <see cref="ExecLog.Default"/> is used.</summary>
     public ExecLog? Log { get; init; }
 }

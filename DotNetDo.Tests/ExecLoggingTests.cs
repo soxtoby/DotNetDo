@@ -35,6 +35,30 @@ public sealed class ExecLoggingTests
     }
 
     [Fact]
+    public async Task Log_command_false_does_not_log_command_start()
+    {
+        var previous = Log.Logger;
+        var sink = new CapturingSink();
+        using var logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        try
+        {
+            Log.Logger = logger;
+
+            await Do.Exec("dotnet --version", new ExecOptions { LogCommand = false });
+
+            Assert.DoesNotContain(sink.Events, @event => @event.MessageTemplate.Text.StartsWith("Executing "));
+        }
+        finally
+        {
+            Log.Logger = previous;
+        }
+    }
+
+    [Fact]
     public void Default_log_uses_escaped_output_as_the_message_template()
     {
         var previous = Log.Logger;
