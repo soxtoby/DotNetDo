@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Serilog;
-using Serilog.Events;
 
 namespace DotNetDo;
 
@@ -42,7 +41,7 @@ public static partial class Do
             var process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException($"Failed to start command '{command}'.");
 
-            return new ExecProcess(process, command, workingDirectory, options.Log ?? ExecOptions.DefaultLog);
+            return new ExecProcess(process, command, workingDirectory, options.Log ?? ExecLog.Default);
         }
         catch (Exception exception)
         {
@@ -100,15 +99,8 @@ public record ExecOptions
     public AbsolutePath? WorkingDirectory { get; init; }
     /// <summary>Transforms an immutable snapshot of the current process environment into the complete child environment for each launch attempt.</summary>
     public Func<ImmutableDictionary<string, string>, ImmutableDictionary<string, string>>? Environment { get; init; }
-    /// <summary>Receives each standard-output and standard-error line; when omitted, the default logger is used.</summary>
-    public Action<OutputType, string>? Log { get; init; }
-
-    internal static void DefaultLog(OutputType type, string message) =>
-        Serilog.Log.Write(
-            type == OutputType.Out ? LogEventLevel.Information : LogEventLevel.Error,
-            message
-                .Replace("{", "{{", StringComparison.Ordinal)
-                .Replace("}", "}}", StringComparison.Ordinal));
+    /// <summary>Controls standard-output and standard-error logging; when omitted, <see cref="ExecLog.Default"/> is used.</summary>
+    public ExecLog? Log { get; init; }
 }
 
 sealed record ExecCommand(string Program, string Arguments)
@@ -145,7 +137,7 @@ public sealed class ExecProcess
         Process process,
         string command,
         string workingDirectory,
-        Action<OutputType, string> log)
+        ExecLog log)
     {
         var output = new ExecCapture(log);
         Output = output.Stream;
@@ -232,7 +224,7 @@ public sealed class ExecFailedException(ExecResult result) : Exception($"Command
     public string Command { get; } = result.Command;
 }
 
-sealed class ExecCapture(Action<OutputType, string> log)
+sealed class ExecCapture(ExecLog log)
 {
     readonly ReplayStream<ExecOutput> _stream = new();
     readonly List<ExecOutput> _snapshot = [];
@@ -265,7 +257,7 @@ sealed class ExecCapture(Action<OutputType, string> log)
             _stream.Append(output);
         }
 
-        log(type, message);
+        log.Write(type, message);
     }
 
     public void Complete(Exception? exception = null) => _stream.Complete(exception);

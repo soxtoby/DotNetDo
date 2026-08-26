@@ -4,6 +4,7 @@
 
 ### Changed
 - `IsNullOrEmpty()` and `IsNullOrWhiteSpace()` now narrow their receiver to non-null when they return `false`.
+- `ExecOptions.Log` now uses discoverable `ExecLog` choices for default, suppressed, stderr-only, filtered, and custom process-output logging.
 
 ### Fixed
 - The bundled source generator and analyzer now target .NET Standard 2.0 so scripts do not require the .NET SDK used to publish DotNetDo.

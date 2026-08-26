@@ -20,7 +20,7 @@ public sealed class PackageToolTests
     public void Tool_commands_own_execution_options_without_rendering_them()
     {
         var workingDirectory = AbsolutePath.Parse(Path.GetTempPath());
-        Action<OutputType, string> log = (_, _) => { };
+        var log = new ExecLog((_, _) => { });
         var command = new PackageToolCommand("Example.Tool", "example")
         {
             WorkingDirectory = workingDirectory,

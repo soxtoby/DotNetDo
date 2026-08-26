@@ -194,7 +194,7 @@ Exec helper commands are a single command-line string where DotNetDo parses only
 
 Exec combines standard output and standard error into replayable `ExecOutput` objects containing an `Out` or `Error` type and a message. Their cross-pipe order is the order DotNetDo observes, not a guarantee of the external process's original write order.
 
-Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` is an optional action receiving each output type and raw message; tasks may replace it to choose another logger or level. A missing or `null` action uses the default. Capture behavior is unchanged.
+Exec logs `Out` messages at `Information` and `Error` messages at `Error` by default. `ExecOptions.Log` accepts an `ExecOutputLog`; its discoverable choices include `Default`, `None`, `ErrorsOnly`, filtering an existing choice, and constructing custom per-line behavior. A missing or `null` value uses `Default`. Capture behavior is unchanged.
 
 The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of registered `Secret` values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
 

@@ -76,7 +76,7 @@ public sealed class ToolInstallTests
             File.WriteAllText(Path.Combine(directory, "fake-shim.cmd"), "@echo %*");
             Environment.SetEnvironmentVariable("PATH", $"{directory}{Path.PathSeparator}{originalPath}");
 
-            var result = await Do.Exec("fake-shim one two", new ExecOptions { Log = (_, _) => { } });
+            var result = await Do.Exec("fake-shim one two", new ExecOptions { Log = ExecLog.None });
 
             Assert.Equal("one two", result.ReadText());
         }

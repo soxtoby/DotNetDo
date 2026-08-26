@@ -226,7 +226,7 @@ sealed class DotNetClient : IUpdateClient
                 ExactMatch = true,
                 Prerelease = prerelease,
                 WorkingDirectory = root,
-                Log = IgnoreOutput,
+                Log = ExecLog.None,
             });
             var versions = result.Sources
                 .SelectMany(source => source.Packages)
@@ -255,7 +255,7 @@ sealed class DotNetClient : IUpdateClient
                 ToolManifest = manifest,
                 Prerelease = prerelease,
                 WorkingDirectory = root,
-                Log = IgnoreOutput,
+                Log = ExecLog.None,
             });
         var version = ToolManifest.VersionOf(manifest, package);
         return previous == version ? null : new(package, previous, version);
@@ -278,7 +278,6 @@ sealed class DotNetClient : IUpdateClient
         }
     }
 
-    static void IgnoreOutput(OutputType _, string __) { }
 }
 
 sealed record ToolManifest

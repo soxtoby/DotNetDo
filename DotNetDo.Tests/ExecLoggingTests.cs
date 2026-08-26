@@ -47,7 +47,7 @@ public sealed class ExecLoggingTests
         {
             Log.Logger = logger;
 
-            ExecOptions.DefaultLog(OutputType.Out, "Built {Project}");
+            ExecLog.Default.Write(OutputType.Out, "Built {Project}");
 
             var @event = Assert.Single(sink.Events);
             Assert.Equal("Built {{Project}}", @event.MessageTemplate.Text);
@@ -58,6 +58,70 @@ public sealed class ExecLoggingTests
         {
             Log.Logger = previous;
         }
+    }
+
+    [Fact]
+    public void None_does_not_log_output()
+    {
+        var previous = Log.Logger;
+        var sink = new CapturingSink();
+        using var logger = new LoggerConfiguration()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        try
+        {
+            Log.Logger = logger;
+
+            ExecLog.None.Write(OutputType.Out, "ordinary output");
+            ExecLog.None.Write(OutputType.Error, "error output");
+
+            Assert.Empty(sink.Events);
+        }
+        finally
+        {
+            Log.Logger = previous;
+        }
+    }
+
+    [Fact]
+    public void Errors_only_logs_standard_error_with_default_behavior()
+    {
+        var previous = Log.Logger;
+        var sink = new CapturingSink();
+        using var logger = new LoggerConfiguration()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+
+        try
+        {
+            Log.Logger = logger;
+
+            ExecLog.ErrorsOnly.Write(OutputType.Out, "ordinary output");
+            ExecLog.ErrorsOnly.Write(OutputType.Error, "Error {Code}");
+
+            var @event = Assert.Single(sink.Events);
+            Assert.Equal(LogEventLevel.Error, @event.Level);
+            Assert.Equal("Error {Code}", @event.RenderMessage());
+            Assert.Empty(@event.Properties);
+        }
+        finally
+        {
+            Log.Logger = previous;
+        }
+    }
+
+    [Fact]
+    public void Filter_forwards_only_matching_output_to_the_wrapped_log()
+    {
+        var output = new List<(OutputType Type, string Message)>();
+        var log = new ExecLog((type, message) => output.Add((type, message)))
+            .Filter((_, message) => message.StartsWith("keep", StringComparison.Ordinal));
+
+        log.Write(OutputType.Out, "drop this");
+        log.Write(OutputType.Error, "keep this");
+
+        Assert.Equal([(OutputType.Error, "keep this")], output);
     }
 
     [Fact]
@@ -81,7 +145,7 @@ public sealed class ExecLoggingTests
                 new ExecOptions
                     {
                         Environment = environment => environment.SetItem(name, value),
-                        Log = (_, _) => { },
+                        Log = ExecLog.None,
                     });
 
             Assert.DoesNotContain(sink.Events, @event =>

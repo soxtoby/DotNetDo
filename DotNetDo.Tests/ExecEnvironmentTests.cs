@@ -63,7 +63,7 @@ public sealed class ExecEnvironmentTests
         var command = new EnvironmentToolCommand
             {
                 Environment = environment => environment.Clear().Add(ChildName, "typed"),
-                Log = (_, _) => { },
+                Log = ExecLog.None,
             };
 
         var result = await command;
@@ -98,7 +98,7 @@ public sealed class ExecEnvironmentTests
         var options = new ExecOptions
             {
                 Environment = _ => throw expected,
-                Log = (_, _) => { },
+                Log = ExecLog.None,
             };
 
         var actual = Assert.Throws<ApplicationException>(() => Do.Exec(EnvironmentCommand, options));
@@ -112,7 +112,7 @@ public sealed class ExecEnvironmentTests
         var options = new ExecOptions
             {
                 Environment = _ => null!,
-                Log = (_, _) => { },
+                Log = ExecLog.None,
             };
 
         var exception = Assert.Throws<InvalidOperationException>(() => Do.Exec(EnvironmentCommand, options));
@@ -126,7 +126,7 @@ public sealed class ExecEnvironmentTests
         var options = new ExecOptions
             {
                 Environment = environment => environment.Clear().Add(ChildName, null!),
-                Log = (_, _) => { },
+                Log = ExecLog.None,
             };
 
         var exception = Assert.Throws<InvalidOperationException>(() => Do.Exec(EnvironmentCommand, options));
@@ -145,7 +145,7 @@ public sealed class ExecEnvironmentTests
                     .WithComparers(StringComparer.Ordinal)
                     .Add(upperName, "upper")
                     .Add(lowerName, "lower"),
-                Log = (_, _) => { },
+                Log = ExecLog.None,
             };
 
         if (OperatingSystem.IsWindows())
@@ -163,7 +163,7 @@ public sealed class ExecEnvironmentTests
 
     static async Task<IReadOnlyDictionary<string, string>> ReadChildEnvironment(ExecOptions options)
     {
-        var result = await Do.Exec(EnvironmentCommand, options with { Log = (_, _) => { } });
+        var result = await Do.Exec(EnvironmentCommand, options with { Log = ExecLog.None });
         return ParseEnvironment(result.OutputLines());
     }
 

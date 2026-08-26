@@ -67,7 +67,7 @@ public sealed partial class GitRepository
 
         public static async Task<RepositorySnapshot> Capture(GitRepository repository)
         {
-            var index = await WriteTree(repository, "write-tree", new ExecOptions { Log = IgnoreOutput });
+            var index = await WriteTree(repository, "write-tree", new ExecOptions { Log = ExecLog.None });
             var worktree = await WriteWorktree(repository, index);
             var submodules = repository.Repository.Submodules.ToDictionary(
                 submodule => submodule.Path,
@@ -89,7 +89,7 @@ public sealed partial class GitRepository
                         All = true,
                         Verbose = false,
                         Environment = env => env.SetItem("GIT_INDEX_FILE", temporaryIndex),
-                        Log = IgnoreOutput,
+                        Log = ExecLog.None,
                     };
 
                 await RunGit(repository, $"read-tree {index.Id.Sha}", add);
@@ -113,7 +113,6 @@ public sealed partial class GitRepository
         static async Task<ExecResult> RunGit(GitRepository repository, string arguments, ExecOptions options) =>
             await repository.Exec(arguments, options);
 
-        static void IgnoreOutput(OutputType _, string __) { }
     }
 
     sealed class RepositoryChanges
