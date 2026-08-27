@@ -300,6 +300,12 @@ Tool commands carry their own process working directory, child-environment trans
 
 Fresh tool commands snapshot `Logging.Level` into dedicated native output-volume controls. Explicit typed values override or clear only their own control; raw additional arguments remain opaque.
 
+## NuGet command suite
+
+The typed DotNetDo command surface for current, documented `nuget.exe` task automation. It excludes the help command and executable self-update, while modeling every other non-deprecated command and option with a current official reference page.
+
+_Avoid_: NuGet package tool, `dotnet nuget`
+
 `Tools.Git` exposes default Git command values bound lazily through `Do.GitRepo`; a specific Git repository exposes equivalent values permanently bound to its root.
 
 Awaiting a tool command executes it through the Exec helper and requires a successful exit code.

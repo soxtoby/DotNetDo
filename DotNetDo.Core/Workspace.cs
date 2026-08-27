@@ -93,6 +93,7 @@ sealed record WorkspaceConfiguration
         {
             Azure.ToolName => Azure.EnsureAvailable,
             Bun.ToolName => Bun.EnsureAvailable,
+            NuGet.ToolName => NuGet.EnsureAvailable,
             _ => null,
         };
 

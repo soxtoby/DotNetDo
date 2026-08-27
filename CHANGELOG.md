@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- `Tools.NuGet` typed commands for the NuGet CLI.
+
 ### Changed
 - `IsNullOrEmpty()` and `IsNullOrWhiteSpace()` now narrow their receiver to non-null when they return `false`.
 - `ExecOptions.Log` now uses discoverable `ExecLog` choices for default, suppressed, stderr-only, filtered, and custom process-output logging.

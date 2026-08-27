@@ -1,0 +1,3 @@
+# NuGet commands defer option validation
+
+`Tools.NuGet` uses flat command records with enums for documented finite choices, `AbsolutePath` for paths, strings for wildcard-capable operands, and snapshotted collections for repeated values. DotNetDo rejects only values that prevent rendering, such as missing required operands, blank required strings, and invalid enum values; it deliberately renders mutually exclusive, dependent, or mode-inapplicable properties and lets `nuget.exe` enforce its own evolving rules. This avoids duplicating a large version-sensitive CLI grammar while keeping authored commands discoverable and immutable.
