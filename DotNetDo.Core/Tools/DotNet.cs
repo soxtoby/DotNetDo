@@ -49,6 +49,7 @@ public abstract record DotNetTargetCommand : ExecToolCommand
 
     /// <summary>Projects or solutions operated on; defaults to the discovered workspace solution.</summary>
     public IReadOnlyList<string> Targets { get; init => field = value.ToArray(); } = [];
+
     /// <summary>MSBuild output detail; defaults from <see cref="Logging.Level"/>.</summary>
     public string? Verbosity { get; init; }
 
@@ -60,7 +61,11 @@ public abstract record DotNetTargetCommand : ExecToolCommand
 public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
 {
     /// <summary>Creates a command with defaults for the current build locality.</summary>
-    protected DotNetBuildOptionsCommand() => Configuration = MSBuildDefaults.Configuration;
+    protected DotNetBuildOptionsCommand()
+    {
+        Configuration = MSBuildDefaults.Configuration;
+        ContinuousIntegrationBuild = Do.IsLocalBuild ? null : true;
+    }
 
     /// <summary>Uses the current runtime as the target runtime instead of resolving one from the project.</summary>
     public bool CurrentRuntime { get; init; }
@@ -82,11 +87,27 @@ public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
     public bool NoLogo { get; init; }
     /// <summary>Prevents reuse of persistent build servers during this invocation.</summary>
     public bool DisableBuildServers { get; init; }
+    /// <summary>Marks outputs as produced by a continuous-integration build; defaults to enabled outside local builds.</summary>
+    public bool? ContinuousIntegrationBuild { get; init; }
+    /// <summary>The first part of the build version.</summary>
+    public string? VersionPrefix { get; init; }
+    /// <summary>The package version produced by the build.</summary>
+    public string? PackageVersion { get; init; }
+    /// <summary>The version stored in the produced assembly manifest.</summary>
+    public string? AssemblyVersion { get; init; }
+    /// <summary>The version stored in the produced file metadata.</summary>
+    public string? FileVersion { get; init; }
+    /// <summary>The informational version stored in the produced assembly.</summary>
+    public string? InformationalVersion { get; init; }
+    /// <summary>The copyright notice applied to produced packages and assemblies.</summary>
+    public string? Copyright { get; init; }
+    /// <summary>Additional MSBuild properties. Values are escaped for MSBuild property-switch syntax.</summary>
+    public IReadOnlyDictionary<string, string> Properties { get; init => field = new Dictionary<string, string>(value).AsReadOnly(); } = new Dictionary<string, string>().AsReadOnly();
 
     /// <summary>Places shared target and build behavior before operation-specific arguments.</summary>
     protected IReadOnlyList<string?> BuildParts =>
         [
-            ..TargetParts,
+            .. TargetParts,
             Arg("--use-current-runtime", CurrentRuntime),
             Arg("--configuration", Configuration),
             Arg("--runtime", Runtime),
@@ -98,11 +119,70 @@ public abstract record DotNetBuildOptionsCommand : DotNetTargetCommand
             Arg("--nologo", NoLogo),
             Arg("--disable-build-servers", DisableBuildServers),
         ];
+
+    /// <summary>Renders common and additional MSBuild properties after checking typed-property collisions.</summary>
+    protected IReadOnlyList<string?> MSBuildPropertyParts(
+        string? version,
+        bool renderVersion,
+        params (string Name, object? Value)[] commandProperties)
+    {
+        (string Name, object? Value)[] typedProperties =
+            [
+                ("Configuration", Configuration),
+                ("RuntimeIdentifier", Runtime),
+                ("VersionSuffix", VersionSuffix),
+                ("ContinuousIntegrationBuild", ContinuousIntegrationBuild),
+                ("Version", version),
+                ("VersionPrefix", VersionPrefix),
+                ("PackageVersion", PackageVersion),
+                ("AssemblyVersion", AssemblyVersion),
+                ("FileVersion", FileVersion),
+                ("InformationalVersion", InformationalVersion),
+                ("Copyright", Copyright),
+                .. commandProperties,
+            ];
+        var conflicts = typedProperties
+            .Where(property => IsSpecified(property.Value))
+            .Select(property => property.Name)
+            .Where(name => Properties.Keys.Contains(name, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (conflicts.Length > 0)
+            throw new InvalidOperationException($"MSBuild properties cannot be supplied through both typed properties and Properties: {string.Join(", ", conflicts)}.");
+
+        var rendered = new List<string?>
+            {
+                MSBuildProperty("ContinuousIntegrationBuild", ContinuousIntegrationBuild?.ToString().ToLowerInvariant()),
+                MSBuildProperty("Version", renderVersion ? version : null),
+                MSBuildProperty("VersionPrefix", VersionPrefix),
+                MSBuildProperty("PackageVersion", PackageVersion),
+                MSBuildProperty("AssemblyVersion", AssemblyVersion),
+                MSBuildProperty("FileVersion", FileVersion),
+                MSBuildProperty("InformationalVersion", InformationalVersion),
+                MSBuildProperty("Copyright", Copyright),
+            };
+        rendered.AddRange(Properties.Select(property => MSBuildProperty(property.Key, property.Value ?? "")));
+        return rendered;
+    }
+
+    static bool IsSpecified(object? value) => value is string text
+        ? !text.IsNullOrWhiteSpace()
+        : value is not null;
+
+    static string? MSBuildProperty(string name, string? value) =>
+        value is null ? null : Arg("--property:", $"{name}={EscapeMSBuildPropertyValue(value)}");
+
+    static string EscapeMSBuildPropertyValue(string value) =>
+        value.Replace("%", "%25")
+            .Replace(";", "%3B")
+            .Replace(",", "%2C");
 }
 
 /// <summary>Compiles selected projects and their dependencies, restoring first unless disabled.</summary>
 public sealed record DotNetBuild : DotNetBuildOptionsCommand
 {
+    /// <summary>Sets the build version.</summary>
+    public string? Version { get; init; }
     /// <summary>Builds only the specified target framework, which must exist in the project.</summary>
     public string? Framework { get; init; }
     /// <summary>Enables additional CLI debug diagnostics.</summary>
@@ -122,7 +202,7 @@ public sealed record DotNetBuild : DotNetBuildOptionsCommand
     protected override IReadOnlyList<string?> CommandParts =>
         [
             "dotnet build",
-            ..BuildParts,
+            .. BuildParts,
             Arg("--framework", Framework),
             Arg("--debug", Debug),
             Arg("--no-incremental", NoIncremental),
@@ -130,6 +210,11 @@ public sealed record DotNetBuild : DotNetBuildOptionsCommand
             Arg("--self-contained", "--no-self-contained", SelfContained),
             Arg("--arch", Architecture),
             Arg("--os", OperatingSystem),
+            .. MSBuildPropertyParts(
+                Version,
+                renderVersion: true,
+                ("TargetFramework", Framework),
+                ("SelfContained", SelfContained)),
         ];
 }
 
@@ -160,7 +245,7 @@ public sealed record DotNetClean : DotNetTargetCommand
     protected override IReadOnlyList<string?> CommandParts =>
         [
             "dotnet clean",
-            ..TargetParts,
+            .. TargetParts,
             Arg("--framework", Framework),
             Arg("--runtime", Runtime),
             Arg("--configuration", Configuration),
@@ -240,12 +325,13 @@ public sealed record DotNetPack : DotNetBuildOptionsCommand
     protected override IReadOnlyList<string?> CommandParts =>
         [
             "dotnet pack",
-            ..BuildParts,
+            .. BuildParts,
             Arg("--no-build", NoBuild),
             Arg("--include-symbols", IncludeSymbols),
             Arg("--include-source", IncludeSource),
             Arg("--serviceable", Serviceable),
             Arg("--version", Version),
+            .. MSBuildPropertyParts(Version, renderVersion: false),
         ];
 }
 
@@ -349,7 +435,7 @@ public sealed record DotNetRestore : DotNetTargetCommand
     protected override IReadOnlyList<string?> CommandParts =>
         [
             "dotnet restore",
-            ..TargetParts,
+            .. TargetParts,
             Arg("--disable-build-servers", DisableBuildServers),
             Args("--source", Sources, " --source "),
             Arg("--packages", Packages),
@@ -439,7 +525,7 @@ public sealed record DotNetTest : DotNetTargetCommand
     protected override IReadOnlyList<string?> CommandParts =>
         [
             "dotnet test",
-            ..TargetParts,
+            .. TargetParts,
             Arg("--settings", Settings),
             Arg("--list-tests", ListTests),
             Args("--environment", TestEnvironment, " --environment "),
@@ -758,7 +844,7 @@ public sealed record DotNetFormat : DotNetTargetCommand
         [
             "dotnet format",
             Arg(CustomCommand ?? Command?.ToString().ToLowerInvariant()),
-            ..TargetParts,
+            .. TargetParts,
             Args("--diagnostics", Diagnostics),
             Args("--exclude-diagnostics", ExcludeDiagnostics),
             Arg("--severity", Severity),

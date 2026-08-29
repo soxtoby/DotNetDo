@@ -99,6 +99,119 @@ public sealed class DotNetToolTests
     }
 
     [Fact]
+    public void Dotnet_build_renders_typed_and_additional_MSBuild_properties()
+    {
+        var properties = new Dictionary<string, string>
+            {
+                ["BuildLabel"] = "release, 100%; stable",
+                [""] = "",
+            };
+        var command = Tools.DotNet.Build with
+            {
+                Targets = ["Product.csproj"],
+                Configuration = null,
+                ContinuousIntegrationBuild = false,
+                Version = "1.2.3",
+                VersionPrefix = "1.2",
+                PackageVersion = "1.2.3-package",
+                AssemblyVersion = "1.2.3.0",
+                FileVersion = "1.2.3.4",
+                InformationalVersion = "1.2.3+sha",
+                Copyright = "Example, Inc.; 2026%",
+                Properties = properties,
+                AdditionalArguments = "--raw-property=value",
+            };
+        properties["BuildLabel"] = "changed";
+
+        Assert.Equal("release, 100%; stable", command.Properties["BuildLabel"]);
+        Assert.Equal(
+            "dotnet build Product.csproj --verbosity normal --property:ContinuousIntegrationBuild=false --property:Version=1.2.3 --property:VersionPrefix=1.2 --property:PackageVersion=1.2.3-package --property:AssemblyVersion=1.2.3.0 --property:FileVersion=1.2.3.4 --property:InformationalVersion=1.2.3+sha --property:\"Copyright=Example%2C Inc.%3B 2026%25\" --property:\"BuildLabel=release%2C 100%25%3B stable\" --property:= --raw-property=value",
+            command.ToString());
+    }
+
+    [Fact]
+    public void Dotnet_pack_preserves_version_alias_and_renders_common_MSBuild_properties()
+    {
+        var command = Tools.DotNet.Pack with
+            {
+                Targets = ["Product.csproj"],
+                Configuration = null,
+                ContinuousIntegrationBuild = null,
+                Version = "1.2.3",
+                Copyright = "Example",
+            };
+
+        Assert.Equal(
+            "dotnet pack Product.csproj --verbosity normal --version 1.2.3 --property:Copyright=Example",
+            command.ToString());
+    }
+
+    [Theory]
+    [InlineData("configuration", "Release", "Configuration")]
+    [InlineData("RuntimeIdentifier", "linux-x64", "RuntimeIdentifier")]
+    [InlineData("VERSION", "1.2.3", "Version")]
+    [InlineData("TargetFramework", "net10.0", "TargetFramework")]
+    [InlineData("SelfContained", "false", "SelfContained")]
+    [InlineData("copyright", "Example", "Copyright")]
+    public void Dotnet_build_rejects_typed_MSBuild_property_collisions(string propertyName, string propertyValue, string expectedName)
+    {
+        var command = Tools.DotNet.Build with
+            {
+                Targets = [],
+                Configuration = propertyName.Equals("configuration", StringComparison.OrdinalIgnoreCase) ? "Release" : null,
+                Runtime = propertyName.Equals("RuntimeIdentifier", StringComparison.OrdinalIgnoreCase) ? "linux-x64" : null,
+                Version = propertyName.Equals("Version", StringComparison.OrdinalIgnoreCase) ? "1.2.3" : null,
+                Framework = propertyName.Equals("TargetFramework", StringComparison.OrdinalIgnoreCase) ? "net10.0" : null,
+                SelfContained = propertyName.Equals("SelfContained", StringComparison.OrdinalIgnoreCase) ? false : null,
+                Copyright = propertyName.Equals("Copyright", StringComparison.OrdinalIgnoreCase) ? "Example" : null,
+                ContinuousIntegrationBuild = null,
+                Properties = new Dictionary<string, string> { [propertyName] = propertyValue },
+            };
+
+        var exception = Assert.Throws<InvalidOperationException>(() => command.ToString());
+        Assert.Contains(expectedName, exception.Message);
+    }
+
+    [Fact]
+    public void Dotnet_build_reports_every_typed_MSBuild_property_collision()
+    {
+        var command = Tools.DotNet.Build with
+            {
+                Targets = [],
+                Configuration = "Release",
+                ContinuousIntegrationBuild = true,
+                Properties = new Dictionary<string, string>
+                    {
+                        ["configuration"] = "Debug",
+                        ["CONTINUOUSINTEGRATIONBUILD"] = "false",
+                    },
+            };
+
+        var exception = Assert.Throws<InvalidOperationException>(() => command.ToString());
+        Assert.Contains("Configuration", exception.Message);
+        Assert.Contains("ContinuousIntegrationBuild", exception.Message);
+    }
+
+    [Fact]
+    public void Dotnet_build_leaves_additional_MSBuild_property_validation_to_MSBuild()
+    {
+        var command = Tools.DotNet.Build with
+            {
+                Targets = [],
+                Configuration = null,
+                ContinuousIntegrationBuild = null,
+                Properties = new Dictionary<string, string>
+                    {
+                        ["label"] = "first",
+                        ["LABEL"] = "second",
+                        [""] = null!,
+                    },
+            };
+
+        Assert.EndsWith("--property:label=first --property:LABEL=second --property:=", command.ToString());
+    }
+
+    [Fact]
     public void Renders_dotnet_nuget_push()
     {
         var command = Tools.DotNet.NuGetPush with

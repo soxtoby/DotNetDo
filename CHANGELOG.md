@@ -4,6 +4,7 @@
 
 ### Added
 - `Tools.NuGet` typed commands for the NuGet CLI.
+- `Tools.DotNet.Build` and `Tools.DotNet.Pack` support arbitrary MSBuild properties plus first-class CI, version, and copyright properties.
 
 ### Changed
 - `IsNullOrEmpty()` and `IsNullOrWhiteSpace()` now narrow their receiver to non-null when they return `false`.

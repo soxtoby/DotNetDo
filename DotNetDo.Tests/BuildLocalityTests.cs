@@ -52,6 +52,8 @@ public sealed class BuildLocalityTests
         Assert.Equal(expected, Tools.DotNet.Pack.Configuration);
         Assert.Equal(expected, Tools.DotNet.Test.Configuration);
         Assert.Equal(expected, Tools.DotNet.Watch.Configuration);
+        Assert.Equal(Do.IsLocalBuild ? null : true, Tools.DotNet.Build.ContinuousIntegrationBuild);
+        Assert.Equal(Do.IsLocalBuild ? null : true, Tools.DotNet.Pack.ContinuousIntegrationBuild);
 
         var properties = Tools.MSBuild.Properties;
         if (expected is null)
