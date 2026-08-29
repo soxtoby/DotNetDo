@@ -1,13 +1,10 @@
 using System.Globalization;
-using System.Reflection;
-using Microsoft.Extensions.Configuration;
 
 namespace DotNetDo;
 
 public static partial class Do
 {
-    const string ImplicitBooleanValue = "\0";
-    static readonly Lazy<IConfiguration> ParameterConfiguration = new(CreateParameterConfiguration);
+    static readonly Lazy<TaskParameterConfiguration> ParameterConfiguration = new(() => TaskParameterConfiguration.Current);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
     /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
@@ -34,18 +31,18 @@ public static partial class Do
         new(name, ReadSecret(name, defaultValue), description);
 
     static ParameterValue<T> ReadParam<T>(string name) =>
-        ReadConfigurationValue<T>(name) is { HasValue: true } value
+        ParameterConfiguration.Value.Read<T>(name) is { HasValue: true } value
             ? value
             : ParameterValue<T>.Missing(name);
 
     static ParameterValue<T> ReadParam<T>(string name, T defaultValue) =>
-        ReadConfigurationValue<T>(name) is { HasValue: true } value
+        ParameterConfiguration.Value.Read<T>(name) is { HasValue: true } value
             ? value
             : ParameterValue<T>.Resolved(name, defaultValue);
 
     static ParameterValue<string> ReadSecret(string name, string? defaultValue)
     {
-        var value = ReadConfigurationValue<string>(name) is { HasValue: true } configured
+        var value = ParameterConfiguration.Value.Read<string>(name) is { HasValue: true } configured
             ? configured.Value
             : defaultValue;
 
@@ -54,57 +51,8 @@ public static partial class Do
             : ParameterValue<string>.Resolved(name, value);
     }
 
-    static ParameterValue<T> ReadConfigurationValue<T>(string name)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        switch (ParameterConfiguration.Value[name])
-        {
-            case null:
-                return ParameterValue<T>.Missing(name);
-            case ImplicitBooleanValue:
-                return typeof(T) == typeof(bool)
-                    ? ParameterValue<T>.Resolved(name, (T)(object)true)
-                    : throw new InvalidOperationException($"Parameter '{name}' requires a value.");
-            default:
-                try
-                {
-                    return ParameterValue<T>.Resolved(name, ParameterConfiguration.Value.GetValue<T>(name)!);
-                }
-                catch (Exception exception)
-                {
-                    throw new InvalidOperationException($"Parameter '{name}' could not be parsed as {typeof(T).Name}.", exception);
-                }
-        }
-    }
-
-    static IConfiguration CreateParameterConfiguration()
-    {
-        return new ConfigurationBuilder()
-            .AddUserSecrets(Assembly.GetEntryAssembly() ?? typeof(Do).Assembly, optional: true)
-            .AddEnvironmentVariables("DOTNETDO_")
-            .AddCommandLine(NormalizeParameterArguments(Environment.GetCommandLineArgs().Skip(1)))
-            .Build();
-    }
-
-    internal static string[] NormalizeParameterArguments(IEnumerable<string> arguments)
-    {
-        var values = arguments.ToArray();
-
-        for (var index = 0; index < values.Length; index++)
-        {
-            var value = values[index];
-            if (value.Length > 2
-                && value.StartsWith("--", StringComparison.Ordinal)
-                && !value.Contains('=')
-                && (index == values.Length - 1 || values[index + 1].StartsWith("--", StringComparison.Ordinal)))
-            {
-                values[index] = $"{value}={ImplicitBooleanValue}";
-            }
-        }
-
-        return values;
-    }
+    internal static string[] NormalizeParameterArguments(IEnumerable<string> arguments) =>
+        TaskParameterConfiguration.NormalizeArguments(arguments);
 }
 
 /// <summary>A task parameter guaranteed to resolve from configuration or its default value.</summary>
@@ -154,11 +102,11 @@ public readonly record struct OptionalParam<T>
     /// <summary>The resolved parameter value, or <see langword="null"/> when absent.</summary>
     public T? Value => _value.ValueOrDefault;
 
-    /// <summary>Resolves the optional parameter, throwing when no value was supplied.</summary>
+    /// <summary>Resolves the optional parameter, prompting during an interactive local build or throwing when no value is available.</summary>
     public Param<T> Required() =>
-        _value.HasValue
-            ? new Param<T>(Name, _value, Description)
-            : throw new InvalidOperationException($"Parameter '{Name}' is required.");
+        _value.HasValue ? new(Name, _value, Description)
+        : ParameterPrompt.TryRead(Name, Description, secret: false, out T value) ? new(Name, ParameterValue<T>.Resolved(Name, value), Description)
+        : throw new InvalidOperationException($"Parameter '{Name}' is required.");
 
     /// <summary>Renders the resolved optional value as one quoted command-line argument.</summary>
     public string? QuotedArgument() => _value.HasValue ? Convert.ToString(_value.Value, CultureInfo.InvariantCulture)?.QuotedArgument() : null;
@@ -193,11 +141,11 @@ public readonly record struct OptionalSecret
     /// <summary>Renders the resolved optional secret value as one quoted command-line argument.</summary>
     public string? QuotedArgument() => Unwrap()?.QuotedArgument();
 
-    /// <summary>Converts the optional parameter to its required form, throwing when no value was supplied.</summary>
+    /// <summary>Converts the optional parameter to its required form, prompting with masked input during an interactive local build or throwing when no value is available.</summary>
     public Secret Required() =>
-        _value.HasValue
-            ? new Secret(Name, _value.Value, Description)
-            : throw new InvalidOperationException($"Secret parameter '{Name}' is required.");
+        _value.HasValue ? new(Name, _value.Value, Description)
+        : ParameterPrompt.TryRead(Name!, Description, secret: true, out string value) ? new(Name, value, Description)
+        : throw new InvalidOperationException($"Secret parameter '{Name}' is required.");
 
     /// <inheritdoc />
     public override string ToString() => "***";

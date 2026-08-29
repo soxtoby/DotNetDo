@@ -13,11 +13,17 @@ static class RunCommand
         if (!catalog.Contains(taskName))
             return Fail($"Task '{taskName}' does not exist.");
 
-        return await RunTask(
-            catalog,
-            taskName,
-            Render(taskArgs),
-            (childTask, arguments) => RunFile(catalog.ScriptsPath, childTask, arguments));
+        var plan = BuildPlan(catalog, taskName, Render(taskArgs));
+        await RequiredParameterPreflight.Apply(catalog, plan);
+
+        foreach (var invocation in plan)
+        {
+            var exitCode = await RunFile(catalog.ScriptsPath, invocation);
+            if (exitCode != 0)
+                return exitCode;
+        }
+
+        return 0;
     }
 
     internal static async Task<int> RunTask(
@@ -42,14 +48,37 @@ static class RunCommand
         return await runTaskFile(taskName, inheritedArguments);
     }
 
-    static async Task<int> RunFile(RelativePath scriptsPath, string taskName, string taskArguments)
+    static List<RunInvocation> BuildPlan(TaskCatalog catalog, string taskName, string inheritedArguments)
     {
-        var file = Do.RootDirectory / scriptsPath / $"{taskName}.cs";
-        var arguments = file.ToString().QuotedArgument();
-        if (taskArguments.Length != 0)
-            arguments += $" -- {taskArguments}";
+        var plan = new List<RunInvocation>();
+        Add(taskName, inheritedArguments);
+        return plan;
 
-        using var process = Process.Start(new ProcessStartInfo("dotnet", arguments) { UseShellExecute = false });
+        void Add(string childTask, string arguments)
+        {
+            if (catalog.TryGetMetaTask(childTask, out var invocations))
+            {
+                foreach (var invocation in invocations)
+                    Add(invocation.TaskName, Combine(arguments, invocation.Arguments));
+            }
+            else
+            {
+                plan.Add(new(childTask, arguments));
+            }
+        }
+    }
+
+    static async Task<int> RunFile(RelativePath scriptsPath, RunInvocation invocation)
+    {
+        var file = Do.RootDirectory / scriptsPath / $"{invocation.TaskName}.cs";
+        var arguments = file.ToString().QuotedArgument();
+        if (invocation.Arguments.Length != 0)
+            arguments += $" -- {invocation.Arguments}";
+
+        var startInfo = new ProcessStartInfo("dotnet", arguments) { UseShellExecute = false };
+        foreach (var (name, value) in invocation.Environment)
+            startInfo.Environment[name] = value;
+        using var process = Process.Start(startInfo);
 
         if (process is null)
         {
@@ -73,4 +102,12 @@ static class RunCommand
         Console.Error.WriteLine(message);
         return 1;
     }
+
+}
+
+sealed class RunInvocation(string taskName, string arguments)
+{
+    public string TaskName { get; } = taskName;
+    public string Arguments { get; set; } = arguments;
+    public Dictionary<string, string> Environment { get; } = new(StringComparer.Ordinal);
 }

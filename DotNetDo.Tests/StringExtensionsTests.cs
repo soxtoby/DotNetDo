@@ -126,6 +126,39 @@ public sealed class StringExtensionsTests
     }
 
     [Theory]
+    [InlineData("yes", true)]
+    [InlineData("n", false)]
+    [InlineData("true", true)]
+    public void Prompt_boolean_values_accept_interactive_shortcuts(string input, bool expected)
+    {
+        Assert.True(ParameterPrompt.TryConvert(input, out bool value, out var error));
+        Assert.Equal(expected, value);
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public void Prompt_values_reuse_parameter_conversion()
+    {
+        Assert.True(ParameterPrompt.TryConvert("42", out int value, out var error));
+        Assert.Equal(42, value);
+        Assert.Null(error);
+
+        Assert.False(ParameterPrompt.TryConvert("many", out value, out error));
+        Assert.Equal(0, value);
+        Assert.Equal("Value could not be parsed as int.", error);
+    }
+
+    [Fact]
+    public void Task_parameter_configuration_resolves_typed_arguments()
+    {
+        var configuration = TaskParameterConfiguration.Create(["--count", "42", "--publish"]);
+
+        Assert.Equal(42, configuration.Read<int>("count").Value);
+        Assert.True(configuration.Read<bool>("publish").Value);
+        Assert.False(configuration.Read<string>("missing").HasValue);
+    }
+
+    [Theory]
     [InlineData(new[] { "build", "--pack" }, new[] { "build", "--pack=\0" })]
     [InlineData(new[] { "build", "--pack", "--mode", "Fast" }, new[] { "build", "--pack=\0", "--mode", "Fast" })]
     [InlineData(new[] { "build", "--pack", "false" }, new[] { "build", "--pack", "false" })]

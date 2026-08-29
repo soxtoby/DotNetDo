@@ -138,6 +138,10 @@ Task parameters may include an optional description for task help output.
 
 `Do.Param(name)` and `Do.Param<T>(name)` declare optional parameters with nullable values. `.Required()` throws immediately when no value exists and otherwise returns a non-nullable `Param<T>`; an immediate call marks the parameter as always required for discovery, while a later call is conditional runtime validation. `Do.Param(name, defaultValue, description)` requires a non-null default and also returns `Param<T>`; a defaulted parameter is never required input.
 
+At the start of an interactive local run command, DotNetDo discovers immediate `.Required()` declarations and resolves cheap configured sources before evaluating a file-based task's user-secrets identity. It prompts on standard output for values still missing and forwards each answer only to child invocations where that value was unresolved; prompted secrets use the child environment rather than command-line arguments. Failure to inspect a child's user secrets defers resolution to that child. An undiscovered runtime `.Required()` also prompts inside its C# task after every configured source fails to supply a value; runtime answers are local to the child process.
+
+Invalid typed input reports the parse failure and prompts again. Boolean prompts additionally accept `y`, `yes`, `n`, and `no`. Blank input is valid for strings and secrets. Secret input is masked. Closed input fails with the ordinary required-parameter error; console interruption aborts normally.
+
 A bare long option resolves to `true` for a Boolean parameter. Other parameter types require an explicit value.
 
 ## Secret value
@@ -227,6 +231,12 @@ _Avoid_: Universal CI API, provider-neutral command
 A build running without an active supported CI provider and without a truthy conventional `CI` marker. `Do.IsLocalBuild` exposes this distinction to tasks; an unsupported CI host with `CI=true` is therefore not local.
 
 _Avoid_: Build environment, non-CI build
+
+## Interactive local build
+
+A local build whose process has an interactive console for both input and output. Missing required task parameters may prompt only during an interactive local build; other builds fail instead.
+
+_Avoid_: Local build
 
 ## CI build default
 

@@ -37,6 +37,26 @@ public sealed class MetaTaskTests
             calls);
     }
 
+    [Theory]
+    [InlineData("yes", "true")]
+    [InlineData("N", "false")]
+    [InlineData("false", "false")]
+    public void Preflight_normalizes_boolean_shortcuts(string input, string expected)
+    {
+        var parameter = new TaskHelp.TaskParameter("publish", "bool", null, null, true, false, ["true", "false"]);
+
+        Assert.True(ParameterPrompt.TryNormalize(input, parameter.Type, parameter.Values, out var value));
+        Assert.Equal(expected, value);
+    }
+
+    [Fact]
+    public void Preflight_argument_splitting_keeps_quoted_values_together()
+    {
+        Assert.Equal(
+            ["--name", "hello world", "--publish=true"],
+            RequiredParameterPreflight.SplitArguments("--name \"hello world\" --publish=true"));
+    }
+
     [Fact]
     public async Task Stops_at_the_first_failed_task()
     {
