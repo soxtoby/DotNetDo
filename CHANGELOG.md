@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- A static documentation site with a curated guide and generated API reference, published from `master`.
 - `Tools.NuGet` typed commands for the NuGet CLI.
 - `Tools.DotNet.Build` and `Tools.DotNet.Pack` support arbitrary MSBuild properties plus first-class CI, version, and copyright properties.
 - Interactive local task runs prompt for missing required parameters before execution, with masked secret input and runtime fallback for conditional requirements.

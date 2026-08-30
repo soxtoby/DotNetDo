@@ -1,5 +1,79 @@
 # Glossary
 
+## Documentation
+
+### Documentation site
+
+The canonical public documentation for DotNetDo. Its sole published version describes `master`; it introduces the project, teaches repository automation workflows, and provides the complete DotNetDo.Core API reference.
+
+### Documentation source
+
+The committed inputs to the documentation build under `docs`: authored landing and Getting started pages, guides under `docs/guides`, API-family definitions under `docs/reference`, presentation overrides under `docs/template`, and `docs/docfx.json`.
+
+### Generated documentation
+
+Uncommitted API-page data and static site output under ignored `artifacts/docs`, derived from the current DotNetDo.Core public API and documentation source. Local builds and CI reproduce it.
+
+### Getting started
+
+The guide that takes a new DotNetDo user from installing the tool through initializing a workspace with `:init` to running its generated task. Shared instructions are shell-neutral; compact Windows and POSIX tabs show the differing generated-launcher commands. A complete compact version remains in README even though the documentation site is canonical.
+
+### Documentation landing page
+
+The basic site entry headed "Repository automation, in C#." It uses the README's project description, a two-line task example, and Get started, Documentation, and GitHub links without feature grids or promotional sections.
+
+### Guide
+
+An authored page that teaches a DotNetDo workflow or explains how its concepts fit together. The initial flat guide list covers task orchestration, Git, solution navigation, path values, and shell completion. Initialization belongs in Getting started; Azure and NuGet examples belong in API introductions. Tool-specific member documentation belongs in the API reference instead.
+
+### API reference
+
+A generated description of the complete public DotNetDo.Core API, organized into tool APIs and core APIs. Curated presentation may clarify facade types such as `Do` without changing their public contract. Project-defined inheritance and interface relationships remain visible; framework-root hierarchies, compiler-generated record members, and inherited boilerplate do not. Facade type cross-references resolve to their curated destination: a tool facade to its tool family and `Do` to the Core API overview. No duplicate facade page is generated.
+
+### Reference introduction
+
+An authored overview for one API family. It begins with the complete generated documentation for qualified entry points such as `Do.Exec()` and `Do.ApplicationData`, ordered by typical workflow, then links alphabetically ordered related generated type documentation. A related type has one canonical family even when other families also link it.
+
+### API family
+
+A documentation grouping for APIs used toward one task-authoring purpose, independent of their declaring C# type. Facade types such as `Do` supply entries to families but are not themselves families.
+
+### Tool API
+
+The part of the DotNetDo.Core API that models external command-line tools through `Tools`.
+
+### Core API
+
+The part of the DotNetDo.Core API outside tool APIs. It is presented by API family rather than by declaring type; `Do` is not a standalone reference category.
+
+### Documentation navigation
+
+The curated site hierarchy shown persistently in a left sidebar on desktop and as a drawer on smaller screens. Generated and unlisted pages retain this hierarchy rather than exposing a flat type inventory. API pages additionally provide a separate right-hand outline: family pages expose entry points and related types, while type pages expose member-kind sections and their alphabetically ordered members.
+
+### Documentation search
+
+The index of curated pages, canonical generated types, and public members. A member result opens its exact family or type anchor. Flat generated inventories and facade artifacts are excluded.
+
+### Documentation theme
+
+The shared landing-page and documentation presentation based on the Compiler notebook direction: compact technical typography, a cool light surface, deep blue primary color, and restrained red accents. Inter supplies interface and content text; JetBrains Mono supplies code, labels, and technical accents. Both load from Google Fonts rather than being stored in the repository. The theme follows the system color preference initially and offers a persistent manual light/dark override.
+
+### Project README
+
+The compact repository entry point containing the project description, installation, the complete Getting started flow, a minimal task example, and links to the canonical documentation site. Detailed guides and API documentation live only on the site.
+
+### Documentation build
+
+The reproducible local and CI operation that generates API data, composes API families, validates the documentation, and emits the static site. `./do docs` runs it locally; `./do docs --serve` additionally serves the result without live rebuilding.
+
+### Documentation validation
+
+The CI gate that rejects generation errors, broken internal links or cross-references, duplicate API ownership, and undocumented public APIs. Any tolerated Docfx warning requires an explicit suppression.
+
+### Documentation URL
+
+The public site at `https://soxtoby.github.io/DotNetDo/`. All generated paths and assets remain base-path-safe so a later custom domain does not require content changes.
+
 ## Document model
 
 A format-native, navigable representation of a structured document that does not require a caller-defined value type. A document-model reader complements, rather than replaces, typed deserialization.

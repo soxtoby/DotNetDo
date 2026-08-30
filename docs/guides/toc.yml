@@ -1,0 +1,10 @@
+- name: Task orchestration
+  href: task-orchestration.md
+- name: Git
+  href: git.md
+- name: Solution navigation
+  href: solution-navigation.md
+- name: Path values
+  href: path-values.md
+- name: Shell completion
+  href: completion.md

@@ -1,0 +1,233 @@
+{
+  "families": [
+    {
+      "slug": "core/execution",
+      "title": "Execution",
+      "summary": "Run processes and installed tools, capture output, and control logging and failure behavior.",
+      "entries": [
+        "DotNetDo.Do.Exec(DotNetDo.ToolCommand)",
+        "DotNetDo.Do.Exec(System.String,DotNetDo.ExecOptions)",
+        "DotNetDo.Do.Exec``1(DotNetDo.PackageToolCommand{``0})",
+        "DotNetDo.Do.WorkingDirectory"
+      ],
+      "typePattern": "^DotNetDo\\.(Exec|OutputType$|ToolCommand|PackageToolCommand|PackageToolNotDeclaredException$|ToolInstall|ToolManifestException$|ToolOutputException$|FormatCommand$)"
+    },
+    {
+      "slug": "core/parameters-and-secrets",
+      "title": "Parameters and secrets",
+      "summary": "Declare task parameters and secrets, then resolve them from arguments, environment variables, user secrets, and workspace configuration.",
+      "entries": [
+        "DotNetDo.Do.Param(System.String)",
+        "DotNetDo.Do.Param``1(System.String)",
+        "DotNetDo.Do.Param``1(System.String,``0,System.String)",
+        "DotNetDo.Do.Secret(System.String,System.String,System.String)"
+      ],
+      "typePattern": "^DotNetDo\\.(OptionalParam|OptionalSecret$|Param|Secret$)"
+    },
+    {
+      "slug": "core/paths-and-files",
+      "title": "Paths and files",
+      "summary": "Work with normalized paths, files, archives, and temporary directories.",
+      "entries": [
+        "DotNetDo.Do.ApplicationData",
+        "DotNetDo.Do.Documents",
+        "DotNetDo.Do.LocalApplicationData",
+        "DotNetDo.Do.ProgramFiles",
+        "DotNetDo.Do.ProgramFilesX86",
+        "DotNetDo.Do.UserProfile",
+        "DotNetDo.Do.CreateTempDirectory(System.String)",
+        "DotNetDo.Do.CreateTempFile(System.String,System.String)"
+      ],
+      "typePattern": "^DotNetDo\\.(AbsolutePath$|RelativePath$|GlobOptions$|TransferOptions$|ZipOptions$|UnzipOptions$)"
+    },
+    {
+      "slug": "core/workspace-and-solutions",
+      "title": "Workspace and solutions",
+      "summary": "Find the workspace root, inspect the configured solution, and navigate its projects.",
+      "entries": [
+        "DotNetDo.Do.RootDirectory",
+        "DotNetDo.Do.Solution"
+      ],
+      "typePattern": "^DotNetDo\\.(ProjectInfo$|Solution$|TaskDescriptionAttribute$)"
+    },
+    {
+      "slug": "core/git-repositories",
+      "title": "Git repositories",
+      "summary": "Read repository state and verify that operations leave Git-visible content unchanged.",
+      "entries": ["DotNetDo.Do.GitRepo"],
+      "typePattern": "^DotNetDo\\.(GitRepository$|GitChange$|RepositoryChangedException$)"
+    },
+    {
+      "slug": "core/ci-and-logging",
+      "title": "CI and logging",
+      "summary": "Detect local builds, read CI metadata, emit provider-native messages, and configure logging.",
+      "entries": [
+        "DotNetDo.Do.IsLocalBuild",
+        "DotNetDo.Do.AzurePipelines",
+        "DotNetDo.Do.GitHubActions"
+      ],
+      "typePattern": "^DotNetDo\\.(Azure(?!Bicep|Command$)|GitHub|Logging$)"
+    },
+    {
+      "slug": "core/string-and-collection-utilities",
+      "title": "String and collection utilities",
+      "summary": "Use the small extension-method set shared by task scripts and command rendering.",
+      "entries": [],
+      "typePattern": "^DotNetDo\\.(StringExtensions$|EnumerableExtensions$)"
+    },
+    {
+      "slug": "tools/azure",
+      "title": "Azure and Bicep",
+      "summary": "Run Azure CLI and typed Bicep commands for validation, formatting, builds, modules, and deployment snapshots.",
+      "introFile": "intros/azure.md",
+      "facades": ["DotNetDo.Tools.Azure", "DotNetDo.Tools.Azure.Bicep"],
+      "entries": [
+        "DotNetDo.Tools.Azure.EnsureAvailable",
+        "DotNetDo.Tools.Azure.Bicep.Build",
+        "DotNetDo.Tools.Azure.Bicep.BuildParams",
+        "DotNetDo.Tools.Azure.Bicep.Format",
+        "DotNetDo.Tools.Azure.Bicep.GenerateParams",
+        "DotNetDo.Tools.Azure.Bicep.Install",
+        "DotNetDo.Tools.Azure.Bicep.Lint",
+        "DotNetDo.Tools.Azure.Bicep.Publish",
+        "DotNetDo.Tools.Azure.Bicep.Restore",
+        "DotNetDo.Tools.Azure.Bicep.Snapshot",
+        "DotNetDo.Tools.Azure.Bicep.Upgrade"
+      ],
+      "typePattern": "^DotNetDo\\.(AzureBicep|Bicep|AzureCommand$)"
+    },
+    {
+      "slug": "tools/bun",
+      "title": "Bun",
+      "summary": "Install dependencies, build packages, run scripts, publish packages, and execute tests with Bun.",
+      "facades": ["DotNetDo.Tools.Bun"],
+      "entries": [
+        "DotNetDo.Tools.Bun.EnsureAvailable",
+        "DotNetDo.Tools.Bun.Install",
+        "DotNetDo.Tools.Bun.Add",
+        "DotNetDo.Tools.Bun.Build",
+        "DotNetDo.Tools.Bun.Run",
+        "DotNetDo.Tools.Bun.Test",
+        "DotNetDo.Tools.Bun.Publish"
+      ],
+      "typePattern": "^DotNetDo\\.Bun"
+    },
+    {
+      "slug": "tools/dotnet",
+      "title": ".NET SDK",
+      "summary": "Build, test, pack, restore, format, watch, and manage tools with the installed .NET SDK.",
+      "facades": ["DotNetDo.Tools.DotNet"],
+      "entries": [
+        "DotNetDo.Tools.DotNet.Build",
+        "DotNetDo.Tools.DotNet.Clean",
+        "DotNetDo.Tools.DotNet.Restore",
+        "DotNetDo.Tools.DotNet.Test",
+        "DotNetDo.Tools.DotNet.Pack",
+        "DotNetDo.Tools.DotNet.Format",
+        "DotNetDo.Tools.DotNet.Watch",
+        "DotNetDo.Tools.DotNet.DevCerts",
+        "DotNetDo.Tools.DotNet.NuGetPush",
+        "DotNetDo.Tools.DotNet.PackageSearch",
+        "DotNetDo.Tools.DotNet.ToolRestore",
+        "DotNetDo.Tools.DotNet.ToolUpdate"
+      ],
+      "typePattern": "^DotNetDo\\.DotNet"
+    },
+    {
+      "slug": "tools/git",
+      "title": "Git",
+      "summary": "Run common Git mutations through typed commands.",
+      "facades": ["DotNetDo.Tools.Git"],
+      "entries": [
+        "DotNetDo.Tools.Git.Add",
+        "DotNetDo.Tools.Git.Commit",
+        "DotNetDo.Tools.Git.CreateTag",
+        "DotNetDo.Tools.Git.Push",
+        "DotNetDo.Tools.Git.PushTag",
+        "DotNetDo.Tools.Git.Reset"
+      ],
+      "typePattern": "^DotNetDo\\.(GitAdd$|GitAuthor$|GitCommand$|GitCommit$|GitCreateTag$|GitPush$|GitPushTag$|GitReset$)"
+    },
+    {
+      "slug": "tools/gitversion",
+      "title": "GitVersion",
+      "summary": "Calculate semantic version information from GitVersion and read its structured result.",
+      "entries": ["DotNetDo.Tools.GitVersion"],
+      "typePattern": "^DotNetDo\\.GitVersion"
+    },
+    {
+      "slug": "tools/msbuild",
+      "title": "MSBuild",
+      "summary": "Build projects and solutions with the installed MSBuild toolset.",
+      "entries": ["DotNetDo.Tools.MSBuild"],
+      "typePattern": "^DotNetDo\\.MSBuild"
+    },
+    {
+      "slug": "tools/npm",
+      "title": "npm",
+      "summary": "Install dependencies, run scripts, pack, publish, and test packages with npm.",
+      "facades": ["DotNetDo.Tools.Npm"],
+      "entries": [
+        "DotNetDo.Tools.Npm.CleanInstall",
+        "DotNetDo.Tools.Npm.Install",
+        "DotNetDo.Tools.Npm.Run",
+        "DotNetDo.Tools.Npm.Test",
+        "DotNetDo.Tools.Npm.Pack",
+        "DotNetDo.Tools.Npm.Publish"
+      ],
+      "typePattern": "^DotNetDo\\.Npm"
+    },
+    {
+      "slug": "tools/nuget",
+      "title": "NuGet CLI",
+      "summary": "Run the host-owned NuGet CLI through typed immutable commands.",
+      "introFile": "intros/nuget.md",
+      "facades": ["DotNetDo.Tools.NuGet"],
+      "entries": [
+        "DotNetDo.Tools.NuGet.ToolName",
+        "DotNetDo.Tools.NuGet.EnsureAvailable",
+        "DotNetDo.Tools.NuGet.Add",
+        "DotNetDo.Tools.NuGet.Config",
+        "DotNetDo.Tools.NuGet.Delete",
+        "DotNetDo.Tools.NuGet.Init",
+        "DotNetDo.Tools.NuGet.Install",
+        "DotNetDo.Tools.NuGet.List",
+        "DotNetDo.Tools.NuGet.Locals",
+        "DotNetDo.Tools.NuGet.Pack",
+        "DotNetDo.Tools.NuGet.Push",
+        "DotNetDo.Tools.NuGet.Restore",
+        "DotNetDo.Tools.NuGet.Search",
+        "DotNetDo.Tools.NuGet.SetApiKey",
+        "DotNetDo.Tools.NuGet.Sign",
+        "DotNetDo.Tools.NuGet.Sources",
+        "DotNetDo.Tools.NuGet.Spec",
+        "DotNetDo.Tools.NuGet.TrustedSigners",
+        "DotNetDo.Tools.NuGet.Update",
+        "DotNetDo.Tools.NuGet.Verify"
+      ],
+      "typePattern": "^DotNetDo\\.NuGet"
+    },
+    {
+      "slug": "tools/scoop",
+      "title": "Scoop",
+      "summary": "Configure Scoop and manage buckets and installed applications on Windows.",
+      "facades": ["DotNetDo.Tools.Scoop"],
+      "entries": [
+        "DotNetDo.Tools.Scoop.EnsureAvailable",
+        "DotNetDo.Tools.Scoop.Bucket",
+        "DotNetDo.Tools.Scoop.Config",
+        "DotNetDo.Tools.Scoop.Install",
+        "DotNetDo.Tools.Scoop.Uninstall",
+        "DotNetDo.Tools.Scoop.Update"
+      ],
+      "typePattern": "^DotNetDo\\.Scoop"
+    },
+    {
+      "slug": "tools/vstest",
+      "title": "VSTest",
+      "summary": "Run test assemblies with VSTest and configure platform-specific execution.",
+      "entries": ["DotNetDo.Tools.VSTest"],
+      "typePattern": "^DotNetDo\\.VSTest"
+    }
+  ]
+}

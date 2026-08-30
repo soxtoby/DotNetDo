@@ -1,0 +1,41 @@
+- name: Overview
+  href: index.md
+- name: Core APIs
+  items:
+  - name: Execution
+    href: core/execution.yml
+  - name: Parameters and secrets
+    href: core/parameters-and-secrets.yml
+  - name: Paths and files
+    href: core/paths-and-files.yml
+  - name: Workspace and solutions
+    href: core/workspace-and-solutions.yml
+  - name: Git repositories
+    href: core/git-repositories.yml
+  - name: CI and logging
+    href: core/ci-and-logging.yml
+  - name: String and collection utilities
+    href: core/string-and-collection-utilities.yml
+- name: Tools
+  href: tools/index.md
+  items:
+  - name: Azure and Bicep
+    href: tools/azure.yml
+  - name: Bun
+    href: tools/bun.yml
+  - name: .NET SDK
+    href: tools/dotnet.yml
+  - name: Git
+    href: tools/git.yml
+  - name: GitVersion
+    href: tools/gitversion.yml
+  - name: MSBuild
+    href: tools/msbuild.yml
+  - name: npm
+    href: tools/npm.yml
+  - name: NuGet CLI
+    href: tools/nuget.yml
+  - name: Scoop
+    href: tools/scoop.yml
+  - name: VSTest
+    href: tools/vstest.yml

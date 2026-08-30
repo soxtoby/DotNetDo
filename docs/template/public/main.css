@@ -1,0 +1,463 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+:root {
+  --do-ink: #17213a;
+  --do-muted: #667085;
+  --do-paper: #fbfcff;
+  --do-surface: #ffffff;
+  --do-rail: #f1f4fa;
+  --do-line: #dbe2ee;
+  --do-blue: #2449d8;
+  --do-blue-hover: #1738b7;
+  --do-red: #d33b32;
+  --do-code: #10182a;
+  --do-code-ink: #edf2ff;
+  --do-shadow: 0 18px 55px rgb(29 45 88 / 10%);
+}
+
+[data-bs-theme="light"] {
+  --bs-body-bg: var(--do-paper);
+  --bs-body-color: var(--do-ink);
+  --bs-link-color: var(--do-blue);
+  --bs-link-hover-color: var(--do-blue-hover);
+  --bs-border-color: var(--do-line);
+  --bs-secondary-color: var(--do-muted);
+}
+
+[data-bs-theme="dark"] {
+  --do-ink: #e8edfa;
+  --do-muted: #9ba8c1;
+  --do-paper: #0c1120;
+  --do-surface: #12192b;
+  --do-rail: #101728;
+  --do-line: #27324a;
+  --do-blue: #8ca6ff;
+  --do-blue-hover: #b1c0ff;
+  --do-red: #ff746b;
+  --do-code: #080c16;
+  --do-code-ink: #eff3ff;
+  --do-shadow: 0 18px 55px rgb(0 0 0 / 28%);
+  --bs-body-bg: var(--do-paper);
+  --bs-body-color: var(--do-ink);
+  --bs-link-color: var(--do-blue);
+  --bs-link-hover-color: var(--do-blue-hover);
+  --bs-border-color: var(--do-line);
+  --bs-secondary-color: var(--do-muted);
+  color-scheme: dark;
+}
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  letter-spacing: -0.008em;
+}
+
+header.bg-body {
+  background: color-mix(in srgb, var(--do-surface) 92%, transparent) !important;
+  border-color: var(--do-line) !important;
+  backdrop-filter: blur(16px);
+}
+
+.navbar {
+  min-height: 64px;
+}
+
+.navbar-brand,
+.navbar-brand:hover,
+.navbar-brand:focus {
+  color: var(--do-ink);
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+}
+
+.navbar-brand::after {
+  content: ".do";
+  color: var(--do-red);
+}
+
+#logo {
+  display: none;
+}
+
+.navbar .form-control {
+  min-width: min(25rem, 34vw);
+  color: var(--do-ink);
+  background: var(--do-rail);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.navbar .form-control:focus {
+  border-color: var(--do-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--do-blue) 16%, transparent);
+}
+
+main.container-xxl,
+header .container-xxl,
+.search-results.container-xxl {
+  max-width: 1560px;
+}
+
+.toc-offcanvas {
+  background: var(--do-rail);
+  border-right: 1px solid var(--do-line);
+}
+
+.toc {
+  padding-top: 1rem;
+}
+
+.toc form.filter input {
+  background: var(--do-surface);
+  border-color: var(--do-line);
+  border-radius: 7px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+
+.toc ul {
+  font-size: 13px;
+}
+
+.toc li {
+  margin: 0.34rem 0;
+}
+
+.toc li > a {
+  color: var(--do-muted);
+  text-decoration: none;
+}
+
+.toc li > a:hover,
+.toc li > a:focus {
+  color: var(--do-ink);
+  text-decoration: none;
+}
+
+.toc li > a.active {
+  color: var(--do-blue);
+  font-weight: 700;
+}
+
+/* Canonical type pages remain in the TOC model for breadcrumbs and family context,
+   while the left rail stops at the authored family level. */
+.toc > .overflow-y-auto > ul > li > ul > li > ul > li > ul {
+  display: none !important;
+}
+
+.toc > .overflow-y-auto > ul > li > ul > li > ul > li.expander > .expand-stub {
+  display: none;
+}
+
+.toc span.name-only {
+  color: var(--do-ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.content {
+  max-width: 900px;
+  padding-top: 1.2rem;
+}
+
+body[data-yaml-mime="ApiPage"] .content {
+  max-width: 960px;
+}
+
+body:not([data-yaml-mime="ApiPage"]) > main > .affix {
+  display: none !important;
+}
+
+.affix {
+  max-height: calc(100vh - 92px);
+  padding-left: 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.affix h5 {
+  color: var(--do-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.affix ul {
+  font-size: 12px;
+}
+
+.affix ul li {
+  margin: 0.28rem 0;
+}
+
+.affix a {
+  color: var(--do-muted);
+}
+
+.affix a:hover,
+.affix a:focus,
+.affix a.active {
+  color: var(--do-blue);
+  text-decoration: none !important;
+}
+
+.actionbar {
+  min-height: 2rem;
+}
+
+.breadcrumb {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+
+article {
+  font-size: 15px;
+  line-height: 1.62;
+}
+
+article h1 {
+  color: var(--do-ink);
+  font-size: clamp(2.35rem, 4vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.052em;
+  line-height: 1.02;
+  margin-bottom: 0.85rem;
+}
+
+article h2,
+article h2.section {
+  color: var(--do-ink);
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  margin-top: 2.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--do-line);
+}
+
+article h2::before {
+  content: "// ";
+  color: var(--do-red);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 500;
+}
+
+article h3,
+body[data-yaml-mime="ApiPage"] article h3[data-uid] {
+  color: var(--do-ink);
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-top: 1.8rem;
+}
+
+body[data-yaml-mime="ApiPage"] article h4.section {
+  color: var(--do-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-top: 1rem;
+  text-transform: uppercase;
+}
+
+article p,
+article li {
+  max-width: 76ch;
+}
+
+article a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+article pre {
+  color: var(--do-code-ink);
+  background: var(--do-code);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: inset 3px 0 var(--do-blue);
+  padding: 0.9rem 1rem;
+}
+
+article code,
+.xref {
+  font-family: "JetBrains Mono", monospace;
+}
+
+article :not(pre) > code {
+  color: var(--do-blue);
+  background: color-mix(in srgb, var(--do-blue) 9%, var(--do-surface));
+  border: 1px solid color-mix(in srgb, var(--do-blue) 14%, transparent);
+  border-radius: 4px;
+  padding: 0.08em 0.28em;
+}
+
+body[data-yaml-mime="ApiPage"] article .facts {
+  color: var(--do-muted) !important;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  margin: 0.65rem 0 0.9rem;
+}
+
+body[data-yaml-mime="ApiPage"] article .codewrapper {
+  margin: 0.8rem 0 1.1rem;
+}
+
+.header-action {
+  color: var(--do-muted) !important;
+}
+
+.hero {
+  max-width: 1040px;
+  padding: clamp(3.5rem, 10vh, 8rem) 0 clamp(4rem, 11vh, 9rem);
+}
+
+.hero .eyebrow {
+  color: var(--do-red);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-bottom: 1.35rem;
+}
+
+.hero h1 {
+  max-width: 980px;
+  font-size: clamp(3.6rem, 8.5vw, 7.8rem);
+  line-height: 0.88;
+  margin: 0;
+}
+
+.hero h1 span {
+  color: var(--do-blue);
+}
+
+.hero .lede {
+  max-width: 720px;
+  color: var(--do-muted);
+  font-size: clamp(1.05rem, 2vw, 1.32rem);
+  line-height: 1.55;
+  margin: 2rem 0;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.hero-actions .button {
+  color: var(--do-ink);
+  background: var(--do-surface);
+  border: 1px solid var(--do-line);
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.68rem 1.05rem;
+  text-decoration: none;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.hero-actions .button:hover,
+.hero-actions .button:focus {
+  border-color: var(--do-blue);
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--do-blue) 14%, transparent);
+  transform: translateY(-1px);
+}
+
+.hero-actions .button.primary {
+  color: #fff;
+  background: var(--do-blue);
+  border-color: var(--do-blue);
+}
+
+.hero-actions .text-link {
+  color: var(--do-muted);
+  font-weight: 650;
+  margin-left: 0.35rem;
+}
+
+.hero-command {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 0.8rem;
+  width: min(590px, 100%);
+  color: var(--do-code-ink);
+  background: var(--do-code);
+  border: 1px solid color-mix(in srgb, var(--do-blue) 35%, transparent);
+  border-radius: 10px;
+  box-shadow: var(--do-shadow);
+  margin-top: 3.2rem;
+  padding: 1.1rem 1.2rem;
+  transform: rotate(-0.35deg);
+}
+
+.hero-command .prompt {
+  color: var(--do-red);
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+}
+
+.hero-command code {
+  color: var(--do-code-ink);
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.contribution,
+.next-article {
+  font-size: 13px;
+}
+
+footer {
+  color: var(--do-muted);
+  border-color: var(--do-line) !important;
+  font-size: 12px;
+}
+
+@media (max-width: 767.98px) {
+  .navbar .form-control {
+    min-width: 100%;
+  }
+
+  .hero {
+    padding-top: 3rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(3.2rem, 17vw, 5rem);
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-actions .button,
+  .hero-actions .text-link {
+    margin-left: 0;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

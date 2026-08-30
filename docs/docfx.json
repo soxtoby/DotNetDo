@@ -1,0 +1,43 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": ["DotNetDo.Core/DotNetDo.Core.csproj"],
+          "src": "../"
+        }
+      ],
+      "dest": "../artifacts/docs/api-raw",
+      "properties": {
+        "TargetFramework": "net10.0",
+        "Configuration": "Release"
+      },
+      "noRestore": true,
+      "outputFormat": "apiPage",
+      "memberLayout": "samePage",
+      "categoryLayout": "none"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["**/*.{md,yml}"],
+        "src": "../artifacts/docs/composed"
+      }
+    ],
+    "output": "../artifacts/docs/site",
+    "template": ["default", "modern", "template"],
+    "sitemap": {
+      "baseUrl": "https://soxtoby.github.io/DotNetDo/"
+    },
+    "globalMetadata": {
+      "_appName": "DotNetDo",
+      "_appTitle": "DotNetDo",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/soxtoby/DotNetDo",
+        "branch": "master"
+      }
+    }
+  }
+}

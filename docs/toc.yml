@@ -1,0 +1,10 @@
+- name: Home
+  href: index.md
+- name: Getting started
+  href: getting-started.md
+- name: Guides
+  href: guides/toc.yml
+- name: API reference
+  href: reference/toc.yml
+- name: GitHub
+  href: https://github.com/soxtoby/DotNetDo
