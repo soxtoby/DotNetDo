@@ -1,50 +1,92 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
+/* ---------------------------------------------------------------- tokens */
+
 :root {
-  --do-ink: #17213a;
-  --do-muted: #667085;
-  --do-paper: #fbfcff;
+  --do-ink: #131722;
+  --do-muted: #616b7d;
+  --do-paper: #fcfcfd;
   --do-surface: #ffffff;
-  --do-rail: #f1f4fa;
-  --do-line: #dbe2ee;
-  --do-blue: #2449d8;
-  --do-blue-hover: #1738b7;
-  --do-red: #d33b32;
-  --do-code: #10182a;
-  --do-code-ink: #edf2ff;
-  --do-shadow: 0 18px 55px rgb(29 45 88 / 10%);
+  --do-rail: #f5f6f9;
+  --do-line: #e4e7ee;
+  --do-line-soft: #eef0f5;
+  --do-nav: #3d4655;
+
+  /* Magenta. Deep enough on paper to clear 4.5:1 at any size and to carry a
+     white button label, so one value covers fills, rules, and text alike. */
+  --do-accent: #d6006e;
+  --do-accent-hover: #ab0058;
+  --do-accent-on: #ffffff;
+  --do-accent-wash: color-mix(in srgb, var(--do-accent) 10%, transparent);
+  --do-accent-ring: color-mix(in srgb, var(--do-accent) 30%, transparent);
+
+  --do-code-bg: #f7f7fb;
+  --do-code-ink: #1d2433;
+  --do-code-line: #e5e5f0;
+  --do-shadow: 0 20px 60px rgb(80 10 45 / 10%);
+
+  /* Code keeps a restrained palette of its own so the accent stays the only
+     thing competing for attention on the page. */
+  --hl-keyword: #0a5fa8;
+  --hl-type: #0f7285;
+  --hl-string: #2c7a3f;
+  --hl-number: #9a5b00;
+  --hl-comment: #6d7684;
+  --hl-meta: #a15c00;
 }
 
 [data-bs-theme="light"] {
+  --bs-focus-ring-color: rgba(214, 0, 110, 0.25);
   --bs-body-bg: var(--do-paper);
   --bs-body-color: var(--do-ink);
-  --bs-link-color: var(--do-blue);
-  --bs-link-hover-color: var(--do-blue-hover);
+  --bs-link-color: var(--do-accent);
+  --bs-link-hover-color: var(--do-accent-hover);
+  /* Bootstrap resolves link colour through the rgb triplet, not --bs-link-color. */
+  --bs-link-color-rgb: 214, 0, 110;
+  --bs-link-hover-color-rgb: 171, 0, 88;
   --bs-border-color: var(--do-line);
   --bs-secondary-color: var(--do-muted);
 }
 
 [data-bs-theme="dark"] {
-  --do-ink: #e8edfa;
-  --do-muted: #9ba8c1;
-  --do-paper: #0c1120;
-  --do-surface: #12192b;
-  --do-rail: #101728;
-  --do-line: #27324a;
-  --do-blue: #8ca6ff;
-  --do-blue-hover: #b1c0ff;
-  --do-red: #ff746b;
-  --do-code: #080c16;
-  --do-code-ink: #eff3ff;
-  --do-shadow: 0 18px 55px rgb(0 0 0 / 28%);
+  --bs-focus-ring-color: rgba(255, 95, 168, 0.25);
+  --do-ink: #e7e9f0;
+  --do-muted: #98a1b3;
+  --do-paper: #0d0f14;
+  --do-surface: #14171f;
+  --do-rail: #141821;
+  --do-line: #262a35;
+  --do-line-soft: #1c202a;
+  --do-nav: #bcc4d2;
+  --do-accent: #ff5fa8;
+  --do-accent-hover: #ff8ac0;
+  --do-accent-on: var(--do-paper);
+  --do-accent-wash: color-mix(in srgb, var(--do-accent) 16%, transparent);
+  --do-accent-ring: color-mix(in srgb, var(--do-accent) 38%, transparent);
+  --do-code-bg: #12151d;
+  --do-code-ink: #dfe3ec;
+  --do-code-line: #232834;
+  --do-shadow: 0 20px 60px rgb(0 0 0 / 40%);
+
+  --hl-keyword: #6fb3f2;
+  --hl-type: #5fd0d8;
+  --hl-string: #8ad9a2;
+  --hl-number: #f0c47a;
+  --hl-comment: #7b8496;
+  --hl-meta: #ffb066;
+
   --bs-body-bg: var(--do-paper);
   --bs-body-color: var(--do-ink);
-  --bs-link-color: var(--do-blue);
-  --bs-link-hover-color: var(--do-blue-hover);
+  --bs-link-color: var(--do-accent);
+  --bs-link-hover-color: var(--do-accent-hover);
+  --bs-link-color-rgb: 255, 95, 168;
+  --bs-link-hover-color-rgb: 255, 138, 192;
   --bs-border-color: var(--do-line);
   --bs-secondary-color: var(--do-muted);
   color-scheme: dark;
 }
+
+/* ------------------------------------------------------------------ base */
 
 html {
   scroll-padding-top: 5rem;
@@ -56,8 +98,58 @@ body {
   letter-spacing: -0.008em;
 }
 
+/* The accent is the same value the primary button fills with, so the same
+   --do-accent-on label colour clears 4.5:1 on it in either theme. */
+::selection {
+  color: var(--do-accent-on);
+  background: var(--do-accent);
+}
+
+/* Bootstrap paints focus in its own blue and offers no single token to move it:
+   .nav-link and the .form-* controls carry a literal #0d6efd40, while buttons
+   derive theirs from --bs-btn-focus-box-shadow. Each route is pointed at the one
+   accent ring below. The rail's filter is named explicitly because its own
+   border-color outranks a bare .form-control:focus, which previously left the
+   ring floating without an edge. */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+.toc form.filter input:focus {
+  border-color: var(--do-accent);
+  box-shadow: 0 0 0 4px var(--do-accent-ring);
+}
+
+/* docfx only puts .nav-link on tree entries outside the active path, so the page
+   you are on and its ancestors fall through to the browser's own outline while
+   their neighbours take the accent ring. Matching the anchors as well as the
+   class keeps the rail on one ring. Bootstrap clears the outline for .nav-link
+   but not for the unclassed ones, so clear it here.
+
+   The affix is deliberately left out: its links turn accent-coloured on focus,
+   and an accent ring around accent text has nothing to read against. The
+   browser's own outline stays, which is the contrast there. */
+.nav-link:focus-visible,
+.toc li > a:focus-visible {
+  border-radius: 6px;
+  outline: 0;
+  box-shadow: 0 0 0 4px var(--do-accent-ring);
+}
+
+/* Covers every button variant and the compound :active/.show focus selectors,
+   which all read the ring back out of this one custom property. The offcanvas
+   close button keeps its own. */
+.btn {
+  --bs-btn-focus-box-shadow: 0 0 0 4px var(--do-accent-ring);
+}
+
+.btn-close {
+  --bs-btn-close-focus-shadow: 0 0 0 4px var(--do-accent-ring);
+}
+
+/* ---------------------------------------------------------------- header */
+
 header.bg-body {
-  background: color-mix(in srgb, var(--do-surface) 92%, transparent) !important;
+  background: color-mix(in srgb, var(--do-surface) 88%, transparent) !important;
   border-color: var(--do-line) !important;
   backdrop-filter: blur(16px);
 }
@@ -66,18 +158,19 @@ header.bg-body {
   min-height: 64px;
 }
 
+/* The brand text is "DotNet" (_appName) so the "Do" can carry the accent. */
 .navbar-brand,
 .navbar-brand:hover,
 .navbar-brand:focus {
   color: var(--do-ink);
   font-size: 1.12rem;
   font-weight: 800;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.045em;
 }
 
 .navbar-brand::after {
-  content: ".do";
-  color: var(--do-red);
+  content: "Do";
+  color: var(--do-accent);
 }
 
 #logo {
@@ -94,9 +187,36 @@ header.bg-body {
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.navbar .form-control:focus {
-  border-color: var(--do-blue);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--do-blue) 16%, transparent);
+/* Sub-items in the navbar dropdown are .nav-link, not .dropdown-item, so they
+   inherit the vertical-navbar padding of 0 horizontally and a 1rem font -- which
+   left them larger than their own parent row and flush against the menu border
+   once the navbar collapses. */
+.navbar .dropdown-menu {
+  background: var(--do-surface);
+  border: 1px solid var(--do-line);
+  border-radius: 10px;
+  box-shadow: var(--do-shadow);
+  min-width: 12rem;
+  padding: 0.3rem;
+}
+
+.navbar .dropdown-menu .nav-link {
+  color: var(--do-nav);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 0.45rem 0.7rem;
+}
+
+.navbar .dropdown-menu .nav-link:hover,
+.navbar .dropdown-menu .nav-link:focus {
+  color: var(--do-ink);
+  background: var(--do-rail);
+}
+
+.navbar .dropdown-menu .nav-link.active {
+  color: var(--do-accent);
+  font-weight: 700;
 }
 
 main.container-xxl,
@@ -105,9 +225,32 @@ header .container-xxl,
   max-width: 1560px;
 }
 
+/* ------------------------------------------------------------ navigation */
+
 .toc-offcanvas {
   background: var(--do-rail);
   border-right: 1px solid var(--do-line);
+}
+
+/* The rail reads as a slab hung off the header rather than a floating card, so it
+   bleeds back through the container gutter to the window edge and up under the
+   navbar. Above 1560px the container is centred, and the bleed has to cover that
+   margin as well. Only the padding on .toc then holds the tree off the edge. */
+@media (min-width: 768px) {
+  body:not([data-search])[data-layout=""] > main > .toc-offcanvas,
+  body:not([data-search])[data-layout="conceptual"] > main > .toc-offcanvas {
+    --do-rail-bleed: calc((100vw - min(100vw, 1560px)) / 2 + 0.75rem);
+    margin-top: -1.6rem;
+    margin-left: calc(0px - var(--do-rail-bleed));
+    top: 60px;
+    max-height: calc(100vh - 60px);
+  }
+
+  /* Scoped, because below md the tree moves into an offcanvas drawer that
+     already brings its own padding. */
+  .toc {
+    padding-inline: 1.1rem;
+  }
 }
 
 .toc {
@@ -119,19 +262,20 @@ header .container-xxl,
   border-color: var(--do-line);
   border-radius: 7px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .toc ul {
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 
 .toc li {
-  margin: 0.34rem 0;
+  margin: 0.38rem 0;
 }
 
 .toc li > a {
-  color: var(--do-muted);
+  color: var(--do-nav);
   text-decoration: none;
 }
 
@@ -142,7 +286,7 @@ header .container-xxl,
 }
 
 .toc li > a.active {
-  color: var(--do-blue);
+  color: var(--do-accent);
   font-weight: 700;
 }
 
@@ -165,19 +309,10 @@ header .container-xxl,
   text-transform: uppercase;
 }
 
-.content {
-  max-width: 900px;
-  padding-top: 1.2rem;
-}
-
-body[data-yaml-mime="ApiPage"] .content {
-  max-width: 960px;
-}
-
-body:not([data-yaml-mime="ApiPage"]) > main > .affix {
-  display: none !important;
-}
-
+/* The template builds this panel from the article's own h2/h3 headings, so it is
+   empty on pages that only list their children -- the grouping nodes in the API
+   tree. The column keeps its width either way, so the article does not slide
+   sideways as you click between a grouping page and the pages under it. */
 .affix {
   max-height: calc(100vh - 92px);
   padding-left: 1rem;
@@ -194,7 +329,8 @@ body:not([data-yaml-mime="ApiPage"]) > main > .affix {
 }
 
 .affix ul {
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 
 .affix ul li {
@@ -202,13 +338,13 @@ body:not([data-yaml-mime="ApiPage"]) > main > .affix {
 }
 
 .affix a {
-  color: var(--do-muted);
+  color: var(--do-nav);
 }
 
 .affix a:hover,
 .affix a:focus,
 .affix a.active {
-  color: var(--do-blue);
+  color: var(--do-accent);
   text-decoration: none !important;
 }
 
@@ -219,6 +355,21 @@ body:not([data-yaml-mime="ApiPage"]) > main > .affix {
 .breadcrumb {
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
+}
+
+.header-action {
+  color: var(--do-muted) !important;
+}
+
+/* ------------------------------------------------------------- article */
+
+.content {
+  max-width: 900px;
+  padding-top: 1.2rem;
+}
+
+body[data-yaml-mime="ApiPage"] .content {
+  max-width: 960px;
 }
 
 article {
@@ -248,7 +399,7 @@ article h2.section {
 
 article h2::before {
   content: "// ";
-  color: var(--do-red);
+  color: var(--do-accent);
   font-family: "JetBrains Mono", monospace;
   font-weight: 500;
 }
@@ -282,28 +433,6 @@ article a {
   text-underline-offset: 0.18em;
 }
 
-article pre {
-  color: var(--do-code-ink);
-  background: var(--do-code);
-  border: 0;
-  border-radius: 8px;
-  box-shadow: inset 3px 0 var(--do-blue);
-  padding: 0.9rem 1rem;
-}
-
-article code,
-.xref {
-  font-family: "JetBrains Mono", monospace;
-}
-
-article :not(pre) > code {
-  color: var(--do-blue);
-  background: color-mix(in srgb, var(--do-blue) 9%, var(--do-surface));
-  border: 1px solid color-mix(in srgb, var(--do-blue) 14%, transparent);
-  border-radius: 4px;
-  padding: 0.08em 0.28em;
-}
-
 body[data-yaml-mime="ApiPage"] article .facts {
   color: var(--do-muted) !important;
   font-family: "JetBrains Mono", monospace;
@@ -315,107 +444,464 @@ body[data-yaml-mime="ApiPage"] article .codewrapper {
   margin: 0.8rem 0 1.1rem;
 }
 
-.header-action {
-  color: var(--do-muted) !important;
+/* ---------------------------------------------------------- code blocks */
+
+article code,
+.xref {
+  font-family: "JetBrains Mono", monospace;
 }
 
-.hero {
-  max-width: 1040px;
-  padding: clamp(3.5rem, 10vh, 8rem) 0 clamp(4rem, 11vh, 9rem);
+article pre {
+  color: var(--do-code-ink);
+  background: var(--do-code-bg);
+  border: 1px solid var(--do-code-line);
+  border-radius: 10px;
+  padding: 0;
 }
 
-.hero .eyebrow {
-  color: var(--do-red);
+/* highlight.js paints its own theme background onto the inner <code>, which
+   otherwise reads as a heavy frame around the block. */
+pre code.hljs,
+pre code.hljs[class*="lang-"],
+pre code.hljs[class*="language-"] {
+  color: inherit;
+  background: transparent;
+  padding: 0.95rem 1.1rem;
+}
+
+article pre > code {
+  display: block;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0.95rem 1.1rem;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+article :not(pre) > code {
+  color: color-mix(in srgb, var(--do-accent) 88%, var(--do-ink));
+  background: var(--do-code-bg);
+  border: 1px solid var(--do-code-line);
+  border-radius: 4px;
+  padding: 0.08em 0.3em;
+  font-size: 0.88em;
+}
+
+article a > code {
+  color: var(--do-accent);
+}
+
+/* --------------------------------------------------- syntax highlighting */
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-symbol,
+.hljs-name,
+.hljs-tag {
+  color: var(--hl-keyword);
+  font-weight: 500;
+}
+
+.hljs-built_in,
+.hljs-type,
+.hljs-class,
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--hl-type);
+  font-weight: 400;
+}
+
+.hljs-string,
+.hljs-meta .hljs-string,
+.hljs-regexp,
+.hljs-template-tag,
+.hljs-quote {
+  color: var(--hl-string);
+}
+
+.hljs-number,
+.hljs-deletion,
+.hljs-addition {
+  color: var(--hl-number);
+}
+
+.hljs-comment,
+.hljs-doctag {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: var(--hl-meta);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-params,
+.hljs-property,
+.hljs-punctuation,
+.hljs-operator,
+.hljs-function,
+.hljs-formula,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-section,
+.hljs-bullet,
+.hljs-link,
+.hljs-subst {
+  color: inherit;
+}
+
+/* Dark-mode rules in the base template are scoped, so restate ours to match. */
+[data-bs-theme="dark"] .hljs,
+[data-bs-theme="dark"] pre code.hljs {
+  color: inherit;
+  background: transparent;
+}
+
+[data-bs-theme="dark"] .hljs-keyword,
+[data-bs-theme="dark"] .hljs-selector-tag,
+[data-bs-theme="dark"] .hljs-literal,
+[data-bs-theme="dark"] .hljs-symbol,
+[data-bs-theme="dark"] .hljs-name,
+[data-bs-theme="dark"] .hljs-tag {
+  color: var(--hl-keyword);
+}
+
+[data-bs-theme="dark"] .hljs-built_in,
+[data-bs-theme="dark"] .hljs-type,
+[data-bs-theme="dark"] .hljs-class,
+[data-bs-theme="dark"] .hljs-title,
+[data-bs-theme="dark"] .hljs-title.class_,
+[data-bs-theme="dark"] .hljs-title.function_ {
+  color: var(--hl-type);
+}
+
+[data-bs-theme="dark"] .hljs-string,
+[data-bs-theme="dark"] .hljs-meta .hljs-string,
+[data-bs-theme="dark"] .hljs-regexp,
+[data-bs-theme="dark"] .hljs-template-tag,
+[data-bs-theme="dark"] .hljs-quote {
+  color: var(--hl-string);
+}
+
+[data-bs-theme="dark"] .hljs-number,
+[data-bs-theme="dark"] .hljs-deletion,
+[data-bs-theme="dark"] .hljs-addition {
+  color: var(--hl-number);
+}
+
+[data-bs-theme="dark"] .hljs-comment,
+[data-bs-theme="dark"] .hljs-doctag {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
+[data-bs-theme="dark"] .hljs-meta,
+[data-bs-theme="dark"] .hljs-meta .hljs-keyword {
+  color: var(--hl-meta);
+}
+
+[data-bs-theme="dark"] .hljs-attr,
+[data-bs-theme="dark"] .hljs-attribute,
+[data-bs-theme="dark"] .hljs-variable,
+[data-bs-theme="dark"] .hljs-params,
+[data-bs-theme="dark"] .hljs-property,
+[data-bs-theme="dark"] .hljs-punctuation,
+[data-bs-theme="dark"] .hljs-operator,
+[data-bs-theme="dark"] .hljs-function,
+[data-bs-theme="dark"] .hljs-formula,
+[data-bs-theme="dark"] .hljs-selector-attr,
+[data-bs-theme="dark"] .hljs-selector-class,
+[data-bs-theme="dark"] .hljs-selector-id,
+[data-bs-theme="dark"] .hljs-section,
+[data-bs-theme="dark"] .hljs-bullet,
+[data-bs-theme="dark"] .hljs-link,
+[data-bs-theme="dark"] .hljs-subst {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------- landing page */
+
+body[data-layout="landing"] .content {
+  max-width: none;
+  padding-top: 0;
+}
+
+body[data-layout="landing"] .actionbar {
+  display: none;
+}
+
+.landing {
+  --landing-width: 1120px;
+}
+
+.landing section {
+  max-width: var(--landing-width);
+  margin: 0 auto;
+}
+
+.landing h2 {
+  color: var(--do-ink);
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  border: 0;
+}
+
+.landing h2::before {
+  content: none;
+}
+
+.landing .eyebrow {
+  color: var(--do-accent);
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.16em;
-  margin-bottom: 1.35rem;
+  margin-bottom: 1.4rem;
+  text-transform: uppercase;
+}
+
+.landing .section-lede {
+  max-width: 62ch;
+  color: var(--do-muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+/* Hero */
+
+.hero {
+  padding: clamp(3.5rem, 9vh, 7rem) 0 clamp(3rem, 7vh, 5rem);
 }
 
 .hero h1 {
-  max-width: 980px;
-  font-size: clamp(3.6rem, 8.5vw, 7.8rem);
-  line-height: 0.88;
+  max-width: 15ch;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
   margin: 0;
 }
 
 .hero h1 span {
-  color: var(--do-blue);
+  color: var(--do-accent);
 }
 
 .hero .lede {
-  max-width: 720px;
+  max-width: 66ch;
   color: var(--do-muted);
-  font-size: clamp(1.05rem, 2vw, 1.32rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
   line-height: 1.55;
-  margin: 2rem 0;
+  margin: 1.9rem 0 2.3rem;
 }
 
 .hero-actions {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.7rem;
   flex-wrap: wrap;
 }
 
-.hero-actions .button {
+.button {
+  display: inline-block;
   color: var(--do-ink);
   background: var(--do-surface);
   border: 1px solid var(--do-line);
-  border-radius: 8px;
+  border-radius: 9px;
   font-weight: 700;
-  padding: 0.68rem 1.05rem;
+  padding: 0.7rem 1.15rem;
   text-decoration: none;
   transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.hero-actions .button:hover,
-.hero-actions .button:focus {
-  border-color: var(--do-blue);
-  box-shadow: 0 7px 18px color-mix(in srgb, var(--do-blue) 14%, transparent);
+.button:hover,
+.button:focus {
+  color: var(--do-ink);
+  border-color: var(--do-accent);
+  box-shadow: 0 8px 20px var(--do-accent-wash);
   transform: translateY(-1px);
+  text-decoration: none;
 }
 
-.hero-actions .button.primary {
-  color: #fff;
-  background: var(--do-blue);
-  border-color: var(--do-blue);
+/* The accent is dark on paper and light on ink, so --do-accent-on flips the
+   label between white and near-black with the theme. */
+.button.primary,
+.button.primary:hover,
+.button.primary:focus {
+  color: var(--do-accent-on);
+  background: var(--do-accent);
+  border-color: var(--do-accent);
 }
 
-.hero-actions .text-link {
+.text-link {
   color: var(--do-muted);
   font-weight: 650;
   margin-left: 0.35rem;
+  text-decoration: none;
 }
 
-.hero-command {
+.text-link:hover,
+.text-link:focus {
+  color: var(--do-accent);
+}
+
+/* Showcase */
+
+.showcase {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.55rem 0.8rem;
-  width: min(590px, 100%);
-  color: var(--do-code-ink);
-  background: var(--do-code);
-  border: 1px solid color-mix(in srgb, var(--do-blue) 35%, transparent);
-  border-radius: 10px;
-  box-shadow: var(--do-shadow);
-  margin-top: 3.2rem;
-  padding: 1.1rem 1.2rem;
-  transform: rotate(-0.35deg);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding: clamp(2.5rem, 6vh, 4.5rem) 0;
+  border-top: 1px solid var(--do-line);
 }
 
-.hero-command .prompt {
-  color: var(--do-red);
-  font-family: "JetBrains Mono", monospace;
-  font-weight: 700;
-}
-
-.hero-command code {
-  color: var(--do-code-ink);
-  background: transparent;
-  border: 0;
+.showcase-notes {
+  list-style: none;
+  margin: 1.5rem 0 0;
   padding: 0;
 }
+
+.showcase-notes li {
+  position: relative;
+  color: var(--do-muted);
+  margin: 0.55rem 0;
+  padding-left: 1.4rem;
+}
+
+.showcase-notes li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--do-accent);
+}
+
+.showcase-code {
+  border-radius: 10px;
+  box-shadow: var(--do-shadow);
+}
+
+.showcase-code pre {
+  margin: 0;
+}
+
+/* Pillars */
+
+.pillars {
+  padding: clamp(2.5rem, 6vh, 4.5rem) 0;
+  border-top: 1px solid var(--do-line);
+}
+
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 1px;
+  background: var(--do-line);
+  border: 1px solid var(--do-line);
+  border-radius: 12px;
+  margin-top: 2.2rem;
+  overflow: hidden;
+}
+
+.pillar {
+  background: var(--do-surface);
+  padding: 1.6rem 1.5rem 1.8rem;
+}
+
+.pillar h3 {
+  color: var(--do-ink);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.pillar .marker {
+  display: block;
+  color: var(--do-accent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin-bottom: 0.9rem;
+}
+
+.pillar p {
+  color: var(--do-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Steps */
+
+.steps {
+  padding: clamp(2.5rem, 6vh, 4.5rem) 0;
+  border-top: 1px solid var(--do-line);
+}
+
+.step-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.4rem;
+  margin-top: 2.2rem;
+}
+
+.step {
+  border-top: 2px solid var(--do-accent);
+  padding-top: 1rem;
+}
+
+.step .count {
+  color: var(--do-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.step p {
+  color: var(--do-muted);
+  font-size: 14px;
+  margin: 0.5rem 0 0.8rem;
+}
+
+.step code {
+  display: block;
+  color: var(--do-code-ink);
+  background: var(--do-code-bg);
+  border: 1px solid var(--do-code-line);
+  border-radius: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+}
+
+/* Closing call to action */
+
+.closing {
+  padding: clamp(3rem, 7vh, 5.5rem) 0 clamp(3.5rem, 8vh, 6rem);
+  border-top: 1px solid var(--do-line);
+}
+
+.closing .section-lede {
+  margin-bottom: 1.8rem;
+}
+
+/* ---------------------------------------------------------------- footer */
 
 .contribution,
 .next-article {
@@ -428,17 +914,25 @@ footer {
   font-size: 12px;
 }
 
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width: 991.98px) {
+  .showcase {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 767.98px) {
   .navbar .form-control {
     min-width: 100%;
   }
 
   .hero {
-    padding-top: 3rem;
+    padding-top: 2.5rem;
   }
 
   .hero h1 {
-    font-size: clamp(3.2rem, 17vw, 5rem);
+    font-size: clamp(2.6rem, 12vw, 4rem);
   }
 
   .hero-actions {
@@ -446,8 +940,8 @@ footer {
     flex-direction: column;
   }
 
-  .hero-actions .button,
-  .hero-actions .text-link {
+  .button,
+  .text-link {
     margin-left: 0;
     text-align: center;
   }

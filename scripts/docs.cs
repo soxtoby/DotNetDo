@@ -5,7 +5,7 @@ using static DotNetDo.Tools;
 
 [assembly: TaskDescription("Build and optionally serve the documentation site.")]
 
-var serve = Do.Param<bool>("serve", false, "Serve the generated site on http://localhost:8080.").Value;
+var serve = Do.Param("serve", false, "Serve the generated site on http://localhost:8080.").Value;
 var root = Do.RootDirectory;
 var docfxConfig = root / "docs" / "docfx.json";
 var familyConfig = root / "docs" / "reference" / "families.json";
@@ -16,30 +16,30 @@ var site = root / "artifacts" / "docs" / "site";
 
 await (DotNet.ToolRestore with { WorkingDirectory = root });
 await (DotNet.Build with
-{
-    Targets = [root / "DotNetDo.Core" / "DotNetDo.Core.csproj"],
-    Configuration = "Release",
-    WorkingDirectory = root,
-});
+    {
+        Targets = [root / "DotNetDo.Core" / "DotNetDo.Core.csproj"],
+        Configuration = "Release",
+        WorkingDirectory = root,
+    });
 await (DotNet.Build with
-{
-    Targets = [composerProject],
-    Configuration = "Release",
-    WorkingDirectory = root,
-});
+    {
+        Targets = [composerProject],
+        Configuration = "Release",
+        WorkingDirectory = root,
+    });
 
 await new DotNetInvocation(["docfx", "metadata", docfxConfig]) { WorkingDirectory = root };
 await new DotNetInvocation([
-    "run",
-    "--project", composerProject,
-    "--configuration", "Release",
-    "--no-build",
-    "--no-restore",
-    "--",
-    rawApi,
-    composedApi,
-    familyConfig,
-]) { WorkingDirectory = root };
+        "run",
+        "--project", composerProject,
+        "--configuration", "Release",
+        "--no-build",
+        "--no-restore",
+        "--",
+        rawApi,
+        composedApi,
+        familyConfig,
+    ]) { WorkingDirectory = root };
 await new DotNetInvocation(["docfx", "build", docfxConfig, "--warningsAsErrors"]) { WorkingDirectory = root };
 
 if (serve)

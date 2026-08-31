@@ -1,2 +1,3 @@
 scripts-path = "scripts"
 solution-path = "DotNetDo.slnx"
+solution-folder = "scripts"

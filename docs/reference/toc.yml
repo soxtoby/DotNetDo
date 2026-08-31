@@ -1,6 +1,7 @@
 - name: Overview
   href: index.md
 - name: Core APIs
+  href: core/index.md
   items:
   - name: Execution
     href: core/execution.yml

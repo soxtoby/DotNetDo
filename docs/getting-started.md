@@ -40,19 +40,9 @@ await Tools.DotNet.Build;
 
 ## Run the task
 
-# [Windows](#tab/windows)
-
-```powershell
-.\do build
-```
-
-# [macOS and Linux](#tab/posix)
-
-```bash
+```console
 ./do build
 ```
-
----
 
 Use `dotnet do :help` for runner commands or `dotnet do :help build` for the task's declared parameters.
 

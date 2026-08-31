@@ -31,13 +31,11 @@
       "baseUrl": "https://soxtoby.github.io/DotNetDo/"
     },
     "globalMetadata": {
-      "_appName": "DotNetDo",
+      "_appName": "DotNet",
       "_appTitle": "DotNetDo",
       "_enableSearch": true,
-      "_gitContribute": {
-        "repo": "https://github.com/soxtoby/DotNetDo",
-        "branch": "master"
-      }
+      "_disableContribution": true,
+      "_disableToc": false
     }
   }
 }

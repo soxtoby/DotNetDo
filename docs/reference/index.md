@@ -8,13 +8,7 @@ DotNetDo.Core APIs are arranged by what a task needs to do. Entry points such as
 
 ## Core APIs
 
-- [Execution](core/execution.yml)
-- [Parameters and secrets](core/parameters-and-secrets.yml)
-- [Paths and files](core/paths-and-files.yml)
-- [Workspace and solutions](core/workspace-and-solutions.yml)
-- [Git repositories](core/git-repositories.yml)
-- [CI and logging](core/ci-and-logging.yml)
-- [String and collection utilities](core/string-and-collection-utilities.yml)
+See the [core API overview](core/index.md) for execution, parameters and secrets, paths and files, the workspace and its solution, Git repositories, CI and logging, and the shared string and collection utilities.
 
 ## Tools
 
