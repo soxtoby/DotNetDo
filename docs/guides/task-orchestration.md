@@ -1,6 +1,10 @@
 # Task orchestration
 
-DotNetDo configuration may define meta-tasks alongside C# tasks:
+Meta-tasks group existing tasks into named workflows. Use them when the same sequence runs locally and in CI, or when you want a convenient command for part of a larger build.
+
+## Define a workflow
+
+Add a `tasks` table to `dotnetdo.toml`. A string runs one task. An array runs tasks in order.
 
 ```toml
 [tasks]
@@ -9,21 +13,19 @@ test-components = ["test-csharp", "test-javascript"]
 coverage = "test-csharp --coverage"
 ```
 
-A string defines one task invocation. A string array defines an ordered sequence. The first token of each string is a task name; the remaining text is passed as fixed arguments.
+You can now choose the workflow you need:
 
-This supports distinct workflows without prerequisite tracking:
-
-```text
-do test                 # build, then both test components
-do test-components      # reuse an existing build
-do test-csharp          # run one component
+```console
+./do test
+./do test-components
+./do coverage
 ```
 
-On CI, run `do build` in the Build step and `do test-components` in the Test step.
+For example, CI can run `build` in one step and `test-components` in another without rebuilding.
 
-## Arguments
+## Pass arguments
 
-Arguments passed to a meta-task are forwarded to every invocation. They are placed before fixed invocation arguments, so fixed arguments take precedence for DotNetDo task parameters.
+Arguments supplied to a meta-task go to every task it runs. Fixed arguments in `dotnetdo.toml` come afterward and take precedence for DotNetDo parameters.
 
 ```toml
 [tasks]
@@ -33,20 +35,28 @@ release-test = [
 ]
 ```
 
-`do release-test --configuration Debug` invokes both tasks with the inherited `Debug` value followed by the fixed `Release` value. Tasks using custom argument parsing must tolerate inherited arguments intended primarily for sibling tasks.
+`./do release-test` now keeps both tasks on the same configuration.
 
-## Execution
+Meta-tasks run sequentially and stop at the first failure. They may call other meta-tasks, but cannot contain cycles. Use C# task code when you need conditions, parallel work, or cleanup.
 
-- Invocations run sequentially.
-- The first non-zero result stops the meta-task and becomes its result.
-- Meta-tasks may invoke other meta-tasks.
-- DotNetDo validates all configured references and cycles before executing anything.
-- Empty meta-tasks and invocation strings are invalid.
-- Nested meta-tasks are traversed in the current DotNetDo process. C# tasks retain normal separate-process execution.
-- There is no cleanup phase, parallelism, condition, freshness detection, caching, or execution deduplication.
+Run `./do :help release-test` to inspect a meta-task.
 
-## Discovery and help
+## Share code between tasks
 
-C# tasks and meta-tasks share one name namespace and the same name grammar. A name collision is invalid configuration.
+Keep shared source files in a subfolder of the scripts directory. DotNetDo treats only `.cs` files directly in the scripts directory as tasks, so the shared file will not appear as another runnable task.
 
-Bare `do` lists both representations together alphabetically. `do :help <meta-task>` displays the authored invocation sequence and explains argument forwarding; it does not merge parameter declarations from child tasks.
+Include the file at the top of each task that needs it:
+
+```csharp
+#:include shared/BuildSettings.cs
+```
+
+Included C# files can declare types and methods, but cannot contain top-level statements. `#:include` requires .NET SDK 10.0.300 or later.
+
+For a larger shared library, reference its project instead:
+
+```csharp
+#:project ../build/BuildTasks.csproj
+```
+
+Both paths are relative to the task file. Use a project when the shared code needs its own dependencies, build settings, or tests.

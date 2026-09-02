@@ -1,21 +1,29 @@
 # Shell completion
 
-Install user-scoped completion for the detected shell:
+Shell completion suggests DotNetDo commands, task names, and task parameters as you type. It saves trips to task help and makes repository tasks easier to discover.
 
-```text
+## Install completion
+
+Run this once, then restart your shell:
+
+```console
 dotnet-do :completion
 ```
 
-Restart the shell afterward. PowerShell is selected on Windows; Bash or Zsh is selected from `$SHELL` elsewhere. Override detection by naming `pwsh`, `bash`, or `zsh`.
+DotNetDo detects PowerShell on Windows and Bash or Zsh elsewhere. To choose a shell explicitly, add `pwsh`, `bash`, or `zsh`:
 
-Completion is registered for `dotnet-do` and the workspace-local launcher invoked as `.\do` or `./do`. It does not replace the .NET SDK's `dotnet` completer. It completes DotNetDo commands, task names, declared task parameters, boolean values, and members of enums declared in the same task file. Enum discovery expects conventional formatting with the declaration braces and each member on separate lines. Meta-tasks combine parameters from all recursively invoked C# tasks. Conflicting parameter metadata keeps the parameter name but omits its detail and values.
+```console
+dotnet-do :completion zsh
+```
 
-Completion only reads workspace configuration and task source. It never executes or compiles tasks, restores packages, or contacts the network.
+Completion works with `dotnet-do` and with a workspace launcher such as `./do`. It suggests parameters declared with `Do.Param`, including Boolean and enum values. Meta-tasks include parameters from the C# tasks they run.
 
-Remove completion from the detected shell:
+Completion reads configuration and task source without executing your tasks or restoring their packages.
 
-```text
+## Uninstall completion
+
+```console
 dotnet-do :completion uninstall
 ```
 
-An optional shell name may follow `uninstall`.
+Add a shell name after `uninstall` if you do not want DotNetDo to detect it.

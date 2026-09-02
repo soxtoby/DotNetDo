@@ -1,10 +1,14 @@
-- name: Task orchestration
-  href: task-orchestration.md
-- name: Git
-  href: git.md
-- name: Solution navigation
-  href: solution-navigation.md
+- name: Tools
+  href: tools.md
 - name: Path values
   href: path-values.md
+- name: Parameters and secrets
+  href: parameters-and-secrets.md
+- name: Task orchestration
+  href: task-orchestration.md
+- name: Solution navigation
+  href: solution-navigation.md
+- name: Git
+  href: git.md
 - name: Shell completion
   href: completion.md

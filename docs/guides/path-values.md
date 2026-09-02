@@ -1,252 +1,49 @@
 # Path values
 
-## Construction
+`AbsolutePath` and `RelativePath` make the difference between filesystem locations and repository-relative names explicit. They normalize separators and `.` segments, work on Windows and Unix, and prevent a relative path from silently escaping an absolute root.
 
-`AbsolutePath` and `RelativePath` are sealed records constructed explicitly from strings. There is no implicit conversion from `string`.
+## Build paths
 
-Internally, a path is a typed root where applicable plus an immutable collection of already-parsed segments. Operations use this structure and never reparse rendered path text.
-
-An absolute path is one of:
-
-- Unix-rooted: `/a`
-- Windows drive-rooted: `C:\a`
-- UNC-rooted: `\\server\share\a` or `//server/share/a`
-
-A UNC root requires non-empty server and share components. The share is the traversal boundary.
-
-Drive-relative (`C:a`) Windows paths are rejected by both types: they are contextual paths, not ordinary relative paths. Root-relative (`\a`) Windows paths are not absolute and are likewise rejected. A relative path has no root. Both `/` and `\` are accepted as input separators. Only NUL and malformed roots are otherwise rejected; platform-specific filename restrictions are not enforced.
-
-Paths are lexical: construction never requires existence, accesses the filesystem, resolves symlinks, expands `~`, expands environment variables, or resolves against the current directory.
-
-Filesystem operations are exposed only by `AbsolutePath`. `RelativePath` never resolves implicitly against the process working directory; callers must join it to an absolute base first.
-
-These operations are instance members of `AbsolutePath`; no separate filesystem service owns them. This does not change lexical construction, normalization, or identity.
-
-`AbsolutePath` exposes live, uncached filesystem classification properties:
+Use `Do.RootDirectory` as the base for repository files, then join path segments with `/`:
 
 ```csharp
-bool Exists { get; }
-bool IsExistingFile { get; }
-bool IsExistingDirectory { get; }
+AbsolutePath artifacts = Do.RootDirectory / "artifacts";
+AbsolutePath package = artifacts / "packages" / "Widget.1.0.0.nupkg";
+RelativePath changelog = new("CHANGELOG.md");
+
+artifacts.EnsureDirectoryExists();
 ```
 
-These properties directly use `File.Exists` and `Directory.Exists`, including their native handling of missing paths, links, invalid paths, and access failures. `Exists` is `IsExistingFile || IsExistingDirectory`.
+Construct `AbsolutePath` when you already have a rooted path and `RelativePath` for a path that needs a base. Construction is lexical, so the path does not need to exist.
 
-`AbsolutePath.EnsureDirectoryExists()` recursively creates missing directories, does nothing when the path already identifies a directory, and returns the same path value for chaining. It throws when the path identifies a file or creation otherwise fails.
+## Read and write files
 
-`EnsureDirectoryExists()` directly uses `Directory.CreateDirectory`, including its native link and error behavior.
-
-`AbsolutePath.RecreateDirectory()` recursively deletes an existing directory and recreates it empty, or creates it when missing. It returns the same path value for chaining and propagates native deletion and creation errors.
-
-`IReadOnlyCollection<AbsolutePath>.RecreateAll()` snapshots and deduplicates the supplied paths, validates every path before mutation, then recreates ancestors before matched descendants so every supplied directory remains present. Empty collections do nothing. Failures stop the operation without rollback. When used after `GlobDirectories`, literal and wildcard patterns recreate only directories that existed when globbing ran; unmatched literal patterns create nothing.
-
-`Do.CreateTempDirectory(prefix)` and `Do.CreateTempFile(prefix, extension)` create uniquely named temporary artifacts and return their `AbsolutePath`. The optional prefix must be a file-name prefix. File extensions are dot-prefixed and default to `.tmp`. Callers own cleanup.
-
-`AbsolutePath` exposes synchronous, typed file-content helpers:
+Path values include common text and structured-data operations. For example, a task can update a JSON manifest without switching between path strings and filesystem helpers:
 
 ```csharp
-string ReadText(Encoding? encoding = null);
-string[] ReadLines(Encoding? encoding = null);
-void WriteText(string text, Encoding? encoding = null);
-void WriteLines(IEnumerable<string> lines, Encoding? encoding = null);
-IDisposable TemporaryFileContents(Action<AbsolutePath> replace);
+var manifestPath = Do.RootDirectory / "manifest.json";
+var manifest = manifestPath.ReadJson<Manifest>() ?? new Manifest();
 
-T? ReadJson<T>(JsonSerializerOptions? options = null);
-JsonNode? ReadJson(JsonSerializerOptions? options = null);
-void WriteJson<T>(T value, JsonSerializerOptions? options = null);
-T? ReadToml<T>(TomlSerializerOptions? options = null);
-TomlTable ReadToml(TomlSerializerOptions? options = null);
-void WriteToml<T>(T value, TomlSerializerOptions? options = null);
-T? ReadYaml<T>(IDeserializer? deserializer = null);
-YamlNode? ReadYaml();
-void WriteYaml<T>(T value, ISerializer? serializer = null);
-void WriteYaml(YamlNode value);
-T? ReadXml<T>();
-XDocument ReadXml();
-void WriteXml<T>(T value);
-void WriteXml(XDocument value);
+manifest.Version = "1.0.0";
+manifestPath.WriteJson(manifest);
 ```
 
-Text helpers delegate to the corresponding eager `File` operations. A null encoding uses the native UTF-8 default. Structured helpers use `System.Text.Json`, Tomlyn, YamlDotNet, and `XmlSerializer` respectively. JSON and TOML expose their native options objects. YAML accepts native YamlDotNet `IDeserializer` and `ISerializer` instances; null uses cached plain builder-created instances with no DotNetDo naming, converter, or tolerance policy. Supplied instances remain caller-owned. YAML uses UTF-8 and exposes no encoding parameter. Typed reads retain the `T?` shape and typed writes pass nullable values through to YamlDotNet. XML typed helpers use serializer defaults.
+JSON, TOML, YAML, and XML can be read into typed values or their native document models. Writes overwrite the file and expect its parent directory to exist.
 
-Non-generic readers return each format's native document model: `JsonNode?`, `TomlTable`, `YamlNode?`, or `XDocument`. JSON `null` and an empty YAML stream return `null`; empty TOML returns an empty table; empty XML is invalid. YAML accepts at most one document and throws `YamlException` for multiple documents. The YAML and XML document-model writers use their model-native emitters. Document-model reads and writes preserve document semantics, not lexical formatting.
+## Find and move files
 
-The structured helpers map arbitrary task types through reflection-based serialization. File-based apps build with Native AOT publishing defaults, which switch that off for both Tomlyn and `System.Text.Json`, so the DotNetDo.Core package restores it for consuming apps unless they set `TomlynIsReflectionEnabledByDefault` or `JsonSerializerIsReflectionEnabledByDefault` themselves. DotNetDo's own configuration loading does not depend on that setting.
-
-Reads preserve serializer nullability and propagate native missing-file, malformed-content, and type errors without DotNetDo exception wrapping. Writes create or overwrite the file directly, return no value, and propagate native errors. They do not create missing parent directories, validate filename extensions, append, write atomically, create backups, or add formatting policy. Structured output uses each serializer's defaults.
-
-`TemporaryFileContents` captures an existing file's exact bytes in memory, then invokes the replacement operation. Disposing the returned scope unconditionally restores those bytes, including over intervening content changes. Restoration changes only the primary contents, not metadata or file identity. Scopes naturally nest when disposed in reverse order. Successful disposal is idempotent; failed restoration may be retried. If replacement throws, restoration is attempted immediately and the original exception is rethrown; if both fail, an `AggregateException` reports both failures. Abrupt process termination is not recoverable.
-
-`AbsolutePath` also owns uniform copy, move, and delete operations for files and directories. Missing paths and symbolic links follow the underlying `System.IO` behavior. The same method names apply to both filesystem kinds rather than exposing parallel file and directory families.
+Glob from an explicit search root. File and directory searches are separate:
 
 ```csharp
-void Delete();
+var packages = artifacts.GlobFiles(["packages/**/*.nupkg"]);
+var publish = (artifacts / "publish").EnsureDirectoryExists();
+
+foreach (var packagePath in packages)
+    packagePath.CopyInto(publish, new() { Overwrite = true });
 ```
 
-`Delete()` removes files directly and directories recursively, following the underlying `System.IO` behavior for missing paths and symbolic links.
+`CopyTo` and `MoveTo` take an exact destination. `CopyInto` and `MoveInto` preserve the source name inside a destination directory. Path values also support deletion, temporary files and directories, and ZIP archives.
 
-Delete and overwrite respect native attributes and permissions. They propagate read-only and access failures rather than clearing protections automatically.
+Use `QuotedArgument()` when inserting a path into a raw command string. Typed tool commands quote their structured path arguments for you.
 
-Copy and move distinguish exact destinations from destination containers:
-
-```csharp
-AbsolutePath CopyTo(AbsolutePath destination, TransferOptions? options = null);
-AbsolutePath CopyInto(AbsolutePath directory, TransferOptions? options = null);
-AbsolutePath MoveTo(AbsolutePath destination, TransferOptions? options = null);
-AbsolutePath MoveInto(AbsolutePath directory, TransferOptions? options = null);
-```
-
-`To` uses the exact destination path. `Into` uses a destination directory, preserves the source name beneath it, and returns that final child path. The directory must exist unless `CreateDirectories` is enabled. Both forms return the final destination path.
-
-Copy and move fail by default when the final destination exists. Their options can enable two independent behaviors:
-
-- `CreateDirectories` makes `To` create missing destination parents and makes `Into` create its destination container.
-- `Overwrite` allows a file to replace a file, or a directory to merge into a directory while recursively replacing colliding files.
-
-Even with `Overwrite`, a file/directory type conflict throws; transfer operations never recursively delete an entry merely to change its filesystem kind.
-
-Symbolic links follow the behavior of the underlying `System.IO` operations; DotNetDo adds no link-specific policy.
-
-Moving a directory beneath itself retains `Directory.Move` failure behavior; it cannot use copy/delete fallback because deleting the source would delete the destination.
-
-Move uses a native rename when possible. When a move cannot cross filesystems, it falls back to copy then delete with the same transfer options. A copy failure leaves the source in place; if deletion fails after copying, both locations may remain and the failure propagates. Cross-filesystem move is not atomic.
-
-Recursive transfers are not transactional. If a transfer fails, destination changes already completed remain. A copy-based move does not begin deleting its source until the complete copy phase succeeds.
-
-```csharp
-public sealed record TransferOptions
-{
-    public bool Overwrite { get; init; }
-    public bool CreateDirectories { get; init; }
-}
-```
-
-`AbsolutePath` creates and extracts ZIP archives synchronously:
-
-```csharp
-AbsolutePath ZipTo(AbsolutePath destination, ZipOptions? options = null);
-AbsolutePath UnzipTo(AbsolutePath destination, UnzipOptions? options = null);
-```
-
-Both methods use an exact destination path, require its parent directory to exist, return the destination, and do not validate filename extensions. A file source becomes one archive entry under its filename. A directory source contributes its contents directly at the archive root, recursively preserving relative paths, file last-write timestamps, and empty directories without adding the source directory name. Archive creation does not promise deterministic bytes, symbolic-link preservation, or portable permission preservation.
-
-`ZipTo` rejects filesystem-root sources, equal source and destination paths, and destinations inside source directories. It creates the complete archive in a temporary file, then moves that file to the destination. Failures during archive creation remove the temporary file and leave an existing destination unchanged. The final transfer uses `MoveTo`, including its cross-filesystem copy/delete fallback, and is not transactional.
-
-`UnzipTo` delegates archive-entry validation, path-escape protection, collision ordering, and extraction to `ZipFile.ExtractToDirectory`. Existing directories merge. Without overwrite, an existing destination file causes extraction to fail; with overwrite, existing files are replaced. Any entries extracted before a later failure remain. Extraction is intended for trusted build artifacts: DotNetDo adds no expanded-size or entry-count limits.
-
-```csharp
-public sealed record ZipOptions
-{
-    public bool Overwrite { get; init; }
-    public CompressionLevel? CompressionLevel { get; init; }
-}
-
-public sealed record UnzipOptions
-{
-    public bool Overwrite { get; init; }
-}
-```
-
-A null compression level uses the underlying .NET implementation's default. Neither operation exposes legacy entry-name encoding.
-
-A **search root** is the absolute directory that explicitly bounds a glob search. It is the receiver for type-specific glob operations:
-
-```csharp
-root.GlobFiles(patterns, options);
-root.GlobDirectories(patterns, options);
-```
-
-Both return absolute path values. There is no mixed-entry `Glob` operation.
-
-Glob results contain descendants of the search root only; the search root itself is never a match candidate.
-
-Glob membership has set semantics. Overlapping inclusions yield one result per path; exclusions and later re-inclusions change membership without creating duplicates.
-
-Globbing uses `Microsoft.Extensions.FileSystemGlobbing` pattern and error semantics. Patterns are evaluated in order. A leading `!` makes a pattern an exclusion; `\!` escapes a literal leading `!`. A later inclusion can re-include a prior exclusion. Pattern validation is owned by the Microsoft matcher.
-
-Pattern matching uses the Microsoft matcher's case-insensitive default unless overridden through `GlobOptions`.
-
-```csharp
-public sealed record GlobOptions
-{
-    public StringComparison Comparison { get; init; } = StringComparison.OrdinalIgnoreCase;
-}
-```
-
-`GlobFiles` delegates filesystem traversal and matching to `Matcher.GetResultsInFullPath`. `GlobDirectories` uses native recursive directory enumeration, then applies the same matcher to the relative directory paths because the Microsoft API returns file matches only.
-
-Glob result order is unspecified and follows the underlying matcher and filesystem enumeration.
-
-Glob searches execute eagerly. Each method returns a completed snapshot and reports search errors during the call.
-
-Constructors throw `ArgumentException` for the wrong path kind, malformed roots, NUL, or traversal above an absolute root.
-
-## Normalization and identity
-
-Dot segments normalize during construction and joining:
-
-- `a/./b` becomes `a/b`.
-- `a/../b` becomes `b`.
-- `../a` remains `../a`.
-- `/x/../y` becomes `/y`.
-- Traversal above an absolute root is invalid.
-
-Repeated and trailing separators normalize away, except the separator required by a root. `//server/share` is UNC; a Unix root uses one leading slash.
-
-An empty relative path exists as `RelativePath.Empty` and is the join identity. It renders as `.` and has no `Name`.
-
-`RelativePath.Raw(string segment)` creates one opaque segment without separator parsing. It rejects empty text, `.`, `..`, and NUL. Separator characters inside any other value remain literal segment content; formatting never rewrites them. `AbsolutePath` has no raw factory because its root must be parsed, but an absolute path can join a raw relative segment.
-
-Equality and hashing use the structural root and segment text with ordinal, case-sensitive comparison on every OS. Rendering style and construction history do not affect identity. Thus `Raw("a")` equals parsed `a`, while raw `a\b` is one segment and parsed `a\b` is two.
-
-## Joining
-
-The `/` operator supports:
-
-```csharp
-AbsolutePath / RelativePath // AbsolutePath
-AbsolutePath / string       // AbsolutePath
-RelativePath / RelativePath // RelativePath
-RelativePath / string       // RelativePath
-```
-
-The right operand must be relative. Absolute-to-absolute and left-hand string operators do not exist. A rooted or otherwise invalid string right operand throws `ArgumentException`. Joining a valid relative path that escapes an absolute root throws `InvalidOperationException`.
-
-## Rendering
-
-Both types expose:
-
-```csharp
-string UnixPath { get; }
-string WindowsPath { get; }
-```
-
-Format properties change separators only; they never map drive or share roots into another root model. `ToString()`, and the implicit conversion from a path value to `string`, use the current OS separator style.
-
-Both types expose `QuotedArgument()` for raw command composition. It renders using the current OS separator style, then applies the same conditional command-line quoting as `string.QuotedArgument()`.
-
-## Metadata
-
-Both types expose:
-
-```csharp
-string? Name { get; }
-string Extension { get; }
-string? NameWithoutExtension { get; }
-```
-
-`Name` is the final segment, regardless of whether the filesystem would treat it as a file or directory. Roots and the empty relative path have no name. Extension behavior matches `System.IO.Path`: `a.txt` has `.txt`, `archive.tar.gz` has `.gz`, while `.gitignore` and `file.` have no extension.
-
-Both `Parent` properties are non-nullable. Accessing `AbsolutePath.Parent` on a root throws `InvalidOperationException`. Relative parents extend lexically beyond the unspecified base: `a/b` has parent `a`, `a` has parent `.`, `.` has parent `..`, and `..` has parent `../..`.
-
-`AbsolutePath` additionally exposes:
-
-```csharp
-AbsolutePath Root { get; }
-bool IsRoot { get; }
-IEnumerable<AbsolutePath> GetAncestry();
-```
-
-`Root` preserves its root model: `/a/b` returns `/`, `C:\a` returns `C:\`, and `\\server\share\a` returns `\\server\share\`. No public root-kind, drive, server, or share API is initially provided.
-
-`GetAncestry()` lazily returns the receiver followed by each parent through its root. A root returns a sequence containing only itself. Traversal is lexical and does not access the filesystem.
+See the [paths and files API reference](../reference/core/paths-and-files.yml) for all operations and options.
