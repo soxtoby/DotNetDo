@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DotNetDo">
+  <title>DotNetDo</title>
+  <style>
+    /* Mirrors --do-accent / --do-accent-on in public/main.css, so the tab icon
+       tracks the same accent the site uses in each colour scheme. */
+    .tile { fill: #d6006e }
+    .glyph { fill: #ffffff }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #ff5fa8 }
+      .glyph { fill: #0d0f14 }
+    }
+  </style>
+  <rect class="tile" width="64" height="64" rx="11.5"/>
+  <path class="glyph" fill-rule="evenodd" d="M8 17H20C27.18 17 33 23.72 33 32C33 40.28 27.18 47 20 47H8ZM15 23.2H19.5C23.09 23.2 26 27.14 26 32C26 36.86 23.09 40.8 19.5 40.8H15Z"/>
+  <path class="glyph" fill-rule="evenodd" d="M34.5 36.5a11 11 0 1 0 22 0a11 11 0 1 0-22 0ZM40.7 36.5a4.8 5.8 0 1 1 9.6 0a4.8 5.8 0 1 1-9.6 0Z"/>
+</svg>

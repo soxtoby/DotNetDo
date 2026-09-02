@@ -33,6 +33,7 @@
     "globalMetadata": {
       "_appName": "DotNet",
       "_appTitle": "DotNetDo",
+      "_appFaviconPath": "public/favicon.svg",
       "_enableSearch": true,
       "_disableContribution": true,
       "_disableToc": false
