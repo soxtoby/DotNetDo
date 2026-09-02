@@ -7,10 +7,10 @@ uid: DotNetDo.Tools
 Typed immutable commands model external command-line tools. Configure a command with a record `with` expression, then await it.
 
 ```csharp
-await Tools.DotNet.Build with
+await (Tools.DotNet.Build with
 {
     Configuration = "Release",
-};
+});
 ```
 
 - [Azure and Bicep](azure.yml)

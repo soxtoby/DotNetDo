@@ -657,6 +657,11 @@ body[data-layout="landing"] .actionbar {
   margin: 0 0 0.7rem;
   padding: 0;
   border: 0;
+  text-wrap: balance;
+}
+
+.landing h2 span {
+  color: var(--do-accent);
 }
 
 .landing h2::before {
@@ -678,6 +683,7 @@ body[data-layout="landing"] .actionbar {
   color: var(--do-muted);
   font-size: 1.02rem;
   line-height: 1.6;
+  text-wrap: pretty;
 }
 
 /* Hero */
@@ -693,6 +699,7 @@ body[data-layout="landing"] .actionbar {
   letter-spacing: -0.055em;
   line-height: 0.94;
   margin: 0;
+  text-wrap: balance;
 }
 
 .hero h1 span {
@@ -705,6 +712,7 @@ body[data-layout="landing"] .actionbar {
   font-size: clamp(1.05rem, 1.6vw, 1.3rem);
   line-height: 1.55;
   margin: 1.9rem 0 2.3rem;
+  text-wrap: pretty;
 }
 
 .hero-actions {
@@ -786,6 +794,10 @@ body[data-layout="landing"] .actionbar {
   position: absolute;
   left: 0;
   color: var(--do-accent);
+}
+
+.showcase-notes code {
+  white-space: nowrap;
 }
 
 .showcase-code {
@@ -954,4 +966,14 @@ footer {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* DocFX's modern template opts every navigation into a cross-document view
+   transition (`@view-transition { navigation: auto }` in docfx.scss). The navbar
+   and TOC are rendered by JS only after the new document's first paint, so the
+   transition cross-fades the old page out to an empty nav that then pops back in
+   once toc.json arrives. Opt back out — this rule wins because main.css is loaded
+   after docfx.min.css. */
+@view-transition {
+  navigation: none;
 }

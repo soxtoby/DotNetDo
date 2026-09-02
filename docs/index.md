@@ -1,15 +1,15 @@
 ---
 layout: landing
 title: DotNetDo
-description: Repository automation written in C#, for modern .NET.
+description: A repository task runner built on modern .NET. Build tasks are plain C# files that run the same way on your laptop and in CI.
 ---
 
 <div class="landing">
 
 <section class="hero">
-  <p class="eyebrow">Repository automation for modern .NET</p>
-  <h1>Your build script is just <span>C#</span>.</h1>
-  <p class="lede">Every repository accumulates a pile of YAML, shell, and copy-pasted pipeline steps that nobody can run locally and nobody wants to change. DotNetDo replaces it with the language you already ship — checked by the compiler, understood by your IDE, and identical on your laptop and in CI.</p>
+  <p class="eyebrow">A repository task runner built on modern .NET</p>
+  <h1>Your build script is just <span>C#</span></h1>
+  <p class="lede">Every repository accumulates a pile of YAML, shell, and copy-pasted pipeline steps that nobody can run locally and nobody wants to change. DotNetDo moves it into the language you already ship, where the compiler checks it, your IDE understands it, and it runs the same on your laptop and in CI.</p>
   <div class="hero-actions">
     <a class="button primary" href="getting-started.md">Get started</a>
     <a class="button" href="guides/task-orchestration.md">Read the guides</a>
@@ -21,14 +21,14 @@ description: Repository automation written in C#, for modern .NET.
 
 <div class="showcase-copy">
 
-## A whole build task, in one file
+## A whole build task in one file
 
-<p class="section-lede">DotNetDo is built on .NET 10 file-based apps. A shebang, a package reference, and the file is a runnable task — no project, no scaffolding, no build step in front of your build.</p>
+<p class="section-lede">DotNetDo is built on .NET 10 file-based apps. A shebang, a package reference, and the file is a runnable task. No project, no scaffolding, no build step in front of your build.</p>
 
 <ul class="showcase-notes">
   <li>Parameters are declared in code and exposed on the command line</li>
   <li>Tool commands are records, so options are discoverable and type-checked</li>
-  <li><code>./do build --configuration Debug</code> runs it anywhere</li>
+  <li><code>./do build</code> runs it anywhere; add <code>--version-suffix beta.1</code> when you need it</li>
 </ul>
 
 </div>
@@ -41,16 +41,16 @@ description: Repository automation written in C#, for modern .NET.
 using DotNetDo;
 using static DotNetDo.Tools;
 
-[assembly: TaskDescription("Build and test the solution.")]
+[assembly: TaskDescription("Build, test, and package the solution.")]
 
-var configuration = Do.Param("configuration", "Release").Value;
+var versionSuffix = Do.Param("version-suffix");
 
-await (DotNet.Build with { Configuration = configuration });
+await DotNet.Test;
 
-await (DotNet.Test with
+await (DotNet.Pack with
 {
-    Configuration = configuration,
-    NoBuild = true,
+    VersionSuffix = versionSuffix,
+    Output = Do.RootDirectory / "artifacts",
 });
 ```
 
@@ -77,8 +77,8 @@ await (DotNet.Test with
   </div>
   <div class="pillar">
     <span class="marker">03</span>
-    <h3>Batteries for real repositories</h3>
-    <p>Typed commands for the .NET SDK, MSBuild, Git, npm, NuGet, and Azure, plus paths, parameters, secrets, and structured logging — composed, not shelled out to.</p>
+    <h3>Batteries included</h3>
+    <p>Typed commands wrap the tools you already run, like <code>dotnet</code>, <code>git</code>, and <code>npm</code>. Paths, secrets, and logging come in the box. Fill in properties instead of stitching together a command line.</p>
   </div>
   <div class="pillar">
     <span class="marker">04</span>
@@ -115,7 +115,7 @@ await (DotNet.Test with
 
 <section class="closing">
 
-## Ready to delete some YAML?
+## Let's <span>do</span> it
 
 <p class="section-lede">Start with a single task and move the rest of the pipeline over as you go. Nothing has to migrate at once.</p>
 

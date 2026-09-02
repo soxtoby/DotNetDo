@@ -64,7 +64,7 @@ The compact repository entry point containing the project description, installat
 
 ### Documentation build
 
-The reproducible local and CI operation that generates API data, composes API families, validates the documentation, and emits the static site. `./do docs` runs it locally; `./do docs --serve` additionally serves the result without live rebuilding.
+The reproducible local and CI operation that generates API data, composes API families, validates the documentation, and emits the static site. It reads an existing Release build of DotNetDo.Core rather than producing one, so the build task runs first both locally and in CI. `./do docs` runs it locally; `./do docs --serve` additionally serves the result without live rebuilding. `./do docs --site-only` reuses previously generated API data, which suits iterating on documentation source while a server started separately keeps serving the rebuilt output.
 
 ### Documentation validation
 
