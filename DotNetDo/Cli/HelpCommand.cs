@@ -11,17 +11,17 @@ static class HelpCommand
 
         Console.WriteLine($$"""
             Usage:
-              dotnet do
-              dotnet do {{CliCommands.Init.Name}}
-              dotnet do {{CliCommands.New.Name}} <name>
-              dotnet do {{CliCommands.Rename.Name}} <old-name> <new-name>
-              dotnet do {{CliCommands.Install.Name}}
-              dotnet do {{CliCommands.Completion.Name}} [pwsh|bash|zsh]
-              dotnet do {{CliCommands.Completion.Name}} uninstall [pwsh|bash|zsh]
-              dotnet do {{CliCommands.Update.Name}} [<package> | --all] [--prerelease]
-              dotnet do {{CliCommands.Help.Name}} <name>
-              dotnet do {{CliCommands.Help.Name}}
-              dotnet do <name> [args...]
+              dotnetdo {{CliCommands.Init.Name}}
+              dotnetdo {{CliCommands.Completion.Name}} [pwsh|bash|zsh]
+              dotnetdo {{CliCommands.Completion.Name}} uninstall [pwsh|bash|zsh]
+              ./do
+              ./do {{CliCommands.New.Name}} <name>
+              ./do {{CliCommands.Rename.Name}} <old-name> <new-name>
+              ./do {{CliCommands.Install.Name}}
+              ./do {{CliCommands.Update.Name}} [<package> | --all] [--prerelease]
+              ./do {{CliCommands.Help.Name}} <name>
+              ./do {{CliCommands.Help.Name}}
+              ./do <name> [args...]
             """);
         return 0;
     }

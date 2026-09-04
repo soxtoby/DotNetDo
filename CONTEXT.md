@@ -228,7 +228,7 @@ The run command executes a task through SDK file execution, equivalent to `dotne
 
 ## Task list
 
-Running `dotnet do` with no arguments shows basic task invocation usage followed by a headed, indented list of C# tasks directly inside the scripts path and meta-tasks from DotNetDo configuration together, alphabetically and without representation markers. C# tasks may declare a concise, statically discoverable description with `[assembly: TaskDescription("...")]`; it appears in task lists, task help, and shell completion. Nested directories are not searched. A missing scripts path produces only configured meta-tasks. PowerShell requires `dotnet do` because `do` is reserved syntax. Initialized workspaces provide local `do.cmd` and `do` launchers, invoked by path as `.\do` or `./do`.
+Running `./do` with no arguments shows basic task invocation usage followed by a headed, indented list of C# tasks directly inside the scripts path and meta-tasks from DotNetDo configuration together, alphabetically and without representation markers. C# tasks may declare a concise, statically discoverable description with `[assembly: TaskDescription("...")]`; it appears in task lists, task help, and shell completion. Nested directories are not searched. A missing scripts path produces only configured meta-tasks.
 
 ## New command
 
@@ -245,6 +245,10 @@ The `:rename` command renames a C# task directly inside the scripts path without
 The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial task. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
 
 Initialization also creates root-local `do.cmd` and executable `do` launchers which forward all arguments to `dnx DotNetDo`.
+
+## Global command
+
+The installed `dotnetdo` command bootstraps DotNetDo workspaces and manages user-scoped shell completion. Commands within an initialized workspace use its `./do` launcher.
 
 ## Install command
 
@@ -264,7 +268,7 @@ DotNetDo v1 includes workspace initialization with `:init`, task listing, task c
 
 User-scoped shell integration that completes DotNetDo task names and their discoverable parameters. Bare `:completion` installs it for the current shell; completion remains separate from workspace tool installation.
 
-The installed `dotnet-do` command serves completion requests for both itself and workspace-local launchers. Completion installation requires that command on `PATH` and fails before changing shell state when it is unavailable; uninstall remains available. Completing `./do` must not execute its `dnx`-based launcher; local version ownership applies to task execution, not static completion discovery.
+Completion installation requires the `dotnetdo` global command on `PATH` and fails before changing shell state when it is unavailable; uninstall remains available. Both `dotnetdo` and `./do` receive completion candidates.
 
 ## Exec helper
 

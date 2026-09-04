@@ -12,7 +12,7 @@ static class NewCommand
         IPackageVersionResolver packageVersions)
     {
         if (args.Length != 2)
-            return Fail("Usage: dotnet do :new <name>");
+            return Fail("Usage: ./do :new <name>");
 
         var taskName = args[1];
         if (!TaskName.IsValid(taskName))

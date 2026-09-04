@@ -48,7 +48,7 @@ public sealed class InstallCommandTests
         var result = await RunInstall(workspace.Directory, "azure");
 
         Assert.Equal(1, result.ExitCode);
-        Assert.Contains("Usage: dotnet do :install", result.Error);
+        Assert.Contains("Usage: ./do :install", result.Error);
     }
 
     static async Task<Result> RunInstall(string directory, params string[] arguments)

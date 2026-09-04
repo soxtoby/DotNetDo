@@ -13,11 +13,11 @@ public sealed class CompletionTests
         workspace.WriteTask("Build", """[assembly: DotNetDo.TaskDescription("Build the solution")]""");
         var catalog = workspace.Catalog();
 
-        var candidates = Complete(catalog, workspace.Root, 1, "dotnet-do", "b");
+        var candidates = Complete(catalog, workspace.Root, 1, "dotnetdo", "b");
 
         Assert.Equal(["Build"], candidates.Select(candidate => candidate.Value));
         Assert.Equal("Build the solution", candidates[0].Detail);
-        var commands = Complete(catalog, workspace.Root, 1, "dotnet-do", ":").Select(candidate => candidate.Value);
+        var commands = Complete(catalog, workspace.Root, 1, "dotnetdo", ":").Select(candidate => candidate.Value);
         Assert.Equal(
             CliCommands.Visible.Where(command => command != CliCommands.Completion).Select(command => command.Name).Order(StringComparer.OrdinalIgnoreCase)
                 .Append(CliCommands.Completion.Name),
@@ -31,7 +31,7 @@ public sealed class CompletionTests
         workspace.WriteTask("release", "");
         var catalog = workspace.Catalog();
 
-        var candidates = Complete(catalog, workspace.Root, 1, "dotnet-do", "");
+        var candidates = Complete(catalog, workspace.Root, 1, "dotnetdo", "");
 
         Assert.Equal("release", candidates[0].Value);
         Assert.Equal(CliCommands.Completion.Name, candidates[^1].Value);
@@ -44,7 +44,7 @@ public sealed class CompletionTests
         workspace.WriteTask("build", "");
         var catalog = workspace.Catalog();
 
-        var candidates = Complete(catalog, workspace.Root, 2, "dotnet-do", ":rename", "");
+        var candidates = Complete(catalog, workspace.Root, 2, "dotnetdo", ":rename", "");
 
         Assert.Equal(["build"], candidates.Select(candidate => candidate.Value));
     }
@@ -70,20 +70,20 @@ public sealed class CompletionTests
             """);
         var catalog = workspace.Catalog();
 
-        var names = Complete(catalog, workspace.Root, 2, "dotnet-do", "build", "--");
+        var names = Complete(catalog, workspace.Root, 2, "dotnetdo", "build", "--");
         Assert.Equal(["--mode", "--pack"], names.Select(candidate => candidate.Value));
         Assert.Contains("Mode", names[0].Detail);
         Assert.Contains("Execution mode", names[0].Detail);
 
         Assert.Equal(
             ["true"],
-            Complete(catalog, workspace.Root, 3, "dotnet-do", "build", "--pack", "t").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 3, "dotnetdo", "build", "--pack", "t").Select(candidate => candidate.Value));
         Assert.Equal(
             ["--mode=Safe"],
-            Complete(catalog, workspace.Root, 2, "dotnet-do", "build", "--mode=S").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 2, "dotnetdo", "build", "--mode=S").Select(candidate => candidate.Value));
         Assert.Equal(
             ["--mode=Combined", "--mode=Custom", "--mode=Fast", "--mode=Last", "--mode=Safe"],
-            Complete(catalog, workspace.Root, 2, "dotnet-do", "build", "--mode=").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 2, "dotnetdo", "build", "--mode=").Select(candidate => candidate.Value));
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public sealed class CompletionTests
             """);
         var catalog = workspace.Catalog();
 
-        var candidates = Complete(catalog, workspace.Root, 4, "dotnet-do", "build", "--first", "value", "--");
+        var candidates = Complete(catalog, workspace.Root, 4, "dotnetdo", "build", "--first", "value", "--");
 
         Assert.Equal(["--second"], candidates.Select(candidate => candidate.Value));
     }
@@ -126,7 +126,7 @@ public sealed class CompletionTests
             """);
         var catalog = workspace.Catalog();
 
-        var candidates = Complete(catalog, workspace.Root, 2, "dotnet-do", "all", "--");
+        var candidates = Complete(catalog, workspace.Root, 2, "dotnetdo", "all", "--");
 
         Assert.Equal(["--first", "--second", "--shared"], candidates.Select(candidate => candidate.Value));
         Assert.Null(candidates.Single(candidate => candidate.Value == "--shared").Detail);
@@ -141,16 +141,16 @@ public sealed class CompletionTests
 
         Assert.Equal(
             ["build"],
-            Complete(catalog, workspace.Root, 2, "dotnet-do", ":help", "b").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 2, "dotnetdo", ":help", "b").Select(candidate => candidate.Value));
         Assert.Equal(
             ["--all", "--prerelease", "Example.Package"],
-            Complete(catalog, workspace.Root, 2, "dotnet-do", ":update", "").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 2, "dotnetdo", ":update", "").Select(candidate => candidate.Value));
         Assert.Equal(
             ["bash"],
-            Complete(catalog, workspace.Root, 2, "dotnet-do", ":completion", "b").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 2, "dotnetdo", ":completion", "b").Select(candidate => candidate.Value));
         Assert.Equal(
             ["zsh"],
-            Complete(catalog, workspace.Root, 3, "dotnet-do", ":completion", "uninstall", "z").Select(candidate => candidate.Value));
+            Complete(catalog, workspace.Root, 3, "dotnetdo", ":completion", "uninstall", "z").Select(candidate => candidate.Value));
     }
 
     [Fact]
@@ -163,8 +163,8 @@ public sealed class CompletionTests
     }
 
     [Theory]
-    [InlineData(1, new[] { "dotnet-do" }, new[] { "" })]
-    [InlineData(3, new[] { "dotnet-do", "release", "--" }, new[] { "release", "--", "" })]
+    [InlineData(1, new[] { "dotnetdo" }, new[] { "" })]
+    [InlineData(3, new[] { "dotnetdo", "release", "--" }, new[] { "release", "--", "" })]
     public void Hidden_protocol_restores_an_empty_active_token_dropped_by_the_shell(
         int activeTokenIndex,
         string[] shellTokens,
@@ -204,7 +204,7 @@ public sealed class CompletionTests
     }
 
     [Fact]
-    public void Refuses_to_install_completion_without_dotnet_do_on_path()
+    public void Refuses_to_install_completion_without_dotnetdo_on_path()
     {
         using var workspace = Workspace.Create();
         var root = AbsolutePath.Parse(workspace.Directory);
@@ -221,7 +221,7 @@ public sealed class CompletionTests
 
         Assert.Equal(1, result);
         Assert.Equal(
-            "Shell completion requires dotnet-do on PATH. Install DotNetDo globally, then run dotnet-do :completion." + Environment.NewLine,
+            "Shell completion requires dotnetdo on PATH. Install DotNetDo globally, then run dotnetdo :completion." + Environment.NewLine,
             error.ToString());
         Assert.False((data / "dotnetdo-completion.ps1").Exists);
     }
@@ -236,8 +236,8 @@ public sealed class CompletionTests
         Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data, true));
 
         var adapter = (data / "dotnetdo-completion.ps1").ReadText();
-        Assert.Contains("-CommandName dotnet-do, do", adapter);
-        Assert.Contains("& dotnet-do :complete", adapter);
+        Assert.Contains("-CommandName dotnetdo, do", adapter);
+        Assert.Contains("& dotnetdo :complete", adapter);
         Assert.DoesNotContain("& $tokens[0] :complete", adapter);
     }
 
@@ -252,7 +252,7 @@ public sealed class CompletionTests
         var data = root / "data";
         var commands = root / "commands";
         commands.EnsureDirectoryExists();
-        (commands / "dotnet-do.cmd").WriteText("@echo build\tTask\r\n");
+        (commands / "dotnetdo.cmd").WriteText("@echo build\tTask\r\n");
         (root / "do.cmd").WriteText("@echo local launcher must not run\r\n");
         Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data, true));
 
@@ -281,8 +281,8 @@ public sealed class CompletionTests
     }
 
     [Theory]
-    [InlineData("bash", "dotnetdo-completion.bash", "dotnet-do :complete", "\"${COMP_WORDS[0]}\" :complete", "dotnet-do do")]
-    [InlineData("zsh", "dotnetdo-completion.zsh", "dotnet-do :complete", "\"${words[1]}\" :complete", "dotnet-do do")]
+    [InlineData("bash", "dotnetdo-completion.bash", "dotnetdo :complete", "\"${COMP_WORDS[0]}\" :complete", "dotnetdo do")]
+    [InlineData("zsh", "dotnetdo-completion.zsh", "dotnetdo :complete", "\"${words[1]}\" :complete", "dotnetdo do")]
     public void Unix_adapter_uses_the_installed_tool_to_complete_the_local_do_launcher(
         string shell,
         string adapterName,

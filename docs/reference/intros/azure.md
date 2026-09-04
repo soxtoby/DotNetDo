@@ -1,6 +1,6 @@
 # Azure CLI
 
-Declare `azure` in the workspace tool requirements, then run `dotnet do :install` to make the `az` command available:
+Declare `azure` in the workspace tool requirements, then run `./do :install` to make the `az` command available:
 
 ```toml
 tools = ["azure"]

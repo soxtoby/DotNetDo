@@ -9,13 +9,14 @@
 - Interactive local task runs prompt for missing required parameters before execution, with masked secret input and runtime fallback for conditional requirements.
 
 ### Changed
+- The global tool command is now `dotnetdo` instead of `dotnet-do`. After updating, run `dotnetdo :completion` to replace the existing shell integration. Initialized repositories continue to use `./do`.
 - `IsNullOrEmpty()` and `IsNullOrWhiteSpace()` now narrow their receiver to non-null when they return `false`.
 - `ExecOptions.Log` now uses discoverable `ExecLog` choices for default, suppressed, stderr-only, filtered, and custom process-output logging.
 - `ExecOptions.LogCommand` can suppress the command-start log for individual commands.
 
 ### Fixed
 - The bundled source generator and analyzer now target .NET Standard 2.0 so scripts do not require the .NET SDK used to publish DotNetDo.
-- Workspace-launcher completion uses the installed `dotnet-do` command instead of invoking `dnx` on every completion request, and installation now fails before changing shell profiles when that command is unavailable.
+- Workspace-launcher completion uses the installed `dotnetdo` command instead of invoking `dnx` on every completion request, and installation now fails before changing shell profiles when that command is unavailable.
 
 ## v0.7.0
 

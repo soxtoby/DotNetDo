@@ -88,7 +88,7 @@ public sealed class RenameCommandTests
             var result = await workspace.Run(arguments);
 
             Assert.Equal(1, result.ExitCode);
-            Assert.Contains("Usage: dotnet do :rename <old-name> <new-name>", result.Error);
+            Assert.Contains("Usage: ./do :rename <old-name> <new-name>", result.Error);
         }
     }
 

@@ -17,7 +17,7 @@ static class CompletionCommand
                 shell!,
                 Do.UserProfile,
                 Do.LocalApplicationData / "DotNetDo" / "completion",
-                ExecutableResolver.Find("dotnet-do") is not null,
+                ExecutableResolver.Find("dotnetdo") is not null,
                 Console.Out,
                 Do.Documents,
                 Console.Error);
@@ -39,7 +39,7 @@ static class CompletionCommand
         TextWriter? error = null)
     {
         if (!uninstall && !completionHostAvailable)
-            return Fail("Shell completion requires dotnet-do on PATH. Install DotNetDo globally, then run dotnet-do :completion.", error);
+            return Fail("Shell completion requires dotnetdo on PATH. Install DotNetDo globally, then run dotnetdo :completion.", error);
 
         var profile = ProfilePath(shell, userProfile, documentsDirectory);
         var adapter = dataDirectory / $"dotnetdo-completion.{Extension(shell)}";
@@ -76,7 +76,7 @@ static class CompletionCommand
 
         if (values.Length > 1)
         {
-            error = "Usage: dotnet do :completion [pwsh|bash|zsh] | :completion uninstall [pwsh|bash|zsh]";
+            error = "Usage: dotnetdo :completion [pwsh|bash|zsh] | :completion uninstall [pwsh|bash|zsh]";
             return false;
         }
 
@@ -182,7 +182,7 @@ static class CompletionCommand
 
     const string PowerShellAdapter =
         """
-        Register-ArgumentCompleter -Native -CommandName dotnet-do, do -ScriptBlock {
+        Register-ArgumentCompleter -Native -CommandName dotnetdo, do -ScriptBlock {
             param($wordToComplete, $commandAst, $cursorPosition)
 
             $tokens = @($commandAst.CommandElements | ForEach-Object {
@@ -194,7 +194,7 @@ static class CompletionCommand
             }
             $active = $tokens.Count - 1
 
-            & dotnet-do :complete $active -- @tokens 2>$null | ForEach-Object {
+            & dotnetdo :complete $active -- @tokens 2>$null | ForEach-Object {
                 $parts = $_ -split "`t", 2
                 [System.Management.Automation.CompletionResult]::new($parts[0], $parts[0], 'ParameterValue', $(if ($parts.Count -gt 1) { $parts[1] } else { $parts[0] }))
             }
@@ -209,9 +209,9 @@ static class CompletionCommand
             COMPREPLY=()
             while IFS= read -r item; do
                 COMPREPLY+=("${item%%$'\t'*}")
-            done < <(dotnet-do :complete "$COMP_CWORD" -- "${COMP_WORDS[@]}" 2>/dev/null)
+            done < <(dotnetdo :complete "$COMP_CWORD" -- "${COMP_WORDS[@]}" 2>/dev/null)
         }
-        complete -F _dotnetdo_complete dotnet-do do
+        complete -F _dotnetdo_complete dotnetdo do
         """;
 
     const string ZshAdapter =
@@ -225,10 +225,10 @@ static class CompletionCommand
                 detail="${line#*$'\t'}"
                 candidate="${candidate//:/\\:}"
                 items+=("${candidate}:${detail}")
-            done < <(dotnet-do :complete "$((CURRENT - 1))" -- "${words[@]}" 2>/dev/null)
+            done < <(dotnetdo :complete "$((CURRENT - 1))" -- "${words[@]}" 2>/dev/null)
             _describe 'DotNetDo' items
         }
-        compdef _dotnetdo_complete dotnet-do do
+        compdef _dotnetdo_complete dotnetdo do
         """;
 
     static int Fail(string message, TextWriter? error = null)

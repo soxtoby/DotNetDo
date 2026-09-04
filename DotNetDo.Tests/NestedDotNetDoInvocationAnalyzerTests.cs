@@ -10,6 +10,8 @@ namespace DotNetDo.Tests;
 public class NestedDotNetDoInvocationAnalyzerTests
 {
     [Theory]
+    [InlineData("Do.Exec(\"dotnetdo build\");")]
+    [InlineData("Do.Exec(\"./do build\");")]
     [InlineData("Do.Exec(\"dotnet do build\");")]
     [InlineData("Do.Exec(\"dotnet-do build\");")]
     [InlineData("Do.Exec(\"  DOTNET.EXE do build\");")]

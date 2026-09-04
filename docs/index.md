@@ -102,7 +102,7 @@ await (DotNet.Pack with
   <div class="step">
     <span class="count">STEP 02</span>
     <p>Set up the workspace and its local launchers.</p>
-    <code>dotnet do :init</code>
+    <code>dotnetdo :init</code>
   </div>
   <div class="step">
     <span class="count">STEP 03</span>

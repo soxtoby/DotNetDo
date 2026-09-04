@@ -13,7 +13,7 @@ static class InitCommand
     {
         if (args.Length != 1)
         {
-            await Console.Error.WriteLineAsync("Usage: dotnet do :init");
+            await Console.Error.WriteLineAsync("Usage: dotnetdo :init");
             return 1;
         }
 
@@ -114,9 +114,7 @@ static class InitCommand
         }
 
         if (initialization.TaskName is not null)
-            Console.WriteLine(OperatingSystem.IsWindows()
-                ? $"Run with: .\\do {initialization.TaskName}"
-                : $"Run with: ./do {initialization.TaskName}");
+            Console.WriteLine($"Run with: ./do {initialization.TaskName}");
     }
 
     static bool UpdateConfigFile(AbsolutePath root, Initialization initialization)

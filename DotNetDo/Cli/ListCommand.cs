@@ -4,7 +4,7 @@ static class ListCommand
 {
     public static int Run()
     {
-        Console.WriteLine("Usage: dotnet do <task> [args...]");
+        Console.WriteLine("Usage: ./do <task> [args...]");
         Console.WriteLine();
         Console.WriteLine("Tasks:");
         var tasks = TaskCatalog.Load().Tasks.ToArray();

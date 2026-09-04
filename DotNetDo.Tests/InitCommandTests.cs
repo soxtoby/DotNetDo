@@ -34,7 +34,7 @@ public sealed class InitCommandTests
             Assert.Contains("Before committing, run: git add --chmod=+x do", result.Output);
         else
             Assert.DoesNotContain("git add --chmod=+x do", result.Output);
-        Assert.Contains(OperatingSystem.IsWindows() ? @"Run with: .\do build" : "Run with: ./do build", result.Output);
+        Assert.Contains("Run with: ./do build", result.Output);
     }
 
     [Fact]

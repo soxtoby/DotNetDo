@@ -57,7 +57,9 @@ public sealed class NestedDotNetDoInvocationAnalyzer : DiagnosticAnalyzer
     static bool InvokesDotNetDo(string command)
     {
         var trimmed = command.TrimStart();
-        return StartsWithCommand(trimmed, "dotnet do")
+        return StartsWithCommand(trimmed, "dotnetdo")
+            || StartsWithCommand(trimmed, "dotnetdo.exe")
+            || StartsWithCommand(trimmed, "dotnet do")
             || StartsWithCommand(trimmed, "dotnet.exe do")
             || StartsWithCommand(trimmed, "dotnet-do")
             || StartsWithCommand(trimmed, "dotnet-do.exe")

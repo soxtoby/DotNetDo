@@ -5,7 +5,7 @@ static class RenameCommand
     public static async Task<int> Run(string[] args)
     {
         if (args.Length != 3)
-            return Fail("Usage: dotnet do :rename <old-name> <new-name>");
+            return Fail("Usage: ./do :rename <old-name> <new-name>");
 
         var oldName = args[1];
         var newName = args[2];

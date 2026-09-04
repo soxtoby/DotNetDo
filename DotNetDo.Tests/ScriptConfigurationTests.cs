@@ -37,7 +37,7 @@ public sealed class ScriptConfigurationTests
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(
-            ["Usage: dotnet do <task> [args...]", "Tasks:", "  build", "  ci", "  pack"],
+            ["Usage: ./do <task> [args...]", "Tasks:", "  build", "  ci", "  pack"],
             result.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
         Assert.Empty(result.Error);
     }

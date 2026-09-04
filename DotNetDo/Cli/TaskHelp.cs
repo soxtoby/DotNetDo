@@ -10,7 +10,7 @@ static partial class TaskHelp
         var description = catalog.Tasks.FirstOrDefault(task => task.Name == taskName)?.Description;
         if (catalog.TryGetMetaTask(taskName, out var invocations))
         {
-            Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
+            Console.WriteLine($"Usage: ./do {taskName} [options...]");
             if (description is not null)
                 Console.WriteLine(description);
             Console.WriteLine();
@@ -32,7 +32,7 @@ static partial class TaskHelp
 
         var parameters = Discover(file).ToArray();
 
-        Console.WriteLine($"Usage: dotnet do {taskName} [options...]");
+        Console.WriteLine($"Usage: ./do {taskName} [options...]");
         if (description is not null)
             Console.WriteLine(description);
 

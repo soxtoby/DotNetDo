@@ -9,7 +9,7 @@ namespace DotNetDo.Cli;
 static partial class UpdateCommand
 {
     const string DotNetDoPackage = "DotNetDo";
-    const string Usage = "Usage: dotnet do :update [<package> | --all] [--prerelease]";
+    const string Usage = "Usage: ./do :update [<package> | --all] [--prerelease]";
 
     public static Task<int> Run(string[] args) => Run(args, Do.RootDirectory, Do.ScriptsDirectory, new DotNetClient());
 

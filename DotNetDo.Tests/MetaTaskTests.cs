@@ -152,7 +152,7 @@ public sealed class MetaTaskTests
         Assert.Equal(0, list.ExitCode);
         Assert.Equal(
             [
-                "Usage: dotnet do <task> [args...]",
+                "Usage: ./do <task> [args...]",
                 "Tasks:",
                 "  build        Build the solution",
                 "  test",

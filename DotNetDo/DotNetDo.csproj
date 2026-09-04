@@ -7,7 +7,7 @@
     <PackageId>DotNetDo</PackageId>
     <Description>Run repository automation written as C# file-based apps.</Description>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-do</ToolCommandName>
+    <ToolCommandName>dotnetdo</ToolCommandName>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetDo.Core\DotNetDo.Core.csproj" />

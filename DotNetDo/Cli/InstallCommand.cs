@@ -5,7 +5,7 @@ static class InstallCommand
     public static async Task<int> Run(string[] args)
     {
         if (args.Length > 1)
-            return Fail("Usage: dotnet do :install");
+            return Fail("Usage: ./do :install");
 
         var tools = WorkspaceConfiguration.Load(Do.RootDirectory).Tools;
         

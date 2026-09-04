@@ -161,7 +161,7 @@ public sealed class UpdateCommandTests
                 Directory.CreateDirectory(workspace.Root / ".config");
                 File.WriteAllText(
                     workspace.Root / ".config/dotnet-tools.json",
-                    """{"version":1,"isRoot":true,"tools":{"dotnetdo":{"version":"1.0.0","commands":["dotnet-do"]}}}""");
+                    """{"version":1,"isRoot":true,"tools":{"dotnetdo":{"version":"1.0.0","commands":["dotnetdo"]}}}""");
             }
 
             return workspace;

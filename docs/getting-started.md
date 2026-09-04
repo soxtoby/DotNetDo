@@ -15,7 +15,7 @@ dotnet tool install --global DotNetDo
 Install task and parameter completion for PowerShell, Bash, or Zsh, then restart your shell:
 
 ```console
-dotnet-do :completion
+dotnetdo :completion
 ```
 
 ## Initialize a workspace
@@ -23,7 +23,7 @@ dotnet-do :completion
 Run the initialization wizard in the repository root:
 
 ```console
-dotnet do :init
+dotnetdo :init
 ```
 
 Accept the defaults to create `dotnetdo.toml`, a `scripts` directory, an initial `build.cs` task, and local launchers.
@@ -49,7 +49,7 @@ Log.Information("Hello from {Task}", "build");
 
 It logs `Hello from build`. Replace the body with the work the task should do — for example `await Tools.DotNet.Build;`.
 
-Use `dotnet do :help` for runner commands or `dotnet do :help build` for the task's description and declared parameters.
+Use `./do :help` for runner commands or `./do :help build` for the task's description and declared parameters.
 
 ## Next steps
 

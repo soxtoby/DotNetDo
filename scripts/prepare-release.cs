@@ -97,6 +97,7 @@ static void UpdatePins(string version, AbsolutePath manifestFile)
     if (tool["version"] is null)
         throw new InvalidOperationException("Tool manifest has no DotNetDo package version.");
     tool["version"] = version;
+    tool["commands"] = new JsonArray("dotnetdo");
     manifestFile.WriteText(manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
 
     foreach (var script in (Do.RootDirectory / "scripts").GlobFiles("*.cs"))
