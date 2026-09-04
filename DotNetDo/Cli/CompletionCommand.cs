@@ -17,8 +17,10 @@ static class CompletionCommand
                 shell!,
                 Do.UserProfile,
                 Do.LocalApplicationData / "DotNetDo" / "completion",
+                ExecutableResolver.Find("dotnet-do") is not null,
                 Console.Out,
-                Do.Documents);
+                Do.Documents,
+                Console.Error);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -31,9 +33,14 @@ static class CompletionCommand
         string shell,
         AbsolutePath userProfile,
         AbsolutePath dataDirectory,
+        bool completionHostAvailable,
         TextWriter? output = null,
-        AbsolutePath? documentsDirectory = null)
+        AbsolutePath? documentsDirectory = null,
+        TextWriter? error = null)
     {
+        if (!uninstall && !completionHostAvailable)
+            return Fail("Shell completion requires dotnet-do on PATH. Install DotNetDo globally, then run dotnet-do :completion.", error);
+
         var profile = ProfilePath(shell, userProfile, documentsDirectory);
         var adapter = dataDirectory / $"dotnetdo-completion.{Extension(shell)}";
 
@@ -187,7 +194,7 @@ static class CompletionCommand
             }
             $active = $tokens.Count - 1
 
-            & $tokens[0] :complete $active -- @tokens 2>$null | ForEach-Object {
+            & dotnet-do :complete $active -- @tokens 2>$null | ForEach-Object {
                 $parts = $_ -split "`t", 2
                 [System.Management.Automation.CompletionResult]::new($parts[0], $parts[0], 'ParameterValue', $(if ($parts.Count -gt 1) { $parts[1] } else { $parts[0] }))
             }
@@ -202,7 +209,7 @@ static class CompletionCommand
             COMPREPLY=()
             while IFS= read -r item; do
                 COMPREPLY+=("${item%%$'\t'*}")
-            done < <("${COMP_WORDS[0]}" :complete "$COMP_CWORD" -- "${COMP_WORDS[@]}" 2>/dev/null)
+            done < <(dotnet-do :complete "$COMP_CWORD" -- "${COMP_WORDS[@]}" 2>/dev/null)
         }
         complete -F _dotnetdo_complete dotnet-do do
         """;
@@ -218,15 +225,15 @@ static class CompletionCommand
                 detail="${line#*$'\t'}"
                 candidate="${candidate//:/\\:}"
                 items+=("${candidate}:${detail}")
-            done < <("${words[1]}" :complete "$((CURRENT - 1))" -- "${words[@]}" 2>/dev/null)
+            done < <(dotnet-do :complete "$((CURRENT - 1))" -- "${words[@]}" 2>/dev/null)
             _describe 'DotNetDo' items
         }
         compdef _dotnetdo_complete dotnet-do do
         """;
 
-    static int Fail(string message)
+    static int Fail(string message, TextWriter? error = null)
     {
-        Console.Error.WriteLine(message);
+        (error ?? Console.Error).WriteLine(message);
         return 1;
     }
 }

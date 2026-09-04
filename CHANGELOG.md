@@ -15,6 +15,7 @@
 
 ### Fixed
 - The bundled source generator and analyzer now target .NET Standard 2.0 so scripts do not require the .NET SDK used to publish DotNetDo.
+- Workspace-launcher completion uses the installed `dotnet-do` command instead of invoking `dnx` on every completion request, and installation now fails before changing shell profiles when that command is unavailable.
 
 ## v0.7.0
 

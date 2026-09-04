@@ -264,6 +264,8 @@ DotNetDo v1 includes workspace initialization with `:init`, task listing, task c
 
 User-scoped shell integration that completes DotNetDo task names and their discoverable parameters. Bare `:completion` installs it for the current shell; completion remains separate from workspace tool installation.
 
+The installed `dotnet-do` command serves completion requests for both itself and workspace-local launchers. Completion installation requires that command on `PATH` and fails before changing shell state when it is unavailable; uninstall remains available. Completing `./do` must not execute its `dnx`-based launcher; local version ownership applies to task execution, not static completion discovery.
+
 ## Exec helper
 
 A DotNetDo library helper for running an external program from a task.

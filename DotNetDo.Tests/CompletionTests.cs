@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using DotNetDo.Cli;
 using Xunit;
 
@@ -189,50 +190,115 @@ public sealed class CompletionTests
         Directory.CreateDirectory(Path.GetDirectoryName(profile)!);
         File.WriteAllText(profile, "existing");
 
-        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data));
-        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data));
+        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data, true));
+        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data, true));
 
         var installed = File.ReadAllText(profile);
         Assert.StartsWith("existing", installed);
         Assert.Equal(1, Count(installed, "# >>> DotNetDo completion >>>"));
         Assert.True((data / adapterName).IsExistingFile);
 
-        Assert.Equal(0, CompletionCommand.Run(true, shell, root, data));
+        Assert.Equal(0, CompletionCommand.Run(true, shell, root, data, false));
         Assert.Equal("existing" + Environment.NewLine + Environment.NewLine, File.ReadAllText(profile));
         Assert.False((data / adapterName).IsExistingFile);
     }
 
     [Fact]
-    public void PowerShell_adapter_completes_the_local_do_launcher()
+    public void Refuses_to_install_completion_without_dotnet_do_on_path()
+    {
+        using var workspace = Workspace.Create();
+        var root = AbsolutePath.Parse(workspace.Directory);
+        var data = root / "data";
+        using var error = new StringWriter();
+
+        var result = CompletionCommand.Run(
+            false,
+            "pwsh",
+            root,
+            data,
+            completionHostAvailable: false,
+            error: error);
+
+        Assert.Equal(1, result);
+        Assert.Equal(
+            "Shell completion requires dotnet-do on PATH. Install DotNetDo globally, then run dotnet-do :completion." + Environment.NewLine,
+            error.ToString());
+        Assert.False((data / "dotnetdo-completion.ps1").Exists);
+    }
+
+    [Fact]
+    public void PowerShell_adapter_uses_the_installed_tool_to_complete_the_local_do_launcher()
     {
         using var workspace = Workspace.Create();
         var root = AbsolutePath.Parse(workspace.Directory);
         var data = root / "data";
 
-        Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data));
+        Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data, true));
 
         var adapter = (data / "dotnetdo-completion.ps1").ReadText();
         Assert.Contains("-CommandName dotnet-do, do", adapter);
-        Assert.Contains("& $tokens[0] :complete", adapter);
+        Assert.Contains("& dotnet-do :complete", adapter);
+        Assert.DoesNotContain("& $tokens[0] :complete", adapter);
+    }
+
+    [Fact]
+    public void PowerShell_adapter_does_not_execute_the_local_launcher_during_completion()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        using var workspace = Workspace.Create();
+        var root = AbsolutePath.Parse(workspace.Directory);
+        var data = root / "data";
+        var commands = root / "commands";
+        commands.EnsureDirectoryExists();
+        (commands / "dotnet-do.cmd").WriteText("@echo build\tTask\r\n");
+        (root / "do.cmd").WriteText("@echo local launcher must not run\r\n");
+        Assert.Equal(0, CompletionCommand.Run(false, "pwsh", root, data, true));
+
+        var adapter = data / "dotnetdo-completion.ps1";
+        var source = adapter.ToString().Replace("'", "''");
+        var startInfo = new ProcessStartInfo("pwsh")
+        {
+            WorkingDirectory = workspace.Directory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-Command");
+        startInfo.ArgumentList.Add($". '{source}'; [System.Management.Automation.CommandCompletion]::CompleteInput('.\\do b', 6, $null).CompletionMatches.CompletionText");
+        startInfo.Environment["PATH"] = $"{commands}{Path.PathSeparator}{startInfo.Environment["PATH"]}";
+
+        using var process = Process.Start(startInfo)!;
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        Assert.True(process.ExitCode == 0, error);
+        Assert.Equal("", error);
+        Assert.Equal("build", output.Trim());
     }
 
     [Theory]
-    [InlineData("bash", "dotnetdo-completion.bash", "\"${COMP_WORDS[0]}\" :complete", "dotnet-do do")]
-    [InlineData("zsh", "dotnetdo-completion.zsh", "\"${words[1]}\" :complete", "dotnet-do do")]
-    public void Unix_adapter_completes_the_local_do_launcher(
+    [InlineData("bash", "dotnetdo-completion.bash", "dotnet-do :complete", "\"${COMP_WORDS[0]}\" :complete", "dotnet-do do")]
+    [InlineData("zsh", "dotnetdo-completion.zsh", "dotnet-do :complete", "\"${words[1]}\" :complete", "dotnet-do do")]
+    public void Unix_adapter_uses_the_installed_tool_to_complete_the_local_do_launcher(
         string shell,
         string adapterName,
         string invocation,
+        string launcherInvocation,
         string registrations)
     {
         using var workspace = Workspace.Create();
         var root = AbsolutePath.Parse(workspace.Directory);
         var data = root / "data";
 
-        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data));
+        Assert.Equal(0, CompletionCommand.Run(false, shell, root, data, true));
 
         var adapter = (data / adapterName).ReadText();
         Assert.Contains(invocation, adapter);
+        Assert.DoesNotContain(launcherInvocation, adapter);
         Assert.Contains(registrations, adapter);
     }
 
@@ -249,7 +315,7 @@ public sealed class CompletionTests
         File.WriteAllText(profile, existing);
 
         Assert.Throws<InvalidDataException>(() =>
-            CompletionCommand.Run(false, "bash", root, data));
+            CompletionCommand.Run(false, "bash", root, data, true));
         Assert.Equal(existing, File.ReadAllText(profile));
     }
 
