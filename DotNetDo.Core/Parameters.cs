@@ -6,6 +6,9 @@ public static partial class Do
 {
     static readonly Lazy<TaskParameterConfiguration> ParameterConfiguration = new(() => TaskParameterConfiguration.Current);
 
+    /// <summary>Arguments supplied after the <c>--</c> separator on the task command line.</summary>
+    public static IReadOnlyList<string> TrailingArguments { get; } = Array.AsReadOnly(ArgumentsAfterSeparator(Environment.GetCommandLineArgs().Skip(1)));
+
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
     /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
     public static OptionalParam<string> Param(string name) =>
@@ -53,6 +56,17 @@ public static partial class Do
 
     internal static string[] NormalizeParameterArguments(IEnumerable<string> arguments) =>
         TaskParameterConfiguration.NormalizeArguments(arguments);
+
+    internal static string[] ArgumentsAfterSeparator(IEnumerable<string> arguments)
+    {
+        using var enumerator = arguments.GetEnumerator();
+        while (enumerator.MoveNext() && enumerator.Current != "--") { }
+
+        var result = new List<string>();
+        while (enumerator.MoveNext())
+            result.Add(enumerator.Current);
+        return [.. result];
+    }
 }
 
 /// <summary>A task parameter guaranteed to resolve from configuration or its default value.</summary>

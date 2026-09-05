@@ -115,7 +115,7 @@ sealed class TaskCatalog
 
 sealed record TaskDefinition(string Name, string? Description);
 
-sealed record TaskInvocation(string TaskName, string Arguments)
+sealed record TaskInvocation(string TaskName, TaskCommandLine CommandLine)
 {
     public static TaskInvocation Parse(string owner, string value)
     {
@@ -125,7 +125,7 @@ sealed record TaskInvocation(string TaskName, string Arguments)
         var arguments = separator < 0 ? "" : invocation[separator..].TrimStart();
 
         return DotNetDo.TaskName.IsValid(taskName) 
-            ? new(taskName, arguments) 
+            ? new(taskName, TaskCommandLine.ParseConfigured(arguments))
             : throw new DotNetDoConfigurationException($"Meta-task '{owner}' contains invalid invocation '{value}'. {DotNetDo.TaskName.InvalidMessage}");
     }
 }

@@ -163,10 +163,21 @@ public sealed class StringExtensionsTests
     [InlineData(new[] { "build", "--pack", "--mode", "Fast" }, new[] { "build", "--pack=\0", "--mode", "Fast" })]
     [InlineData(new[] { "build", "--pack", "false" }, new[] { "build", "--pack", "false" })]
     [InlineData(new[] { "build", "--pack=false" }, new[] { "build", "--pack=false" })]
-    [InlineData(new[] { "build", "--" }, new[] { "build", "--" })]
+    [InlineData(new[] { "build", "--" }, new[] { "build" })]
+    [InlineData(new[] { "build", "--pack", "--", "--other" }, new[] { "build", "--pack=\0" })]
     public void Normalizes_bare_parameter_flags(string[] arguments, string[] expected)
     {
         Assert.Equal(expected, Do.NormalizeParameterArguments(arguments));
+    }
+
+    [Theory]
+    [InlineData(new string[0], new string[0])]
+    [InlineData(new[] { "--configuration", "Release" }, new string[0])]
+    [InlineData(new[] { "--", "interactive", "--config", "my file" }, new[] { "interactive", "--config", "my file" })]
+    [InlineData(new[] { "--name", "value", "--", "--", "tail" }, new[] { "--", "tail" })]
+    public void Reads_arguments_after_the_separator(string[] commandLine, string[] expected)
+    {
+        Assert.Equal(expected, Do.ArgumentsAfterSeparator(commandLine));
     }
 
     [Fact]

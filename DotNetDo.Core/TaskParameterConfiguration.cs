@@ -58,7 +58,7 @@ sealed class TaskParameterConfiguration
 
     public static string[] NormalizeArguments(IEnumerable<string> arguments)
     {
-        var values = arguments.ToArray();
+        var values = arguments.TakeWhile(argument => argument != "--").ToArray();
         for (var index = 0; index < values.Length; index++)
         {
             var value = values[index];

@@ -17,6 +17,7 @@
       "title": "Parameters and secrets",
       "summary": "Declare task parameters and secrets, then resolve them from arguments, environment variables, user secrets, and workspace configuration.",
       "entries": [
+        "DotNetDo.Do.TrailingArguments",
         "DotNetDo.Do.Param(System.String)",
         "DotNetDo.Do.Param``1(System.String)",
         "DotNetDo.Do.Param``1(System.String,``0,System.String)",

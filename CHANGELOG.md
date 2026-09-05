@@ -4,6 +4,7 @@
 
 ### Added
 - A static documentation site with a curated guide and generated API reference, published from `master`.
+- `Do.TrailingArguments` for reading arbitrary task arguments supplied after the `--` command-line separator.
 - `Tools.NuGet` typed commands for the NuGet CLI.
 - `Tools.DotNet.Build` and `Tools.DotNet.Pack` support arbitrary MSBuild properties plus first-class CI, version, and copyright properties.
 - Interactive local task runs prompt for missing required parameters before execution, with masked secret input and runtime fallback for conditional requirements.
@@ -15,6 +16,7 @@
 - `ExecOptions.LogCommand` can suppress the command-start log for individual commands.
 
 ### Fixed
+- Meta-task argument parsing preserves escaped quotes, empty values, and trailing backslashes when forwarding arguments to tasks.
 - The bundled source generator and analyzer now target .NET Standard 2.0 so scripts do not require the .NET SDK used to publish DotNetDo.
 - Workspace-launcher completion uses the installed `dotnetdo` command instead of invoking `dnx` on every completion request, and installation now fails before changing shell profiles when that command is unavailable.
 

@@ -104,6 +104,16 @@ public sealed class CompletionTests
     }
 
     [Fact]
+    public void Stops_parameter_completion_after_the_argument_separator()
+    {
+        using var workspace = Workspace.Create();
+        workspace.WriteTask("run", """var configuration = Do.Param("configuration");""");
+        var catalog = workspace.Catalog();
+
+        Assert.Empty(Complete(catalog, workspace.Root, 4, "dotnetdo", "run", "--", "tool", "--"));
+    }
+
+    [Fact]
     public void Recursively_unions_meta_task_parameters_and_drops_conflicting_detail()
     {
         using var workspace = Workspace.Create(

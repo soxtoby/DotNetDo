@@ -16,7 +16,10 @@ static partial class TaskHelp
             Console.WriteLine();
             Console.WriteLine("Invocations:");
             foreach (var invocation in invocations)
-                Console.WriteLine($"  {invocation.TaskName}{(invocation.Arguments.Length == 0 ? "" : $" {invocation.Arguments}")}");
+            {
+                var commandLine = invocation.CommandLine.Render();
+                Console.WriteLine($"  {invocation.TaskName}{(commandLine.Length == 0 ? "" : $" {commandLine}")}");
+            }
             Console.WriteLine();
             Console.WriteLine("Arguments are forwarded to each task.");
             return 0;

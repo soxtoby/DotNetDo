@@ -148,15 +148,17 @@ The configured root solution folder presenting every C# source beneath the scrip
 
 A named runnable unit discovered by DotNetDo. A task is either implemented as a single C# source file or defined as a meta-task in DotNetDo configuration.
 
+Task parameters are named values before the `--` command-line separator. Task arguments are the ordered, unchanged values after the separator and are available through `Do.TrailingArguments`. Values after the separator are never interpreted as task parameters.
+
 Generated tasks pin the latest stable DotNetDo.Core version available from configured NuGet sources and import the `DotNetDo` namespace by default.
 
 The initial DotNetDo API surface is intentionally tiny. Generated tasks reference it to establish a stable import path for future helpers.
 
 ## Meta-task
 
-A task defined under the `tasks` table in DotNetDo configuration. A string value defines one task invocation; a string array defines an ordered sequence of task invocations. Each invocation parses its first token as the task name and preserves the remaining text as raw task arguments.
+A task defined under the `tasks` table in DotNetDo configuration. A string value defines one task invocation; a string array defines an ordered sequence of task invocations. Each invocation parses its first token as the task name and decodes the remaining command-line text into values, preserving quoted spaces, escaped quotes, empty values, and backslashes.
 
-Each invocation may supply fixed task arguments. Arguments supplied to the meta-task are inherited by every invocation and placed before its fixed arguments, giving fixed arguments precedence. Invocations run sequentially; the first failure stops execution and becomes the meta-task result. Meta-tasks have no cleanup or finally phase.
+Each invocation may supply fixed task parameters and trailing arguments. Values supplied to the meta-task are inherited by every invocation. Inherited parameters precede fixed parameters, giving fixed parameters precedence; inherited trailing arguments precede fixed trailing arguments. Parameters remain before the `--` separator. Invocations run sequentially; the first failure stops execution and becomes the meta-task result. Meta-tasks have no cleanup or finally phase.
 
 Argument inheritance is unconditional. Invoked tasks using custom argument parsing must tolerate inherited arguments that may primarily concern sibling tasks.
 

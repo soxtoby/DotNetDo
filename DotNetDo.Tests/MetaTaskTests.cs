@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using DotNetDo.Cli;
 using Xunit;
 
@@ -18,23 +19,24 @@ public sealed class MetaTaskTests
         workspace.WriteTask("first", "Console.WriteLine(\"first:\" + string.Join(\"|\", args));");
         workspace.WriteTask("second", "Console.WriteLine(\"second:\" + string.Join(\"|\", args));");
 
-        var calls = new List<(string Task, string Arguments)>();
-        var catalog = TaskCatalog.Load(AbsolutePath.Parse(workspace.Directory), RelativePath.Parse("scripts"));
+        var result = await workspace.Run("all", "--shared", "hello world", "--", "tool", "--flag");
 
-        var exitCode = await RunCommand.RunTask(catalog, "all", "--shared \"hello world\"", (task, arguments) =>
-        {
-            calls.Add((task, arguments));
-            return Task.FromResult(0);
-        });
-
-        Assert.Equal(0, exitCode);
+        Assert.True(result.ExitCode == 0, result.Output + result.Error);
         Assert.Equal(
-            new[]
-                {
-                    ("first", "--shared \"hello world\" --fixed one"),
-                    ("second", "--shared \"hello world\" --fixed two")
-                },
-            calls);
+            ["first:--shared|hello world|--fixed|one|--|tool|--flag",
+             "second:--shared|hello world|--fixed|two|--|tool|--flag"],
+            result.OutputLines);
+    }
+
+    [Fact]
+    public void Separates_trailing_arguments_before_rendering()
+    {
+        var commandLine = TaskCommandLine.FromArguments(["--configuration", "Debug", "--", "interactive", "--config", "my file"])
+            .AppendParameters("--configuration", "Release");
+
+        Assert.Equal(["--configuration", "Debug", "--configuration", "Release"], commandLine.Parameters);
+        Assert.Equal(["interactive", "--config", "my file"], commandLine.Arguments);
+        Assert.Equal("--configuration Debug --configuration Release -- interactive --config \"my file\"", commandLine.Render());
     }
 
     [Theory]
@@ -50,11 +52,48 @@ public sealed class MetaTaskTests
     }
 
     [Fact]
-    public void Preflight_argument_splitting_keeps_quoted_values_together()
+    public void Parses_configured_arguments_once()
     {
+        var commandLine = TaskCommandLine.ParseConfigured("--name \"hello world\" --publish=true -- tool \"some file\"");
+
+        Assert.Equal(["--name", "hello world", "--publish=true"], commandLine.Parameters);
+        Assert.Equal(["tool", "some file"], commandLine.Arguments);
+    }
+
+    [Theory]
+    [InlineData("\"say \\\"hello\\\"\"", "say \"hello\"")]
+    [InlineData("\"C:\\some folder\\\\\"", "C:\\some folder\\")]
+    [InlineData("\"\"", "")]
+    [InlineData("\"a\"\"b\"", "a\"b")]
+    [InlineData("one\" two \"three", "one two three")]
+    [InlineData("C:\\folder\\", "C:\\folder\\")]
+    [InlineData("a\\\\\"\"", "a\\")]
+    [InlineData("\"a\\\\\\\"b\"", "a\\\"b")]
+    public void Preserves_configured_argument_escaping(string configured, string expected)
+    {
+        var commandLine = TaskCommandLine.ParseConfigured($"--value {configured} -- {configured}");
+
+        Assert.Equal(["--value", expected], commandLine.Parameters);
+        Assert.Equal([expected], commandLine.Arguments);
+    }
+
+    [Fact]
+    public async Task Preserves_configured_and_inherited_values_in_the_child_process()
+    {
+        using var workspace = Workspace.Create(
+            """
+            [tasks]
+            all = 'echo --message "say \"hello\"" --path "C:\some folder\\" -- tool "" "fixed \"quote\""'
+            """);
+        workspace.WriteTask("echo", "Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(args));");
+
+        var result = await workspace.Run("all", "--", "", "inherited \"quote\"", "C:\\another folder\\", "--");
+
+        Assert.True(result.ExitCode == 0, result.Output + result.Error);
         Assert.Equal(
-            ["--name", "hello world", "--publish=true"],
-            RequiredParameterPreflight.SplitArguments("--name \"hello world\" --publish=true"));
+            ["--message", "say \"hello\"", "--path", "C:\\some folder\\", "--",
+             "", "inherited \"quote\"", "C:\\another folder\\", "--", "tool", "", "fixed \"quote\""],
+            JsonSerializer.Deserialize<string[]>(Assert.Single(result.OutputLines))!);
     }
 
     [Fact]
@@ -68,17 +107,10 @@ public sealed class MetaTaskTests
         workspace.WriteTask("fail", "Console.WriteLine(\"fail\"); return 7;");
         workspace.WriteTask("second", "Console.WriteLine(\"second\");");
 
-        var calls = new List<string>();
-        var catalog = TaskCatalog.Load(AbsolutePath.Parse(workspace.Directory), RelativePath.Parse("scripts"));
+        var result = await workspace.Run("all");
 
-        var exitCode = await RunCommand.RunTask(catalog, "all", "", (task, _) =>
-        {
-            calls.Add(task);
-            return Task.FromResult(task == "fail" ? 7 : 0);
-        });
-
-        Assert.Equal(7, exitCode);
-        Assert.Equal(new[] { "fail" }, calls);
+        Assert.Equal(7, result.ExitCode);
+        Assert.Equal(["fail"], result.OutputLines);
     }
 
     [Fact]
@@ -186,7 +218,7 @@ public sealed class MetaTaskTests
         }
 
         public void WriteTask(string name, string source) =>
-            File.WriteAllText(Path.Combine(Directory, "scripts", $"{name}.cs"), source);
+            File.WriteAllText(Path.Combine(Directory, "scripts", $"{name}.cs"), "#:property PublishAot=false\n" + source);
 
         public async Task<Result> Run(params string[] arguments)
         {
@@ -202,10 +234,10 @@ public sealed class MetaTaskTests
                 startInfo.ArgumentList.Add(argument);
 
             using var process = Process.Start(startInfo)!;
-            var output = await process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
-            var error = await process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
+            var output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
+            var error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
             await process.WaitForExitAsync(TestContext.Current.CancellationToken);
-            return new(process.ExitCode, output, error);
+            return new(process.ExitCode, await output, await error);
         }
 
         public void Dispose() => System.IO.Directory.Delete(Directory, recursive: true);

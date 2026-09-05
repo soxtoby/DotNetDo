@@ -23,7 +23,7 @@ static class RequiredParameterPreflight
         {
             var result = secrets[occurrence.Invocation.TaskName];
             occurrence.IsMissing = result.Inspected
-                && TaskParameterConfiguration.Create(SplitArguments(occurrence.Invocation.Arguments), result.UserSecretsId)[occurrence.Parameter.Name] is null;
+                && TaskParameterConfiguration.Create(occurrence.Invocation.CommandLine.Parameters, result.UserSecretsId)[occurrence.Parameter.Name] is null;
         }
 
         foreach (var group in occurrences
@@ -46,7 +46,7 @@ static class RequiredParameterPreflight
                     if (secret)
                         occurrence.Invocation.Environment[$"DOTNETDO_{group.Key}"] = answer;
                     else
-                        occurrence.Invocation.Arguments = $"{occurrence.Invocation.Arguments} --{group.Key} {answer.QuotedArgument()}".Trim();
+                        occurrence.Invocation.CommandLine = occurrence.Invocation.CommandLine.AppendParameters($"--{group.Key}", answer);
                 }
             }
         }
@@ -63,35 +63,7 @@ static class RequiredParameterPreflight
     }
 
     static TaskParameterConfiguration Configuration(RunInvocation invocation) =>
-        TaskParameterConfiguration.Create(SplitArguments(invocation.Arguments));
-
-    internal static string[] SplitArguments(string arguments)
-    {
-        var result = new List<string>();
-        var value = new List<char>();
-        var quoted = false;
-        foreach (var character in arguments)
-        {
-            if (character == '"')
-                quoted = !quoted;
-            else if (char.IsWhiteSpace(character) && !quoted)
-            {
-                if (value.Count != 0)
-                {
-                    result.Add(new string([.. value]));
-                    value.Clear();
-                }
-            }
-            else
-            {
-                value.Add(character);
-            }
-        }
-
-        if (value.Count != 0)
-            result.Add(new string([.. value]));
-        return [.. result];
-    }
+        TaskParameterConfiguration.Create(invocation.CommandLine.Parameters);
 
     static async Task<UserSecretsResult> LoadUserSecrets(RelativePath scriptsPath, string taskName)
     {

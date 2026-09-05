@@ -58,3 +58,18 @@ dotnet user-secrets set "deployment-token" "your-secret-value" --file scripts/re
 DotNetDo reads that value when `release.cs` calls `Do.Secret("deployment-token")`. The secret stays outside the repository. See [.NET user secrets for file-based apps](https://learn.microsoft.com/en-us/dotnet/core/sdk/file-based-apps#user-secrets) for listing and managing stored values.
 
 See the [parameters and secrets API reference](../reference/core/parameters-and-secrets.yml) for resolution order and wrapper types.
+
+## Pass trailing arguments
+
+Use `--` when a task needs to forward arbitrary arguments to another command. `Do.TrailingArguments` returns each value after the separator without treating option-like values as task parameters:
+
+```csharp
+var arguments = string.Join(" ", Do.TrailingArguments.Select(argument => argument.QuotedArgument()));
+await Do.Exec($"dotnet test {arguments}");
+```
+
+```console
+./do test -- --filter "Category=Unit"
+```
+
+Save this task as `scripts/test.cs`. Here, `Do.TrailingArguments` contains `--filter` and `Category=Unit`, limiting the test run to unit tests. Declared task parameters still go before the separator.

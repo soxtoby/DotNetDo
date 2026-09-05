@@ -83,6 +83,9 @@ static class CompletionEngine
         IReadOnlyList<string> arguments,
         int activeIndex)
     {
+        if (arguments.Take(activeIndex).Contains("--", StringComparer.Ordinal))
+            return [];
+
         var parameters = Parameters(catalog, root, taskName);
         return CompleteAttachedValue(parameters, arguments[activeIndex])
             ?? CompleteSeparateValue(parameters, arguments, activeIndex)

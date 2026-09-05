@@ -13,7 +13,7 @@ static class RunCommand
         if (!catalog.Contains(taskName))
             return Fail($"Task '{taskName}' does not exist.");
 
-        var plan = BuildPlan(catalog, taskName, Render(taskArgs));
+        var plan = BuildPlan(catalog, taskName, TaskCommandLine.FromArguments(taskArgs));
         await RequiredParameterPreflight.Apply(catalog, plan);
 
         foreach (var invocation in plan)
@@ -26,44 +26,22 @@ static class RunCommand
         return 0;
     }
 
-    internal static async Task<int> RunTask(
-        TaskCatalog catalog,
-        string taskName,
-        string inheritedArguments,
-        Func<string, string, Task<int>> runTaskFile)
-    {
-        if (catalog.TryGetMetaTask(taskName, out var invocations))
-        {
-            foreach (var invocation in invocations)
-            {
-                var childArguments = Combine(inheritedArguments, invocation.Arguments);
-                var exitCode = await RunTask(catalog, invocation.TaskName, childArguments, runTaskFile);
-                if (exitCode != 0)
-                    return exitCode;
-            }
-
-            return 0;
-        }
-
-        return await runTaskFile(taskName, inheritedArguments);
-    }
-
-    static List<RunInvocation> BuildPlan(TaskCatalog catalog, string taskName, string inheritedArguments)
+    static List<RunInvocation> BuildPlan(TaskCatalog catalog, string taskName, TaskCommandLine commandLine)
     {
         var plan = new List<RunInvocation>();
-        Add(taskName, inheritedArguments);
+        Add(taskName, commandLine);
         return plan;
 
-        void Add(string childTask, string arguments)
+        void Add(string childTask, TaskCommandLine childCommandLine)
         {
             if (catalog.TryGetMetaTask(childTask, out var invocations))
             {
                 foreach (var invocation in invocations)
-                    Add(invocation.TaskName, Combine(arguments, invocation.Arguments));
+                    Add(invocation.TaskName, childCommandLine.AppendFixed(invocation.CommandLine));
             }
             else
             {
-                plan.Add(new(childTask, arguments));
+                plan.Add(new(childTask, childCommandLine));
             }
         }
     }
@@ -71,11 +49,11 @@ static class RunCommand
     static async Task<int> RunFile(RelativePath scriptsPath, RunInvocation invocation)
     {
         var file = Do.RootDirectory / scriptsPath / $"{invocation.TaskName}.cs";
-        var arguments = file.ToString().QuotedArgument();
-        if (invocation.Arguments.Length != 0)
-            arguments += $" -- {invocation.Arguments}";
-
-        var startInfo = new ProcessStartInfo("dotnet", arguments) { UseShellExecute = false };
+        var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false };
+        startInfo.ArgumentList.Add(file.ToString());
+        startInfo.ArgumentList.Add("--");
+        foreach (var argument in invocation.CommandLine.ToArguments())
+            startInfo.ArgumentList.Add(argument);
         foreach (var (name, value) in invocation.Environment)
             startInfo.Environment[name] = value;
         using var process = Process.Start(startInfo);
@@ -91,12 +69,6 @@ static class RunCommand
         }
     }
 
-    static string Render(IEnumerable<string> arguments) =>
-        string.Join(" ", arguments.Select(argument => argument.QuotedArgument()));
-
-    static string Combine(string inherited, string fixedArguments) =>
-        $"{inherited} {fixedArguments}".Trim();
-
     static int Fail(string message)
     {
         Console.Error.WriteLine(message);
@@ -105,9 +77,9 @@ static class RunCommand
 
 }
 
-sealed class RunInvocation(string taskName, string arguments)
+sealed class RunInvocation(string taskName, TaskCommandLine commandLine)
 {
     public string TaskName { get; } = taskName;
-    public string Arguments { get; set; } = arguments;
+    public TaskCommandLine CommandLine { get; set; } = commandLine;
     public Dictionary<string, string> Environment { get; } = new(StringComparer.Ordinal);
 }
