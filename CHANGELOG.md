@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.8.0
+
 ### Added
 - A static documentation site with a curated guide and generated API reference, published from `master`.
 - `Do.TrailingArguments` for reading arbitrary task arguments supplied after the `--` command-line separator.
