@@ -2,6 +2,8 @@
 
 DotNetDo turns small C# files into repository automation scripts. Install the `dotnetdo` global tool to initialize a workspace, then run its scripts through the local `./do` launcher. Scripts use typed helpers for processes, paths, Git, .NET, configuration, secrets, logging, and CI providers.
 
+**[Website & documentation](https://soxtoby.github.io/DotNetDo/)** · [Guides](https://soxtoby.github.io/DotNetDo/guides/task-orchestration.html) · [API reference](https://soxtoby.github.io/DotNetDo/reference/)
+
 ## Getting started
 
 Note that DotNetDo requires .NET 10.
@@ -32,7 +34,5 @@ await Tools.DotNet.Build;
 ```
 
 Use `./do :help` for runner commands or `./do :help <name>` for a script's declared parameters.
-
-Read the [documentation](https://soxtoby.github.io/DotNetDo/), browse the [API reference](https://soxtoby.github.io/DotNetDo/reference/), or continue with the [guides](https://soxtoby.github.io/DotNetDo/guides/task-orchestration.html).
 
 Licensed under the [MIT License](LICENSE).

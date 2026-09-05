@@ -19,7 +19,7 @@ public sealed class DotNetToolTests
         {
             Do.Solution = await Solution.Load(path, TestContext.Current.CancellationToken);
 
-            var build = Tools.DotNet.Build with { Configuration = null };
+            var build = Tools.DotNet.Build with { Configuration = null, ContinuousIntegrationBuild = null };
             Assert.Equal($"dotnet build {path.QuotedArgument()} --verbosity normal", build.ToString());
             var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], Output = "test output", Configuration = null };
             Assert.Equal(["My App.csproj"], command.Targets);
