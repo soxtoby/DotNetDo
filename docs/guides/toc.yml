@@ -1,5 +1,7 @@
 - name: Tools
   href: tools.md
+- name: HTTP requests
+  href: http.md
 - name: Path values
   href: path-values.md
 - name: Parameters and secrets

@@ -284,6 +284,18 @@ Exec logs `Out` messages at `Information` and `Error` messages at `Error` by def
 
 The default log action passes the raw message to the redacting logger. DotNetDo's redacting logger masks raw, JSON-escaped, and URI-escaped forms of registered `Secret` values, matching longer values first. Arbitrary transformations such as Base64 and hashes are outside the redaction guarantee.
 
+## Fetch helper
+
+A DotNetDo library helper for sending an HTTP request from a task. It is the HTTP counterpart to the Exec helper: the request is sent immediately, awaiting it requires a successful status code, and `Completed` returns the buffered response for any status.
+
+Format shortcuts such as `Do.FetchJson` request their format with an `Accept` header unless the caller supplies one, require success, and return the parsed body. `Do.FetchFile` streams the body to disk and never buffers it.
+
+_Avoid_: Download helper, HTTP client
+
+## HTTP tool command
+
+A typed immutable record that describes a request to an HTTP API, the HTTP counterpart to a tool command. It derives its URL from its own properties and carries its own method, headers, and body. Awaiting it produces a semantic result; passing it to the Fetch helper returns the raw response. HTTP tool commands are internal until DotNetDo ships an HTTP-based tool.
+
 ## Logging bootstrap
 
 DotNetDo's module-initializer setup of the process-wide logger for tasks. When Serilog still has its default silent logger, DotNetDo installs a logger using its CI log sink and `Logging.Level`, which defaults to `Information`; the task remains free to replace `Log.Logger` normally. `Logging.Level` remains DotNetDo's explicit task-wide output-volume preference when the logger is replaced, and fresh typed tool commands snapshot it into best-effort native volume controls. DotNetDo retains and disposes only its bootstrap logger at process exit, never a replacement owned by the task.

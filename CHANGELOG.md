@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `Do.Fetch()` sends HTTP requests from tasks. `Do.FetchJson()`, `Do.FetchXml()`, and `Do.FetchText()` read a response in one line, and `Do.FetchFile()` streams a download to disk. Unsuccessful responses throw with the status and the start of the response body.
 - `Tools.DotNet.Test` supports repositories that run `dotnet test` with Microsoft.Testing.Platform. Its new `TestingPlatform` options cover MTP test selection and run limits, plus TRX, JUnit, HTML, CTRF, Azure DevOps, and GitHub Actions test reports.
 - `Tools.Bun.Test` supports `Reporter` and `ReporterOutfile` for JUnit XML and dots output.
 
@@ -10,6 +11,9 @@
 - `Tools.DotNet.Test` detects the repository's test runner mode from `global.json` or `DOTNET_TEST_RUNNER`. It renders shared options for that mode and fails before running when options for the other mode are set.
 - VSTest-only `Tools.DotNet.Test` options now live under `VSTest`: `Settings`, `Filter`, `TestAdapterPath`, `Loggers`, `Output`, `Diag`, `Collect`, `Blame*`, `Interactive`, and `DisableBuildServers`. For example, write `Tools.DotNet.Test with { VSTest = new() { Loggers = ["trx"] } }`.
 - `Tools.Npm.Test` has been removed. Use `Tools.Npm.Run with { Script = "test" }` instead.
+
+### Fixed
+- Type and member references in API reference descriptions are now links, labeled without the namespace, instead of plain fully qualified names.
 
 ## v0.8.0
 

@@ -13,6 +13,21 @@
       "typePattern": "^DotNetDo\\.(Exec|OutputType$|ToolCommand|PackageToolCommand|PackageToolNotDeclaredException$|ToolInstall|ToolManifestException$|ToolOutputException$|FormatCommand$)"
     },
     {
+      "slug": "core/http",
+      "title": "HTTP requests",
+      "summary": "Send HTTP requests, read JSON, XML, or text responses, and download files.",
+      "entries": [
+        "DotNetDo.Do.Fetch(System.String,DotNetDo.FetchOptions)",
+        "DotNetDo.Do.FetchJson``1(System.String,DotNetDo.FetchOptions,System.Text.Json.JsonSerializerOptions)",
+        "DotNetDo.Do.FetchJson(System.String,DotNetDo.FetchOptions,System.Text.Json.JsonSerializerOptions)",
+        "DotNetDo.Do.FetchXml``1(System.String,DotNetDo.FetchOptions)",
+        "DotNetDo.Do.FetchXml(System.String,DotNetDo.FetchOptions)",
+        "DotNetDo.Do.FetchText(System.String,DotNetDo.FetchOptions)",
+        "DotNetDo.Do.FetchFile(System.String,DotNetDo.AbsolutePath,DotNetDo.FetchOptions)"
+      ],
+      "typePattern": "^DotNetDo\\.Fetch"
+    },
+    {
       "slug": "core/parameters-and-secrets",
       "title": "Parameters and secrets",
       "summary": "Declare task parameters and secrets, then resolve them from arguments, environment variables, user secrets, and workspace configuration.",

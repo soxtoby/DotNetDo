@@ -15,7 +15,9 @@ var rawApi = root / "artifacts" / "docs" / "api-raw";
 var composedApi = root / "artifacts" / "docs" / "composed";
 var site = root / "artifacts" / "docs" / "site";
 
-var coreAssembly = root / "DotNetDo.Core" / "bin" / "Release" / "net10.0" / "DotNetDo.Core.dll";
+var coreOutput = root / "DotNetDo.Core" / "bin" / "Release" / "net10.0";
+var coreAssembly = coreOutput / "DotNetDo.Core.dll";
+var coreDocumentation = coreOutput / "DotNetDo.Core.xml";
 
 if (siteOnly && !rawApi.IsExistingDirectory)
     throw new InvalidOperationException($"No generated API data in {rawApi}. Run the task without --site-only first.");
@@ -25,8 +27,12 @@ if (!siteOnly && !coreAssembly.IsExistingFile)
 await (DotNet.ToolRestore with { WorkingDirectory = root });
 
 // Reads the Release build of DotNetDo.Core rather than producing it, so building the solution stays the build task's job.
+// Docfx metadata never deletes pages for types that are removed or made internal, so start from an empty directory.
 if (!siteOnly)
+{
+    rawApi.RecreateDirectory();
     await new DotNetInvocation(["docfx", "metadata", docfxConfig]) { WorkingDirectory = root };
+}
 
 await (DotNet.Build with
     {
@@ -44,6 +50,7 @@ await new DotNetInvocation([
         rawApi,
         composedApi,
         familyConfig,
+        coreDocumentation,
     ]) { WorkingDirectory = root };
 await new DotNetInvocation(["docfx", "build", docfxConfig, "--warningsAsErrors"]) { WorkingDirectory = root };
 

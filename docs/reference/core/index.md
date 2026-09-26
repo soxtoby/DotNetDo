@@ -9,6 +9,7 @@ await Do.Exec("dotnet --info");
 Each family below collects its entry points with their complete generated documentation, followed by the supporting types it uses.
 
 - [Execution](execution.yml) — run processes and installed tools, capture output, and control logging and failure behavior.
+- [HTTP requests](http.yml) — send HTTP requests, read JSON, XML, or text responses, and download files.
 - [Parameters and secrets](parameters-and-secrets.yml) — declare task parameters and secrets, then resolve them from arguments, environment variables, user secrets, and workspace configuration.
 - [Paths and files](paths-and-files.yml) — work with normalized paths, files, archives, and temporary directories.
 - [Workspace and solutions](workspace-and-solutions.yml) — find the workspace root, inspect the configured solution, and navigate its projects.

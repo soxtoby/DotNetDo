@@ -1,18 +1,23 @@
+using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using YamlDotNet.RepresentationModel;
 
-if (args.Length != 3)
-    throw new ArgumentException("Usage: DocComposer <raw-api-directory> <output-directory> <families.json>");
+if (args.Length != 4)
+    throw new ArgumentException("Usage: DocComposer <raw-api-directory> <output-directory> <families.json> <documentation.xml>");
 
 var rawDirectory = Path.GetFullPath(args[0]);
 var outputDirectory = Path.GetFullPath(args[1]);
 var familyFile = Path.GetFullPath(args[2]);
+var documentationFile = Path.GetFullPath(args[3]);
 
 if (!Directory.Exists(rawDirectory))
     throw new DirectoryNotFoundException($"Raw API directory not found: {rawDirectory}");
 if (!File.Exists(familyFile))
     throw new FileNotFoundException("API family definition not found.", familyFile);
+if (!File.Exists(documentationFile))
+    throw new FileNotFoundException("Compiler XML documentation not found.", documentationFile);
 if (outputDirectory == Path.GetPathRoot(outputDirectory))
     throw new InvalidOperationException("Refusing to use a filesystem root as the generated documentation directory.");
 
@@ -51,6 +56,13 @@ var facadeTargets = BuildFacadeTargets(configuration.Families);
 facadeTargets["DotNetDo.Do"] = "reference/index.html";
 facadeTargets["DotNetDo.Tools"] = "reference/tools/index.html";
 
+var entryIndex = facadeDocuments
+    .SelectMany(document => ReadMemberGroups(document).Select(group => (document, group)))
+    .ToDictionary(pair => pair.group.Uid, pair => pair, StringComparer.Ordinal);
+var xrefTargets = BuildXrefTargets(typeDocuments, configuration.Families, entryIndex, facadeTargets);
+var externalKinds = ReadCrefKinds(documentationFile);
+var unresolvedXrefs = new List<string>();
+
 foreach (var document in typeDocuments)
 {
     var family = configuration.Families.Single(candidate => Regex.IsMatch(document.Uid, candidate.TypePattern));
@@ -59,13 +71,10 @@ foreach (var document in typeDocuments)
     var body = GetSequence(root, "body");
     CleanType(body, document.DisplayName);
     RewriteUrls(root, url => RewriteTypeUrl(url, facadeTargets));
+    RewriteXrefs(root, TypePage(document), xrefTargets, externalKinds, unresolvedXrefs);
     SetMetadata(root, "family", family.Title);
     SaveApiPage(outputPath, root);
 }
-
-var entryIndex = facadeDocuments
-    .SelectMany(document => ReadMemberGroups(document).Select(group => (document, group)))
-    .ToDictionary(pair => pair.group.Uid, pair => pair, StringComparer.Ordinal);
 
 foreach (var family in configuration.Families)
 {
@@ -101,6 +110,7 @@ foreach (var family in configuration.Families)
         foreach (var node in cloned)
         {
             RewriteUrls(node, url => RewriteFamilyUrl(url, family.Slug, facadeTargets));
+            RewriteXrefs(node, FamilyPage(family), xrefTargets, externalKinds, unresolvedXrefs);
             body.Add(node);
         }
     }
@@ -131,6 +141,9 @@ foreach (var family in configuration.Families)
     };
     SaveApiPage(familyPath, root);
 }
+
+if (unresolvedXrefs.Count > 0)
+    throw new InvalidOperationException("Unresolved DotNetDo cross-references:\n" + string.Join("\n", unresolvedXrefs.Distinct().Order()));
 
 AddTypeOwnershipToToc(outputDirectory, configuration.Families, typeDocuments);
 
@@ -255,6 +268,114 @@ static string RelativeUrl(string source, string target)
 {
     var sourceDirectory = Path.GetDirectoryName(source.Replace('/', Path.DirectorySeparatorChar))!;
     return Path.GetRelativePath(sourceDirectory, target.Replace('/', Path.DirectorySeparatorChar)).Replace('\\', '/');
+}
+
+static string TypePage(ApiDocument type) => $"reference/types/{Path.GetFileNameWithoutExtension(type.Path)}.html";
+
+static string FamilyPage(ApiFamily family) => $"reference/{family.Slug}.html";
+
+// Docfx registers no UIDs for ApiPage documents, so the composer resolves prose cross-references itself.
+static Dictionary<string, XrefTarget> BuildXrefTargets(
+    IEnumerable<ApiDocument> types,
+    IEnumerable<ApiFamily> families,
+    IReadOnlyDictionary<string, (ApiDocument document, MemberGroup group)> entryIndex,
+    IReadOnlyDictionary<string, string> facadeTargets)
+{
+    var targets = new Dictionary<string, XrefTarget>(StringComparer.Ordinal);
+
+    foreach (var type in types)
+    {
+        var page = TypePage(type);
+        targets.Add(type.Uid, new XrefTarget(page, null, type.DisplayName, null));
+        foreach (var member in ReadMemberGroups(type))
+            targets.Add(member.Uid, new XrefTarget(page, ScalarValue(member.Nodes[0], "id"), MemberName(member), type.DisplayName));
+    }
+
+    foreach (var (uid, page) in facadeTargets)
+        targets.Add(uid, new XrefTarget(page, null, DisplayFacade(uid), null));
+
+    foreach (var family in families)
+    {
+        foreach (var entry in family.Entries)
+        {
+            var (source, group) = entryIndex[entry];
+            targets.Add(entry, new XrefTarget(FamilyPage(family), ScalarValue(group.Nodes[0], "id"), $"{DisplayFacade(source.Uid)}.{MemberName(group)}", null));
+        }
+    }
+
+    return targets;
+}
+
+static string MemberName(MemberGroup member)
+{
+    var name = ScalarValue(member.Nodes[0], "api3") ?? member.Uid;
+    var parameters = name.IndexOf('(');
+    return parameters < 0 ? name : name[..parameters] + "()";
+}
+
+static Dictionary<string, char> ReadCrefKinds(string documentationFile) =>
+    XDocument.Load(documentationFile)
+        .Descendants()
+        .Attributes("cref")
+        .Select(attribute => attribute.Value)
+        .Where(cref => cref.Length > 2 && cref[1] == ':')
+        .DistinctBy(cref => cref[2..])
+        .ToDictionary(cref => cref[2..], cref => cref[0], StringComparer.Ordinal);
+
+static void RewriteXrefs(YamlNode node, string page, IReadOnlyDictionary<string, XrefTarget> targets, IReadOnlyDictionary<string, char> externalKinds, List<string> unresolved)
+{
+    switch (node)
+    {
+        case YamlScalarNode { Value: { } value } scalar when value.Contains("<xref ", StringComparison.Ordinal):
+            scalar.Value = Regex.Replace(
+                value,
+                """<xref href="(?<uid>[^"]*)"[^>]*?(?:/>|>(?<text>.*?)</xref>)""",
+                match => XrefLink(match, page, targets, externalKinds, unresolved),
+                RegexOptions.Singleline);
+            break;
+        case YamlMappingNode mapping:
+            foreach (var pair in mapping.Children) RewriteXrefs(pair.Value, page, targets, externalKinds, unresolved);
+            break;
+        case YamlSequenceNode sequence:
+            foreach (var child in sequence.Children) RewriteXrefs(child, page, targets, externalKinds, unresolved);
+            break;
+    }
+}
+
+static string XrefLink(Match match, string page, IReadOnlyDictionary<string, XrefTarget> targets, IReadOnlyDictionary<string, char> externalKinds, List<string> unresolved)
+{
+    var uid = WebUtility.HtmlDecode(match.Groups["uid"].Value);
+    var text = match.Groups["text"].Value;
+
+    if (targets.TryGetValue(uid, out var target))
+    {
+        var href = RelativeUrl(page, target.Page) + (target.Anchor is null ? "" : "#" + target.Anchor);
+        var name = target.Owner is not null && target.Page != page ? $"{target.Owner}.{target.Name}" : target.Name;
+        return XrefAnchor(href, text.Length > 0 ? text : WebUtility.HtmlEncode(name));
+    }
+
+    if (uid.StartsWith("DotNetDo.", StringComparison.Ordinal))
+    {
+        unresolved.Add($"{uid} (referenced from {page})");
+        return match.Value;
+    }
+
+    var display = text.Length > 0 ? text : WebUtility.HtmlEncode(ExternalName(uid, externalKinds));
+    return uid.StartsWith("System.", StringComparison.Ordinal) || uid.StartsWith("Microsoft.", StringComparison.Ordinal)
+        ? XrefAnchor($"https://learn.microsoft.com/dotnet/api/{Regex.Replace(uid, @"\(.*$", "").Replace('`', '-').ToLowerInvariant()}", display)
+        : display;
+}
+
+static string XrefAnchor(string href, string text) => $"""<a class="xref" href="{WebUtility.HtmlEncode(href)}">{text}</a>""";
+
+// Types show only their name; members show their declaring type too, since the namespace boundary isn't otherwise known.
+static string ExternalName(string uid, IReadOnlyDictionary<string, char> kinds)
+{
+    var kind = kinds.GetValueOrDefault(uid, 'T');
+    var segments = Regex.Replace(uid, @"\(.*$", "").Split('.');
+    var name = kind == 'T' ? segments[^1] : $"{segments[^2]}.{segments[^1]}";
+    name = Regex.Replace(name, @"`+\d+", "");
+    return kind == 'M' ? name + "()" : name;
 }
 
 static void CleanType(YamlSequenceNode body, string typeName)
@@ -486,6 +607,8 @@ static ApiDocument LoadApiDocument(string path)
 }
 
 sealed record MemberGroup(string Uid, IReadOnlyList<YamlNode> Nodes);
+
+sealed record XrefTarget(string Page, string? Anchor, string Name, string? Owner);
 
 sealed record ApiDocument(string Path, YamlMappingNode Root, string Uid, string? CommentId, string DisplayName);
 

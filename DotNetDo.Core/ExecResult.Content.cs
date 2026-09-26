@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 using Tomlyn;
 using Tomlyn.Model;
 using YamlDotNet.RepresentationModel;
@@ -27,41 +26,26 @@ public sealed partial record ExecResult
     public string ReadText() => string.Join(Environment.NewLine, OutputLines());
 
     /// <summary>Deserializes the captured standard output into the requested value type.</summary>
-    public T? ReadJson<T>(JsonSerializerOptions? options = null) =>
-        JsonSerializer.Deserialize<T>(ReadText(), options);
+    public T? ReadJson<T>(JsonSerializerOptions? options = null) => TextContent.ReadJson<T>(ReadText(), options);
 
     /// <summary>Reads the captured standard output as a JSON document model.</summary>
-    public JsonNode? ReadJson(JsonSerializerOptions? options = null) => ReadJson<JsonNode>(options);
+    public JsonNode? ReadJson(JsonSerializerOptions? options = null) => TextContent.ReadJson(ReadText(), options);
 
     /// <summary>Deserializes the captured standard output into the requested value type.</summary>
-    public T? ReadToml<T>(TomlSerializerOptions? options = null) =>
-        TomlSerializer.Deserialize<T>(ReadText(), options);
+    public T? ReadToml<T>(TomlSerializerOptions? options = null) => TextContent.ReadToml<T>(ReadText(), options);
 
     /// <summary>Reads the captured standard output as a TOML document model.</summary>
-    public TomlTable ReadToml(TomlSerializerOptions? options = null) => ReadToml<TomlTable>(options)!;
+    public TomlTable ReadToml(TomlSerializerOptions? options = null) => TextContent.ReadToml(ReadText(), options);
 
     /// <summary>Deserializes one YAML document from the captured standard output.</summary>
-    public T? ReadYaml<T>(IDeserializer? deserializer = null) =>
-        (deserializer ?? YamlSerialization.Deserializer).Deserialize<T>(ReadText());
+    public T? ReadYaml<T>(IDeserializer? deserializer = null) => TextContent.ReadYaml<T>(ReadText(), deserializer);
 
     /// <summary>Reads the root node of one YAML document from the captured standard output.</summary>
-    public YamlNode? ReadYaml()
-    {
-        using var reader = new StringReader(ReadText());
-        return YamlSerialization.ReadNode(reader);
-    }
+    public YamlNode? ReadYaml() => TextContent.ReadYaml(ReadText());
 
     /// <summary>Deserializes the captured standard output into the requested value type.</summary>
-    public T? ReadXml<T>()
-    {
-        using var reader = new StringReader(ReadText());
-        return (T?)new XmlSerializer(typeof(T)).Deserialize(reader);
-    }
+    public T? ReadXml<T>() => TextContent.ReadXml<T>(ReadText());
 
     /// <summary>Reads the captured standard output as an XML document model.</summary>
-    public XDocument ReadXml()
-    {
-        using var reader = new StringReader(ReadText());
-        return XDocument.Load(reader);
-    }
+    public XDocument ReadXml() => TextContent.ReadXml(ReadText());
 }

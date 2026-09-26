@@ -5,6 +5,8 @@
   items:
   - name: Execution
     href: core/execution.yml
+  - name: HTTP requests
+    href: core/http.yml
   - name: Parameters and secrets
     href: core/parameters-and-secrets.yml
   - name: Paths and files
