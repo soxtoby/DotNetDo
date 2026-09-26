@@ -70,6 +70,14 @@ public sealed class BunToolTests
     }
 
     [Fact]
+    public void Test_renders_reporter_and_outfile()
+    {
+        Assert.Equal(
+            "bun test --reporter=junit --reporter-outfile=\"test results/bun.xml\"",
+            (Tools.Bun.Test with { Reporter = BunTestReporter.Junit, ReporterOutfile = "test results/bun.xml" }).ToString());
+    }
+
+    [Fact]
     public void Build_requires_entries_and_validates_output()
     {
         Assert.Throws<InvalidOperationException>(() => Tools.Bun.Build.ToString());

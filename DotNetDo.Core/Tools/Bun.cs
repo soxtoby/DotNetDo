@@ -218,6 +218,10 @@ public sealed record BunTest : ExecToolCommand
     public string? TestNamePattern { get; init; }
     /// <summary>Exits successfully when no tests are found.</summary>
     public bool PassWithNoTests { get; init; }
+    /// <summary>Test reporter used in addition to Bun's console output.</summary>
+    public BunTestReporter? Reporter { get; init; }
+    /// <summary>File written by <see cref="Reporter"/>; required by the JUnit reporter.</summary>
+    public string? ReporterOutfile { get; init; }
 
     /// <inheritdoc />
     protected override IReadOnlyList<string?> CommandParts =>
@@ -231,7 +235,18 @@ public sealed record BunTest : ExecToolCommand
             Arg("--bail", Bail),
             Arg("--test-name-pattern", TestNamePattern),
             Arg("--pass-with-no-tests", PassWithNoTests),
+            Arg("--reporter=", Reporter),
+            Arg("--reporter-outfile=", ReporterOutfile),
         ];
+}
+
+/// <summary>Bun test reporter format.</summary>
+public enum BunTestReporter
+{
+    /// <summary>JUnit XML written to <see cref="BunTest.ReporterOutfile"/>.</summary>
+    Junit,
+    /// <summary>Compact dot progress output.</summary>
+    Dots,
 }
 
 /// <summary>Bundles one or more application entry points.</summary>

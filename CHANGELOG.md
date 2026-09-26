@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+- `Tools.DotNet.Test` supports repositories that run `dotnet test` with Microsoft.Testing.Platform. Its new `TestingPlatform` options cover MTP test selection and run limits, plus TRX, JUnit, HTML, CTRF, Azure DevOps, and GitHub Actions test reports.
+- `Tools.Bun.Test` supports `Reporter` and `ReporterOutfile` for JUnit XML and dots output.
+
+### Changed
+- `Tools.DotNet.Test` detects the repository's test runner mode from `global.json` or `DOTNET_TEST_RUNNER`. It renders shared options for that mode and fails before running when options for the other mode are set.
+- VSTest-only `Tools.DotNet.Test` options now live under `VSTest`: `Settings`, `Filter`, `TestAdapterPath`, `Loggers`, `Output`, `Diag`, `Collect`, `Blame*`, `Interactive`, and `DisableBuildServers`. For example, write `Tools.DotNet.Test with { VSTest = new() { Loggers = ["trx"] } }`.
+- `Tools.Npm.Test` has been removed. Use `Tools.Npm.Run with { Script = "test" }` instead.
+
 ## v0.8.0
 
 ### Added

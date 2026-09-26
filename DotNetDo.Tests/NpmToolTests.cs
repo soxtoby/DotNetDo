@@ -57,14 +57,6 @@ public sealed class NpmToolTests
     }
 
     [Fact]
-    public void Test_forwards_arguments_after_separator()
-    {
-        Assert.Equal(
-            "npm test --ignore-scripts -- --filter \"unit tests\"",
-            (Tools.Npm.Test with { IgnoreScripts = true, Arguments = ["--filter", "unit tests"] }).ToString());
-    }
-
-    [Fact]
     public void Pack_renders_destination_workspace_and_flags()
     {
         var command = Tools.Npm.Pack with

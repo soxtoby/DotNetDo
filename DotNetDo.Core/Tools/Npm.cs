@@ -11,8 +11,6 @@ public static partial class Tools
         public static NpmCleanInstall CleanInstall => new();
         /// <summary>Runs a package script.</summary>
         public static NpmRun Run => new();
-        /// <summary>Runs the package test script.</summary>
-        public static NpmTest Test => new();
         /// <summary>Creates a package tarball.</summary>
         public static NpmPack Pack => new();
         /// <summary>Publishes a package to the configured registry.</summary>
@@ -189,27 +187,6 @@ public sealed record NpmRun : NpmWorkspaceCommand
                 ];
         }
     }
-}
-
-/// <summary>Runs the package's test script.</summary>
-public sealed record NpmTest : ExecToolCommand
-{
-    /// <summary>Arguments forwarded to the test script after <c>--</c>.</summary>
-    public IReadOnlyList<string> Arguments { get; init => field = [..value]; } = [];
-    /// <summary>Skips package lifecycle scripts.</summary>
-    public bool IgnoreScripts { get; init; }
-    /// <summary>The shell used to execute scripts.</summary>
-    public string? ScriptShell { get; init; }
-
-    /// <inheritdoc />
-    protected override IReadOnlyList<string?> CommandParts =>
-        [
-            "npm test",
-            Arg("--ignore-scripts", IgnoreScripts),
-            Arg("--script-shell", ScriptShell),
-            Arguments.Count == 0 ? null : "--",
-            Args(Arguments),
-        ];
 }
 
 /// <summary>Creates an npm package tarball.</summary>

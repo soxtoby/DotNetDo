@@ -409,3 +409,15 @@ Shared tool command option groups may be modeled as public non-generic base reco
 Raw positional command text used when a configured tool command has a known closed set of subcommands but must allow future or unsupported subcommands.
 
 When supplied alongside the typed command selection, the custom command deterministically controls rendering regardless of property assignment order.
+
+## Test reporter
+
+A test runner's own extension that writes a report file, such as TRX or JUnit XML, or native CI output, such as GitHub Actions annotations and step summaries, during a test run. DotNetDo configures test reporters through test tool commands; it never produces, parses, or publishes test reports itself.
+
+_Avoid_: Test result publishing, test tool, CI server tool
+
+## Test runner mode
+
+The runner a repository selects for `dotnet test`: VSTest by default, or Microsoft.Testing.Platform when opted into through `global.json` or `DOTNET_TEST_RUNNER`. It is a property of the repository, not of an individual command; each mode accepts a different set of test options.
+
+_Avoid_: TestPlatform (VSTest's own package name), MTP mode

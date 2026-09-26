@@ -132,7 +132,7 @@
         "DotNetDo.Tools.DotNet.ToolRestore",
         "DotNetDo.Tools.DotNet.ToolUpdate"
       ],
-      "typePattern": "^DotNetDo\\.DotNet"
+      "typePattern": "^DotNetDo\\.(DotNet|TestingPlatform)"
     },
     {
       "slug": "tools/git",
@@ -166,13 +166,12 @@
     {
       "slug": "tools/npm",
       "title": "npm",
-      "summary": "Install dependencies, run scripts, pack, publish, and test packages with npm.",
+      "summary": "Install dependencies, run scripts, pack, and publish packages with npm.",
       "facades": ["DotNetDo.Tools.Npm"],
       "entries": [
         "DotNetDo.Tools.Npm.CleanInstall",
         "DotNetDo.Tools.Npm.Install",
         "DotNetDo.Tools.Npm.Run",
-        "DotNetDo.Tools.Npm.Test",
         "DotNetDo.Tools.Npm.Pack",
         "DotNetDo.Tools.Npm.Publish"
       ],
