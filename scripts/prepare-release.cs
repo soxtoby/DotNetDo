@@ -1,5 +1,5 @@
 #!/usr/bin/env dotnet
-#:package DotNetDo.Core@0.7.0
+#:package DotNetDo.Core@0.8.0
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Nodes;

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.9.0
+
 ### Added
 - `Do.Fetch()` sends HTTP requests from tasks. `Do.FetchJson()`, `Do.FetchXml()`, and `Do.FetchText()` read a response in one line, and `Do.FetchFile()` streams a download to disk. Unsuccessful responses throw with the status and the start of the response body.
 - `Tools.DotNet.Test` supports repositories that run `dotnet test` with Microsoft.Testing.Platform. Its new `TestingPlatform` options cover MTP test selection and run limits, plus TRX, JUnit, HTML, CTRF, Azure DevOps, and GitHub Actions test reports.
