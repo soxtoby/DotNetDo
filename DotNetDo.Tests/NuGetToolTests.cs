@@ -3,6 +3,7 @@ using Xunit;
 
 namespace DotNetDo.Tests;
 
+[Collection("Logging level")]
 public sealed class NuGetToolTests
 {
     [Fact]

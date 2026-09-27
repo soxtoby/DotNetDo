@@ -21,7 +21,7 @@ public sealed class DotNetToolTests
 
             var build = Tools.DotNet.Build with { Configuration = null, ContinuousIntegrationBuild = null };
             Assert.Equal($"dotnet build {path.QuotedArgument()} --verbosity normal", build.ToString());
-            var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], VSTest = new() { Output = "test output" }, Configuration = null };
+            var command = Tools.DotNet.Test with { Targets = ["My App.csproj"], VSTest = new() { Output = "test output" }, Configuration = null, WorkingDirectory = AbsolutePath.Parse(directory) };
             Assert.Equal(["My App.csproj"], command.Targets);
             Assert.Equal("test output", command.VSTest!.Output);
             Assert.Equal("dotnet test \"My App.csproj\" --verbosity normal --output \"test output\"", command.ToString());
