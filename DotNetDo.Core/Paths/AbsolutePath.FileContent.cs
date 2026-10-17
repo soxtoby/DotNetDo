@@ -173,20 +173,69 @@ public sealed partial record AbsolutePath
         value.Save(stream);
     }
 
+    /// <summary>Reads the variables assigned in a dotenv (<c>.env</c>) file, in file order.</summary>
+    /// <remarks>
+    /// Each line is a <c>NAME=value</c> assignment, optionally prefixed with <c>export</c>, a <c>#</c> comment, or blank.
+    /// Unquoted values are trimmed and end at a <c>#</c> preceded by whitespace. Single-quoted values are literal.
+    /// Double-quoted values support backslash escapes for newline, carriage return, tab, double quote, and backslash. Quoted values may span lines.
+    /// Variable references such as <c>$HOME</c> are read as written, never expanded.
+    /// A later assignment replaces the value of an earlier one with the same name.
+    /// </remarks>
+    /// <exception cref="FormatException">A line is not an assignment, comment, or blank line, or a quoted value is not closed.</exception>
+    public OrderedDictionary<string, string> ReadDotEnv() => DotEnv.Parse(ReadText());
+
+    /// <summary>Writes variables to this file in dotenv (<c>.env</c>) format, replacing its contents.</summary>
+    /// <remarks>
+    /// Values are written unquoted when they contain only letters, numbers, and common URL punctuation,
+    /// otherwise single-quoted when possible, and double-quoted with escapes as a last resort.
+    /// <see cref="ReadDotEnv"/> reads every written value back unchanged.
+    /// Use <see cref="UpdateDotEnv"/> to change an existing file while keeping its comments and layout.
+    /// </remarks>
+    /// <param name="variables">The variable names and values, in file order. Missing parent directories are not created.</param>
+    /// <exception cref="ArgumentException">A variable name contains characters other than letters, numbers, <c>_</c>, <c>-</c>, or <c>.</c>. The file is left unchanged.</exception>
+    public void WriteDotEnv(IEnumerable<KeyValuePair<string, string>> variables) => WriteText(DotEnv.Format(variables));
+
+    /// <summary>Sets variables in this existing dotenv (<c>.env</c>) file, keeping the rest of the file as it is.</summary>
+    /// <remarks>
+    /// Variables that aren't supplied keep their values, so <paramref name="variables"/> can hold just the variables to change,
+    /// or the result of <see cref="ReadDotEnv"/> after changing it. Updating never removes a variable.
+    /// Only the values of changed variables are rewritten in their existing quote style when they can represent the new value.
+    /// Comments, blank lines, line order, <c>export</c> prefixes, inline comments, line endings, and encoding are kept.
+    /// New variables are appended to the end of the file. Existing lines aren't moved, whatever order the variables are supplied in.
+    /// When a name is assigned more than once, changing it rewrites only the last assignment, which is the one <see cref="ReadDotEnv"/> uses.
+    /// </remarks>
+    /// <param name="variables">The variables to set. Variables that aren't already in the file are added.</param>
+    /// <exception cref="FileNotFoundException">The file doesn't exist. Use <see cref="WriteDotEnv"/> to create one.</exception>
+    /// <exception cref="FormatException">The existing file isn't valid dotenv content.</exception>
+    /// <exception cref="ArgumentException">A new variable name contains characters other than letters, numbers, <c>_</c>, <c>-</c>, or <c>.</c>. The file is left unchanged.</exception>
+    public void UpdateDotEnv(IEnumerable<KeyValuePair<string, string>> variables)
+    {
+        ArgumentNullException.ThrowIfNull(variables);
+
+        var (text, encoding) = ReadTextAndEncoding();
+        WriteText(DotEnv.Update(text, variables), encoding);
+    }
+
+    (string Text, Encoding Encoding) ReadTextAndEncoding()
+    {
+        using var reader = new StreamReader(this, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), detectEncodingFromByteOrderMarks: true);
+        return (reader.ReadToEnd(), reader.CurrentEncoding);
+    }
+
     sealed class FileContentsRestoration(AbsolutePath path, byte[] contents) : IDisposable
     {
-        readonly Lock sync = new();
-        bool restored;
+        readonly Lock _sync = new();
+        bool _restored;
 
         public void Dispose()
         {
-            lock (sync)
+            lock (_sync)
             {
-                if (restored)
+                if (_restored)
                     return;
 
                 File.WriteAllBytes(path, contents);
-                restored = true;
+                _restored = true;
             }
         }
     }

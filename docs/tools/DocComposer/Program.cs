@@ -344,7 +344,8 @@ static void RewriteXrefs(YamlNode node, string page, IReadOnlyDictionary<string,
 
 static string XrefLink(Match match, string page, IReadOnlyDictionary<string, XrefTarget> targets, IReadOnlyDictionary<string, char> externalKinds, List<string> unresolved)
 {
-    var uid = WebUtility.HtmlDecode(match.Groups["uid"].Value);
+    // Docfx URL-encodes generic braces and parameter commas in member UIDs.
+    var uid = Uri.UnescapeDataString(WebUtility.HtmlDecode(match.Groups["uid"].Value));
     var text = match.Groups["text"].Value;
 
     if (targets.TryGetValue(uid, out var target))

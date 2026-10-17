@@ -26,4 +26,15 @@ public static partial class StringExtensions
         /// <summary>Returns whether the value is null, empty, or consists only of whitespace.</summary>
         public bool IsNullOrWhiteSpace() => string.IsNullOrWhiteSpace(value);
     }
+
+    /// <summary>
+    /// Detects the newline sequence used in the given text. If no newline is found, returns the system's default newline sequence.
+    /// </summary>
+    public static string DetectedNewLine(this string text)
+    {
+        var index = text.IndexOf('\n');
+        return index < 0 ? Environment.NewLine
+            : index > 0 && text[index - 1] == '\r' ? "\r\n"
+            : "\n";
+    }
 }

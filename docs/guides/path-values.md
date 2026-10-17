@@ -30,6 +30,22 @@ manifestPath.WriteJson(manifest);
 
 JSON, TOML, YAML, and XML can be read into typed values or their native document models. Writes overwrite the file and expect its parent directory to exist.
 
+Dotenv (`.env`) files read into an ordered dictionary of variables, which suits passing local settings to a development server:
+
+```csharp
+var settings = (Do.RootDirectory / ".env").ReadDotEnv();
+
+await Do.Exec("npm run dev", new() { Environment = environment => environment.SetItems(settings) });
+```
+
+Values are read exactly as written: references such as `$HOME` are not expanded. `WriteDotEnv` quotes values only when they need it, and reading the file back returns the same values.
+
+To change some variables in a file that developers also edit by hand, use `UpdateDotEnv`. It rewrites only the variables you set, leaves the others as they are, and keeps comments, blank lines, and ordering:
+
+```csharp
+(Do.RootDirectory / ".env").UpdateDotEnv([new("API_PORT", "5001")]);
+```
+
 ## Find and move files
 
 Glob from an explicit search root. File and directory searches are separate:

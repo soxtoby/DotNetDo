@@ -78,6 +78,12 @@ The public site at `https://soxtoby.github.io/DotNetDo/`. All generated paths an
 
 A format-native, navigable representation of a structured document that does not require a caller-defined value type. A document-model reader complements, rather than replaces, typed deserialization.
 
+## Dotenv file
+
+A `.env` file of `NAME=value` variable assignments, read as an ordered dictionary. DotNetDo reads values literally and never expands variable references; a later assignment to the same name wins. A dotenv update edits an existing file in place, rewriting only changed or added variables and keeping everything else.
+
+_Avoid_: Environment file
+
 ## Workspace
 
 ### DotNetDo configuration

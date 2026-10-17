@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- `AbsolutePath.ReadDotEnv()` and `WriteDotEnv(...)` read and write dotenv (`.env`) files. Values are read exactly as written, without expanding references such as `$HOME`. Written files quote values only when needed and always read back unchanged.
+- `AbsolutePath.UpdateDotEnv(...)` sets variables in an existing `.env` file while keeping its other variables, comments, blank lines, ordering, and line endings.
+
 ## v0.9.0
 
 ### Added

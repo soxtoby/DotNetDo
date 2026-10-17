@@ -1,0 +1,15 @@
+# Dotenv files use a DotNetDo-owned parser
+
+`AbsolutePath.ReadDotEnv()`, `WriteDotEnv(...)`, and `UpdateDotEnv(...)` use a small parser and formatter in DotNetDo.Core rather than a NuGet package. No maintained .NET dotenv package writes files, and each reader we evaluated would leak a flaw into DotNetDo. DotNetEnv always expands `$NAME` references from the process environment and keeps expansion state across reads, so a later file's `$NAME` could resolve to a value from an earlier, unrelated file. dotenv.net doesn't process escapes, turns multiline values into CRLF on Windows, and silently skips malformed lines. DotEnv.Core turns empty values into a space. Hyprx.DotEnv writes files, but only unlisted prereleases exist.
+
+Reading returns an ordered dictionary because dotenv files have no richer document model worth exposing. Values are always literal. Expansion depends on the process environment and differs between dotenv implementations, so a task that wants it can apply it explicitly. Malformed lines throw `FormatException` with a line number but no line content, because the line may contain a secret. Writing chooses unquoted, single-quoted, or double-quoted output in that order of preference. Unquoted and single-quoted values are also literal in other dotenv readers and POSIX shells, and every written value reads back unchanged.
+
+Updating sets the supplied variables and leaves every other variable as it is. A caller can pass just the variables it changes, or the dictionary that reading returns after changing it, and DotNetDo edits the original text to match. Only changed values are rewritten, in their existing quote style when possible, and added variables are appended. Everything else stays byte-for-byte, including line endings and a byte-order mark. That way an automated update doesn't fight with a file developers also edit by hand. Updating a missing file fails rather than creating one, so a mistyped path can't succeed silently.
+
+## Considered options
+
+- DotNetEnv for reading plus a DotNetDo writer. Rejected because of the cross-read expansion state and unconditional environment expansion.
+- dotenv.net for reading plus a DotNetDo writer. Rejected because values with newlines or a trailing backslash can't be written so that it reads them back unchanged.
+- A document model that exposes comments and blank lines when reading. Rejected because callers only need to change variables. In-place updates preserve the layout without making every reader handle it.
+- Removing variables while updating, through a callback that changes the file's variables or a `remove` parameter. Rejected because each made the API awkward for the common case of setting values, and tasks update a file to set values, not to retire settings. Retiring a setting is a one-off edit, and a removal that keeps the layout would leave the variable's comment describing nothing.
+- Updating so the file ends up with exactly the supplied variables, from either `UpdateDotEnv` or a `WriteDotEnv` that updates by default. Rejected because passing only the variables to change would silently remove the rest.
