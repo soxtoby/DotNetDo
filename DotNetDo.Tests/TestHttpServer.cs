@@ -73,7 +73,7 @@ sealed class TestHttpServer : IDisposable
     public void Dispose()
     {
         _stopping = true;
-        _listener.Stop();
+        // Close without Stop: on Unix, closing a stopped listener unregisters it again, which rebinds the port and can fail.
         _listener.Close();
         _serving.Wait();
     }

@@ -295,7 +295,7 @@ public sealed class PathFileSystemTests
         using var source = new MemoryStream([1, 2, 3, 4]);
         source.Position = 1;
 
-        await file.WriteStream(source);
+        await file.WriteStream(source, TestContext.Current.CancellationToken);
 
         Assert.Equal([2, 3, 4], File.ReadAllBytes(file));
         Assert.True(source.CanRead);
@@ -308,7 +308,7 @@ public sealed class PathFileSystemTests
         var file = workspace.Path / "value.bin";
         file.WriteText("previous");
 
-        await Assert.ThrowsAsync<IOException>(() => file.WriteStream(new FailingStream([1, 2, 3])));
+        await Assert.ThrowsAsync<IOException>(() => file.WriteStream(new FailingStream([1, 2, 3]), TestContext.Current.CancellationToken));
 
         Assert.False(file.Exists);
     }
