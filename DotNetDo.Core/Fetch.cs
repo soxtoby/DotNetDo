@@ -77,18 +77,7 @@ public static partial class Do
         if (!response.IsSuccessStatusCode)
             throw new FetchFailedException(await ReadResultAsync(url, options, response));
 
-        var file = File.Create(path);
-        try
-        {
-            await using (file)
-                await response.Content.CopyToAsync(file);
-        }
-        catch
-        {
-            File.Delete(path);
-            throw;
-        }
-
+        await path.WriteStream(await response.Content.ReadAsStreamAsync());
         return path;
     }
 

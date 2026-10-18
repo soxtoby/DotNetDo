@@ -28,7 +28,16 @@ manifest.Version = "1.0.0";
 manifestPath.WriteJson(manifest);
 ```
 
-JSON, TOML, YAML, and XML can be read into typed values or their native document models. Writes overwrite the file and expect its parent directory to exist.
+JSON, TOML, YAML, and XML can be read into typed values or their native document models. Other files can be read and written as `BinaryData`, the same type HTTP request bodies use. Writes overwrite the file and expect its parent directory to exist.
+
+`WriteStream` saves a stream to a file as it's read, so large content doesn't have to fit in memory. For example, to decompress a downloaded `.gz` file:
+
+```csharp
+await using var decompressed = new GZipStream(File.OpenRead(downloads / "tool.gz"), CompressionMode.Decompress);
+await (tools / "tool").WriteStream(decompressed);
+```
+
+If the copy fails, the partly written file is deleted.
 
 Dotenv (`.env`) files read into an ordered dictionary of variables, which suits passing local settings to a development server:
 

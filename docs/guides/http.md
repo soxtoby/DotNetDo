@@ -34,7 +34,15 @@ await Do.Fetch("https://seq.example.com/api/events/raw", new()
     });
 ```
 
-`BinaryData.FromObjectAsJson()` sets the JSON content type. For other bodies, give the media type to the `BinaryData` factory or add a `Content-Type` header.
+`BinaryData.FromObjectAsJson()` sets the JSON content type. For other bodies, give the media type to the `BinaryData` factory or add a `Content-Type` header. To upload a file, read it with `ReadBinary()`:
+
+```csharp
+await Do.Fetch($"{artifactStoreUrl}/docs/{version}.zip", new()
+    {
+        Method = HttpMethod.Put,
+        Body = (Do.RootDirectory / "artifacts" / "docs.zip").ReadBinary("application/zip"),
+    });
+```
 
 Secrets used in headers or URLs stay masked in DotNetDo's logs. See [Parameters and secrets](parameters-and-secrets.md).
 

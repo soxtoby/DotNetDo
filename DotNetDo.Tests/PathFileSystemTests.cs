@@ -273,6 +273,47 @@ public sealed class PathFileSystemTests
     }
 
     [Fact]
+    public void Reads_and_writes_exact_binary_data()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.bin";
+        byte[] bytes = [0xEF, 0xBB, 0xBF, 0, 13, 10, 255];
+
+        file.WriteBinary(BinaryData.FromBytes(bytes));
+        var result = file.ReadBinary("application/octet-stream");
+
+        Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.Equal(bytes, result.ToArray());
+        Assert.Equal("application/octet-stream", result.MediaType);
+    }
+
+    [Fact]
+    public async Task Writes_a_stream_from_its_current_position_and_leaves_it_open()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.bin";
+        using var source = new MemoryStream([1, 2, 3, 4]);
+        source.Position = 1;
+
+        await file.WriteStream(source);
+
+        Assert.Equal([2, 3, 4], File.ReadAllBytes(file));
+        Assert.True(source.CanRead);
+    }
+
+    [Fact]
+    public async Task Writing_a_stream_deletes_the_file_when_the_copy_fails()
+    {
+        using var workspace = Workspace.Create();
+        var file = workspace.Path / "value.bin";
+        file.WriteText("previous");
+
+        await Assert.ThrowsAsync<IOException>(() => file.WriteStream(new FailingStream([1, 2, 3])));
+
+        Assert.False(file.Exists);
+    }
+
+    [Fact]
     public void Temporarily_replaces_and_restores_exact_file_contents()
     {
         using var workspace = Workspace.Create();
@@ -411,6 +452,33 @@ public sealed class PathFileSystemTests
     {
         public string Name { get; set; } = "";
         public int Count { get; set; }
+    }
+
+    /// <summary>Returns some bytes, then fails like a dropped connection.</summary>
+    sealed class FailingStream(byte[] prefix) : Stream
+    {
+        bool _prefixRead;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_prefixRead)
+                throw new IOException("Connection dropped.");
+
+            _prefixRead = true;
+            prefix.CopyTo(buffer, offset);
+            return prefix.Length;
+        }
+
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     sealed class Workspace : IDisposable

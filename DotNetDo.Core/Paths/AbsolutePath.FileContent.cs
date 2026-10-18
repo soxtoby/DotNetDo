@@ -73,6 +73,40 @@ public sealed partial record AbsolutePath
             File.WriteAllLines(this, lines, encoding);
     }
 
+    /// <summary>Reads the entire file as binary data.</summary>
+    /// <param name="mediaType">The media type of the file's contents, such as <c>application/zip</c>; <see langword="null"/> leaves it unset.</param>
+    public BinaryData ReadBinary(string? mediaType = null) => BinaryData.FromBytes(File.ReadAllBytes(this), mediaType);
+
+    /// <summary>Writes binary data to this existing file location, replacing its contents.</summary>
+    /// <param name="data">The complete file content. Its media type isn't stored. Missing parent directories are not created.</param>
+    public void WriteBinary(BinaryData data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+
+        File.WriteAllBytes(this, data.ToMemory().Span);
+    }
+
+    /// <summary>Copies a stream to this existing file location, replacing its contents, without buffering the stream in memory.</summary>
+    /// <remarks>If the copy fails or is canceled, the file is deleted rather than left partly written.</remarks>
+    /// <param name="source">The stream to copy from its current position to its end. It is left open. Missing parent directories are not created.</param>
+    /// <param name="cancellationToken">Cancels the copy.</param>
+    public async Task WriteStream(Stream source, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        var file = File.Create(this);
+        try
+        {
+            await using (file)
+                await source.CopyToAsync(file, cancellationToken);
+        }
+        catch
+        {
+            File.Delete(this);
+            throw;
+        }
+    }
+
     /// <summary>Deserializes the file into the requested value type.</summary>
     /// <param name="options">JSON serializer behavior; <see langword="null"/> uses <see cref="JsonSerializerOptions.Default"/>.</param>
     public T? ReadJson<T>(JsonSerializerOptions? options = null)

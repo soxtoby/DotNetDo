@@ -5,6 +5,8 @@
 ### Added
 - `AbsolutePath.ReadDotEnv()` and `WriteDotEnv(...)` read and write dotenv (`.env`) files. Values are read exactly as written, without expanding references such as `$HOME`. Written files quote values only when needed and always read back unchanged.
 - `AbsolutePath.UpdateDotEnv(...)` sets variables in an existing `.env` file while keeping its other variables, comments, blank lines, ordering, and line endings.
+- `AbsolutePath.ReadBinary()` and `WriteBinary(...)` read and write a file's exact bytes as `BinaryData`, so a file can be sent as a `Do.Fetch()` request body.
+- `AbsolutePath.WriteStream(...)` copies a stream into a file without buffering it in memory. If the copy fails, the partly written file is deleted.
 
 ## v0.9.0
 
