@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetDo.Core\DotNetDo.Core.csproj" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.402" PrivateAssets="all" />
     <PackageReference Include="NuGet.Versioning" Version="7.9.0" />
   </ItemGroup>
   <ItemGroup>
