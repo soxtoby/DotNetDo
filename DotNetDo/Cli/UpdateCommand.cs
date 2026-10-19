@@ -176,7 +176,7 @@ static partial class UpdateCommand
         return 1;
     }
 
-    [GeneratedRegex(@"(?m)^#:package[ \t]+(?<package>[A-Za-z0-9_.-]+)@(?<version>\S+)[ \t]*$")]
+    [GeneratedRegex(@"(?m)^#:package[ \t]+(?<package>[A-Za-z0-9_.-]+)@(?<version>\S+)[ \t]*\r?$")]
     private static partial Regex PackageDirective();
 
     readonly record struct Options(string? Package, bool All, bool Prerelease);

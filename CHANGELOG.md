@@ -8,6 +8,9 @@
 - `AbsolutePath.ReadBinary()` and `WriteBinary(...)` read and write a file's exact bytes as `BinaryData`, so a file can be sent as a `Do.Fetch()` request body.
 - `AbsolutePath.WriteStream(...)` copies a stream into a file without buffering it in memory. If the copy fails, the partly written file is deleted.
 
+### Fixed
+- `:update` now updates pinned packages in scripts with Windows (CRLF) line endings.
+
 ## v0.9.0
 
 ### Added

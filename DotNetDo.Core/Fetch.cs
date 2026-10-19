@@ -18,6 +18,7 @@ namespace DotNetDo;
 public static partial class Do
 {
     static readonly HttpClient HttpClient = new(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
+
     static readonly Lazy<string> DefaultUserAgent = new(() =>
         {
             var version = typeof(Do).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -28,7 +29,7 @@ public static partial class Do
     /// <summary>Sends an HTTP request immediately and buffers its response.</summary>
     /// <param name="url">The absolute request URL.</param>
     /// <param name="options">Optional method, headers, and body.</param>
-    public static FetchRequest Fetch(string url, FetchOptions? options = null) => 
+    public static FetchRequest Fetch(string url, FetchOptions? options = null) =>
         new(SendAsync(url, options ?? new FetchOptions()));
 
     /// <summary>Requests JSON and deserializes the successful response into the requested value type.</summary>
@@ -169,8 +170,10 @@ public record FetchOptions
 {
     /// <summary>The request method; defaults to GET.</summary>
     public HttpMethod Method { get; init; } = HttpMethod.Get;
+
     /// <summary>Request headers in sending order. Content headers such as <c>Content-Type</c> apply to the body.</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Headers { get; init => field = [.. value]; } = [];
+    public IReadOnlyList<KeyValuePair<string, string>> Headers { get; init => field = [..value]; } = [];
+
     /// <summary>The request body; its media type becomes the <c>Content-Type</c> unless a header supplies one.</summary>
     public BinaryData? Body { get; init; }
 }

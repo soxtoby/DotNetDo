@@ -27,6 +27,22 @@ public sealed class UpdateCommandTests
         Assert.Contains("Serilog@2.0.0", workspace.ScriptText);
     }
 
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task Updates_pins_and_preserves_script_line_endings(string newline)
+    {
+        var script = "#!/usr/bin/env dotnet\n#:package DotNetDo.Core@0.6.0\nusing DotNetDo;\n"
+            .ReplaceLineEndings(newline);
+        using var workspace = Workspace.Create(script);
+        var client = new Client(("DotNetDo.Core", "0.9.0"));
+
+        var result = await UpdateCommand.Run([":update"], workspace.Root, workspace.Scripts, client);
+
+        Assert.Equal(0, result);
+        Assert.Equal(script.Replace("DotNetDo.Core@0.6.0", "DotNetDo.Core@0.9.0"), workspace.ScriptText);
+    }
+
     [Fact]
     public async Task Named_package_updates_only_matching_pins_case_insensitively()
     {
