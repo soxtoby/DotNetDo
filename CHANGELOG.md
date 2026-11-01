@@ -7,6 +7,7 @@
 - `AbsolutePath.UpdateDotEnv(...)` sets variables in an existing `.env` file while keeping its other variables, comments, blank lines, ordering, and line endings.
 - `AbsolutePath.ReadBinary()` and `WriteBinary(...)` read and write a file's exact bytes as `BinaryData`, so a file can be sent as a `Do.Fetch()` request body.
 - `AbsolutePath.WriteStream(...)` copies a stream into a file without buffering it in memory. If the copy fails, the partly written file is deleted.
+- `GitRepository.CommitsSince(...)` accepts tags, commit SHAs, and other Git revisions as well as branch names, and has a new overload that takes a `Commit`. For example, `Do.GitRepo.CommitsSince("v1.2.0")` lists the commits since that release.
 
 ### Fixed
 - `:update` now updates pinned packages in scripts with Windows (CRLF) line endings.

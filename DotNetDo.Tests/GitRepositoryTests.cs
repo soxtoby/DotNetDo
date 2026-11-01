@@ -64,6 +64,29 @@ public sealed class GitRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void CommitsSinceAcceptsAnnotatedTag()
+    {
+        var first = Commit("first");
+        _repository.ApplyTag("v1.0.0", first.Sha, _signature, "Version 1.0.0");
+        var second = Commit("second");
+        var third = Commit("third");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        var commits = git.CommitsSince("v1.0.0");
+
+        Assert.Equal([third.Id, second.Id], commits.Select(commit => commit.Id));
+    }
+
+    [Fact]
+    public void CommitsSinceRejectsUnknownRevision()
+    {
+        Commit("first");
+        using var git = new GitRepository(AbsolutePath.Parse(_directory));
+
+        Assert.Throws<KeyNotFoundException>(() => git.CommitsSince("missing"));
+    }
+
+    [Fact]
     public async Task AddAndResetOperateOnWholePaths()
     {
         File.WriteAllText(Path.Combine(_directory, "new file.txt"), "content");

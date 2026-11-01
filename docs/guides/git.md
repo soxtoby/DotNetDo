@@ -14,7 +14,11 @@ foreach (var commit in Do.GitRepo.CommitsSince("origin/main"))
     Log.Information("{Sha} {Message}", commit.Sha[..7], commit.MessageShort);
 ```
 
-Branch names must identify an exact local or remote-tracking branch.
+`CommitsSince` accepts any Git revision, so a tag lists the commits since a release:
+
+```csharp
+var changes = Do.GitRepo.CommitsSince("v1.2.0");
+```
 
 ## Verify generated content
 

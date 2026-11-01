@@ -81,23 +81,31 @@ public sealed partial class GitRepository : IDisposable
     /// <summary>Creates a fresh tag-push command bound to this repository root.</summary>
     public GitPushTag PushTag { get; }
 
-    /// <summary>Walks commits from HEAD back to, but excluding, the merge base with the supplied branch.</summary>
-    public IReadOnlyList<Commit> CommitsSince(string baseBranch)
+    /// <summary>Walks commits from HEAD back to, but excluding, the merge base with the supplied revision.</summary>
+    /// <param name="baseRevision">A branch, remote-tracking branch, tag, commit SHA, or other Git revision such as <c>HEAD~3</c>.</param>
+    public IReadOnlyList<Commit> CommitsSince(string baseRevision)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(baseBranch);
-        return CommitsSince(Repository.Branches[baseBranch]
-            ?? throw new KeyNotFoundException($"Git branch '{baseBranch}' was not found in '{Root}'."));
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseRevision);
+        var target = Repository.Lookup(baseRevision)
+            ?? throw new KeyNotFoundException($"Git revision '{baseRevision}' was not found in '{Root}'.");
+        return CommitsSince(target.Peel<Commit>());
     }
 
     /// <summary>Walks commits from HEAD back to, but excluding, the merge base with the supplied branch.</summary>
     public IReadOnlyList<Commit> CommitsSince(Branch baseBranch)
     {
         ArgumentNullException.ThrowIfNull(baseBranch);
+        return CommitsSince(baseBranch.Tip
+            ?? throw new InvalidOperationException($"Git branch '{baseBranch.FriendlyName}' has no commits."));
+    }
+
+    /// <summary>Walks commits from HEAD back to, but excluding, the merge base with the supplied commit.</summary>
+    public IReadOnlyList<Commit> CommitsSince(Commit baseCommit)
+    {
+        ArgumentNullException.ThrowIfNull(baseCommit);
         var head = CurrentCommit;
-        var baseCommit = baseBranch.Tip
-            ?? throw new InvalidOperationException($"Git branch '{baseBranch.FriendlyName}' has no commits.");
         var mergeBase = Repository.ObjectDatabase.FindMergeBase(head, baseCommit)
-            ?? throw new InvalidOperationException($"Git branch '{baseBranch.FriendlyName}' has no common history with HEAD.");
+            ?? throw new InvalidOperationException($"Git commit '{baseCommit.Sha[..7]}' has no common history with HEAD.");
         var commits = new List<Commit>();
 
         for (var commit = head; commit.Id != mergeBase.Id; commit = commit.Parents.FirstOrDefault()
