@@ -6,6 +6,10 @@ namespace DotNetDo.Cli;
 static class InitCommand
 {
     const string DefaultSolutionFolder = "scripts";
+    const string WindowsLauncher = "do.cmd";
+    const string WindowsLauncherContent = "@call dnx DotNetDo -- %*\r\n@exit /b %ERRORLEVEL%\r\n";
+    const string UnixLauncher = "do";
+    const string UnixLauncherContent = "#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n";
 
     public static Task<int> Run(string[] args) => Run(args, Do.WorkingDirectory, new DotNetClient());
 
@@ -62,6 +66,9 @@ static class InitCommand
             if (initialization.SolutionPath is not null && PromptAddScriptsToSolution(initialization.SolutionPath!))
                 initialization = initialization with { AddScriptsToSolution = true };
 
+            if (PromptOverwriteLaunchers(root))
+                initialization = initialization with { OverwriteLaunchers = true };
+
             return true;
         }
         catch (InitializationCancelledException)
@@ -103,14 +110,13 @@ static class InitCommand
             Console.WriteLine($"Added scripts to {initialization.SolutionFolder} solution folder");
         }
 
-        if (CreateWindowsLauncher(root))
-            Console.WriteLine("Created do.cmd launcher");
+        WriteLauncher(root, WindowsLauncher, WindowsLauncherContent, initialization.OverwriteLaunchers);
 
-        if (CreateUnixLauncher(root))
+        if (WriteLauncher(root, UnixLauncher, UnixLauncherContent, initialization.OverwriteLaunchers))
         {
-            Console.WriteLine("Created do launcher");
+            FileScaffolding.MakeExecutableIfUnix(root / UnixLauncher);
             if (OperatingSystem.IsWindows())
-                Console.WriteLine("Before committing, run: git add --chmod=+x do");
+                Console.WriteLine($"Before committing, run: git add --chmod=+x {UnixLauncher}");
         }
 
         if (initialization.TaskName is not null)
@@ -153,26 +159,35 @@ static class InitCommand
             };
     }
 
-    static bool CreateWindowsLauncher(AbsolutePath root)
+    /// <returns><see langword="true"/> if the launcher was created rather than overwritten or left unchanged.</returns>
+    static bool WriteLauncher(AbsolutePath root, string name, string content, bool overwrite)
     {
-        var windowsLauncher = root / "do.cmd";
-        var create = !windowsLauncher.Exists;
-        if (create)
-            windowsLauncher.WriteText("@dnx DotNetDo -- %*\r\n");
+        var launcher = root / name;
+        var create = !launcher.Exists;
+        if (!create && !(overwrite && LauncherDiffers(root, name, content)))
+            return false;
+
+        launcher.WriteText(content);
+        Console.WriteLine($"{(create ? "Created" : "Updated")} {name} launcher");
         return create;
     }
 
-    static bool CreateUnixLauncher(AbsolutePath root)
+    static bool PromptOverwriteLaunchers(AbsolutePath root)
     {
-        var unixLauncher = root / "do";
-        var create = !unixLauncher.Exists;
-        if (create)
-        {
-            unixLauncher.WriteText("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n");
-            FileScaffolding.MakeExecutableIfUnix(unixLauncher);
-        }
+        var differing = new[] { (WindowsLauncher, WindowsLauncherContent), (UnixLauncher, UnixLauncherContent) }
+            .Where(launcher => LauncherDiffers(root, launcher.Item1, launcher.Item2))
+            .Select(launcher => launcher.Item1)
+            .ToArray();
+        return differing.Length > 0
+            && PromptYesNo($"Overwrite launchers that differ from the default ({string.Join(", ", differing)})?", defaultValue: false);
+    }
 
-        return create;
+    static bool LauncherDiffers(AbsolutePath root, string name, string content)
+    {
+        var launcher = root / name;
+        // Compare without line endings, which Git may rewrite on checkout.
+        return launcher.IsExistingFile
+            && launcher.ReadText().ReplaceLineEndings("\n") != content.ReplaceLineEndings("\n");
     }
 
     static bool PromptCreateNestedWorkspace(AbsolutePath root, AbsolutePath ancestorConfiguration)
@@ -273,6 +288,7 @@ static class InitCommand
         public RelativePath? SolutionPath { get; init; }
         public bool AddScriptsToSolution { get; init; }
         public string SolutionFolder { get; init; } = DefaultSolutionFolder;
+        public bool OverwriteLaunchers { get; init; }
     }
 
     sealed class InitializationCancelledException : Exception;

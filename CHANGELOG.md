@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+- `do.cmd` now returns the task's exit code in PowerShell. Rerun `:init` to update an existing workspace.
+
+### Changed
+- `:init` offers to overwrite `do` and `do.cmd` launchers that differ from the default ones.
+
 ## v0.10.0
 
 ### Added

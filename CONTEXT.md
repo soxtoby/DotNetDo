@@ -252,7 +252,7 @@ The `:rename` command renames a C# task directly inside the scripts path without
 
 The `:init` command interactively creates a DotNetDo workspace in the current directory: committed configuration, a scripts path, and an initial task. It may select a default solution and may create a nested workspace only after warning about the containing workspace.
 
-Initialization also creates root-local `do.cmd` and executable `do` launchers which forward all arguments to `dnx DotNetDo`.
+Initialization also creates root-local `do.cmd` and executable `do` launchers which forward all arguments to `dnx DotNetDo`. When existing launchers differ from the default, ignoring line endings, `:init` asks once before overwriting all of them.
 
 ## Global command
 

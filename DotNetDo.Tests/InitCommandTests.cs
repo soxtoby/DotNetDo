@@ -25,7 +25,7 @@ public sealed class InitCommandTests
         Assert.All(client.PrereleaseSearches, Assert.False);
         Assert.Contains("""[assembly: TaskDescription("Says hello")]""", task);
         Assert.Contains("""Log.Information("Hello from {Task}", "build");""", task);
-        Assert.Equal("@dnx DotNetDo -- %*\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal("@call dnx DotNetDo -- %*\r\n@exit /b %ERRORLEVEL%\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
         Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
         Assert.Contains("Created scripts", result.Output);
         Assert.Contains("Created do.cmd launcher", result.Output);
@@ -232,17 +232,71 @@ public sealed class InitCommandTests
     [Theory]
     [InlineData("do")]
     [InlineData("do.cmd")]
-    public async Task Existing_launcher_is_preserved_while_initialization_continues(string launcher)
+    public async Task Different_launcher_is_preserved_by_default_while_initialization_continues(string launcher)
     {
         using var workspace = Workspace.Create();
         File.WriteAllText(Path.Combine(workspace.Directory, launcher), "existing");
 
-        var result = await RunInit(workspace.Directory, "\n\n");
+        var result = await RunInit(workspace.Directory, "\n\n\n");
 
         Assert.Equal(0, result.ExitCode);
+        Assert.Contains($"Overwrite launchers that differ from the default ({launcher})? [y/N]:", result.Output);
         Assert.True(File.Exists(Path.Combine(workspace.Directory, "dotnetdo.toml")));
         Assert.True(File.Exists(Path.Combine(workspace.Directory, "scripts", "build.cs")));
         Assert.Equal("existing", File.ReadAllText(Path.Combine(workspace.Directory, launcher)));
+    }
+
+    [Fact]
+    public async Task Different_launchers_are_overwritten_when_confirmed()
+    {
+        using var workspace = Workspace.Create();
+        File.WriteAllText(Path.Combine(workspace.Directory, "do.cmd"), "@dnx DotNetDo -- %*\r\n");
+        File.WriteAllText(Path.Combine(workspace.Directory, "do"), "#!/usr/bin/env sh\ndnx DotNetDo \"$@\"\n");
+
+        var result = await RunInit(workspace.Directory, "\n\ny\n");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Overwrite launchers that differ from the default (do.cmd, do)? [y/N]:", result.Output);
+        Assert.Equal("@call dnx DotNetDo -- %*\r\n@exit /b %ERRORLEVEL%\r\n", File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
+        Assert.Contains("Updated do.cmd launcher", result.Output);
+        Assert.Contains("Updated do launcher", result.Output);
+        Assert.DoesNotContain("git add --chmod=+x do", result.Output);
+    }
+
+    [Fact]
+    public async Task Confirmed_overwrite_leaves_launcher_differing_only_in_line_endings()
+    {
+        using var workspace = Workspace.Create();
+        const string windowsLauncher = "@call dnx DotNetDo -- %*\n@exit /b %ERRORLEVEL%\n";
+        File.WriteAllText(Path.Combine(workspace.Directory, "do.cmd"), windowsLauncher);
+        File.WriteAllText(Path.Combine(workspace.Directory, "do"), "existing");
+
+        var result = await RunInit(workspace.Directory, "\n\ny\n");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Overwrite launchers that differ from the default (do)? [y/N]:", result.Output);
+        Assert.Equal(windowsLauncher, File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal("#!/usr/bin/env sh\nexec dnx DotNetDo -- \"$@\"\n", File.ReadAllText(Path.Combine(workspace.Directory, "do")));
+        Assert.DoesNotContain("do.cmd launcher", result.Output);
+    }
+
+    [Fact]
+    public async Task Launchers_differing_only_in_line_endings_are_left_without_prompting()
+    {
+        using var workspace = Workspace.Create();
+        const string windowsLauncher = "@call dnx DotNetDo -- %*\n@exit /b %ERRORLEVEL%\n";
+        const string unixLauncher = "#!/usr/bin/env sh\r\nexec dnx DotNetDo -- \"$@\"\r\n";
+        File.WriteAllText(Path.Combine(workspace.Directory, "do.cmd"), windowsLauncher);
+        File.WriteAllText(Path.Combine(workspace.Directory, "do"), unixLauncher);
+
+        var result = await RunInit(workspace.Directory, "\n\n");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.DoesNotContain("Overwrite", result.Output);
+        Assert.DoesNotContain("launcher", result.Output);
+        Assert.Equal(windowsLauncher, File.ReadAllText(Path.Combine(workspace.Directory, "do.cmd")));
+        Assert.Equal(unixLauncher, File.ReadAllText(Path.Combine(workspace.Directory, "do")));
     }
 
     [Fact]
