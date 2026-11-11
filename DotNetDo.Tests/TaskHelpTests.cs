@@ -46,6 +46,8 @@ public sealed class TaskHelpTests
 
     [Theory]
     [InlineData("""var name = Do.Param("name", defaultValue: "foo", description: "The name");""")]
+    [InlineData("""var name = Do.Param("name", description: "The name");""")]
+    [InlineData("""var name = Do.Param<int>("name", description: "The name");""")]
     public void Named_description_is_discovered_without_its_argument_name(string source)
     {
         var file = Path.GetTempFileName();
@@ -56,6 +58,26 @@ public sealed class TaskHelpTests
             var parameter = Assert.Single(TaskHelp.Discover(file));
 
             Assert.Equal("The name", parameter.Description);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void Required_parameter_with_named_description_is_required_without_default()
+    {
+        var file = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(file, """var feed = Do.Param("feed", description: "Package feed").Required();""");
+
+            var parameter = Assert.Single(TaskHelp.Discover(file));
+
+            Assert.Equal("Package feed", parameter.Description);
+            Assert.Null(parameter.DefaultValue);
+            Assert.True(parameter.Required);
         }
         finally
         {

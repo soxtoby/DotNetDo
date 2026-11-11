@@ -28,6 +28,13 @@ Pass values as long options:
 
 A Boolean option may omit its value. Other types require one. Call `.Required()` on a parameter without a default when the task cannot continue without it. When running locally in an interactive shell, DotNetDo prompts for any required parameters that are still missing.
 
+Parameters without a default can still have a description. Pass it by name, because a second positional argument is the default value:
+
+```csharp
+var feed = Do.Param("feed", description: "NuGet feed to publish to")
+    .Required();
+```
+
 Literal `Do.Param` declarations contribute names, descriptions, Boolean values, and same-file enum values to task help and [shell completion](completion.md). DotNetDo discovers them from source without running the task.
 
 ## Keep secrets out of logs

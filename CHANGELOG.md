@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- `Do.Param` accepts a named `description:` without a default value, so required and optional parameters can describe themselves in task help and prompts. For example, `Do.Param("feed", description: "NuGet feed to publish to").Required()`.
+
 ### Fixed
 - `do.cmd` now returns the task's exit code in PowerShell. Rerun `:init` to update an existing workspace.
 

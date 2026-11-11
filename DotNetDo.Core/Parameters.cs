@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace DotNetDo;
 
@@ -11,18 +12,22 @@ public static partial class Do
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
     /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
-    public static OptionalParam<string> Param(string name) =>
-        new(name, ReadParam<string>(name), null);
+    /// <param name="description">Optional task help text describing the parameter to callers. Pass it by name, because a second positional argument is a default value.</param>
+    public static OptionalParam<string> Param(string name, string? description = null) =>
+        new(name, ReadParam<string>(name), description);
 
     /// <summary>Declares an optional typed command-line parameter without a default value.</summary>
     /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
-    public static OptionalParam<T> Param<T>(string name) where T : notnull =>
-        new(name, ReadParam<T>(name), null);
+    /// <param name="description">Optional task help text describing the parameter to callers. Pass it by name, because a second positional argument is a default value.</param>
+    public static OptionalParam<T> Param<T>(string name, string? description = null) where T : notnull =>
+        new(name, ReadParam<T>(name), description);
 
     /// <summary>Declares a command-line parameter and resolves its configured value without executing user code during help discovery.</summary>
     /// <param name="name">The non-empty configuration key, written as <c>--name value</c> on the command line or <c>DOTNETDO_name</c> in the environment.</param>
     /// <param name="defaultValue">The value used when command-line arguments, environment variables, and user secrets do not configure the parameter.</param>
     /// <param name="description">Optional task help text describing the parameter to callers.</param>
+    // Takes precedence so a positional string second argument stays a default value rather than a description.
+    [OverloadResolutionPriority(1)]
     public static Param<T> Param<T>(string name, T defaultValue, string? description = null) where T : notnull =>
         new(name, ReadParam(name, defaultValue), description);
 
