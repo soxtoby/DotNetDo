@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.11.0
+
 ### Added
 - `Do.Param` accepts a named `description:` without a default value, so required and optional parameters can describe themselves in task help and prompts. For example, `Do.Param("feed", description: "NuGet feed to publish to").Required()`.
 
