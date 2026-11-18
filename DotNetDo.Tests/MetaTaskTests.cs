@@ -229,7 +229,9 @@ public sealed class MetaTaskTests
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
-            MSBuildEnvironment.RestoreInherited(startInfo.Environment);
+            // The workspace is outside the repository, so it may resolve a different SDK than the one running the tests.
+            foreach (var name in new[] { "MSBUILD_EXE_PATH", "MSBuildExtensionsPath", "MSBuildSDKsPath" })
+                startInfo.Environment.Remove(name);
             startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "DotNetDo.dll"));
             foreach (var argument in arguments)
                 startInfo.ArgumentList.Add(argument);
