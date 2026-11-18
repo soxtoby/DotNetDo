@@ -6,6 +6,8 @@
 - `Do.Param` accepts a named `description:` without a default value, so required and optional parameters can describe themselves in task help and prompts. For example, `Do.Param("feed", description: "NuGet feed to publish to").Required()`.
 
 ### Fixed
+- Tasks run when the .NET 11 SDK is installed. Previously they could fail with `NETSDK1045: The current .NET SDK does not support targeting .NET 11.0`, because DotNetDo passed its .NET 10 MSBuild settings to the `dotnet` processes it started. Processes started with `Do.Exec` and tool commands also no longer inherit those settings, so they use the SDK they would select on their own.
+- The `DotNetDo` tool runs on .NET 11 or later when .NET 10 is not installed.
 - `do.cmd` now returns the task's exit code in PowerShell. Rerun `:init` to update an existing workspace.
 
 ### Changed

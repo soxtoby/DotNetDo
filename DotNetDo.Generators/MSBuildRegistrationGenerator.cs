@@ -20,8 +20,17 @@ public sealed class MSBuildRegistrationGenerator : IIncrementalGenerator
             [global::System.Runtime.CompilerServices.ModuleInitializer]
             internal static void Initialize()
             {
-                if (!global::Microsoft.Build.Locator.MSBuildLocator.IsRegistered)
-                    global::Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults();
+                if (global::Microsoft.Build.Locator.MSBuildLocator.IsRegistered)
+                    return;
+
+                // MSBuildLocator points these variables at the registered SDK. Remember the inherited values so
+                // DotNetDo can restore them for child processes, which may resolve a different SDK.
+                var inherited = new global::System.Collections.Generic.Dictionary<string, string>();
+                foreach (var name in new[] { "MSBUILD_EXE_PATH", "MSBuildExtensionsPath", "MSBuildSDKsPath" })
+                    inherited[name] = global::System.Environment.GetEnvironmentVariable(name);
+                global::System.AppContext.SetData("DotNetDo.InheritedMSBuildEnvironment", inherited);
+
+                global::Microsoft.Build.Locator.MSBuildLocator.RegisterDefaults();
             }
         }
         """;

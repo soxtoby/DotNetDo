@@ -4,7 +4,7 @@ Create and run your first repository-local DotNetDo task.
 
 ## Requirements
 
-Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
+Install the [.NET SDK](https://dotnet.microsoft.com/download), version 10 or later.
 
 ## Install DotNetDo
 

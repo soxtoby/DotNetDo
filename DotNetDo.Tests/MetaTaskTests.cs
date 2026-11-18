@@ -229,6 +229,7 @@ public sealed class MetaTaskTests
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
+            MSBuildEnvironment.RestoreInherited(startInfo.Environment);
             startInfo.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "DotNetDo.dll"));
             foreach (var argument in arguments)
                 startInfo.ArgumentList.Add(argument);

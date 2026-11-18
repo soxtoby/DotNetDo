@@ -96,7 +96,7 @@ await (DotNet.Pack with
 <div class="step-list">
   <div class="step">
     <span class="count">STEP 01</span>
-    <p>Install the global tool. DotNetDo needs the .NET 10 SDK.</p>
+    <p>Install the global tool. DotNetDo needs the .NET 10 SDK or later.</p>
     <code>dotnet tool install --global DotNetDo</code>
   </div>
   <div class="step">

@@ -50,6 +50,7 @@ static class RunCommand
     {
         var file = Do.RootDirectory / scriptsPath / $"{invocation.TaskName}.cs";
         var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false };
+        MSBuildEnvironment.RestoreInherited(startInfo.Environment);
         startInfo.ArgumentList.Add(file.ToString());
         startInfo.ArgumentList.Add("--");
         foreach (var argument in invocation.CommandLine.ToArguments())

@@ -6,7 +6,7 @@ DotNetDo turns small C# files into repository automation scripts. Install the `d
 
 ## Getting started
 
-Note that DotNetDo requires .NET 10.
+Note that DotNetDo requires .NET 10 or later.
 
 ```console
 dotnet tool install --global DotNetDo

@@ -58,6 +58,25 @@ public sealed class ExecEnvironmentTests
     }
 
     [Fact]
+    public async Task Children_do_not_inherit_the_registered_MSBuild_SDK()
+    {
+        var registered = Environment.GetEnvironmentVariable("MSBuildSDKsPath");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("MSBuildSDKsPath", "registered SDK");
+
+            var child = await ReadChildEnvironment(new ExecOptions());
+
+            Assert.NotEqual("registered SDK", child.GetValueOrDefault("MSBuildSDKsPath"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("MSBuildSDKsPath", registered);
+        }
+    }
+
+    [Fact]
     public async Task Typed_commands_use_the_process_environment()
     {
         var command = new EnvironmentToolCommand

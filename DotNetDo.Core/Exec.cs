@@ -30,6 +30,7 @@ public static partial class Do
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
         startInfo.WorkingDirectory = workingDirectory;
+        MSBuildEnvironment.RestoreInherited(startInfo.Environment);
 
         if (options.Environment is { } transformEnvironment)
             ApplyEnvironment(startInfo, transformEnvironment);
